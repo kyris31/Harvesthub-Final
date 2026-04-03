@@ -30,7 +30,7 @@ export async function getSale(id: string) {
 
   const sale = await db.query.sales.findFirst({
     where: and(eq(sales.id, id), eq(sales.userId, session.user.id), isNull(sales.deletedAt)),
-    with: { customer: true },
+    with: { customer: true, saleItems: true },
   })
 
   if (!sale) throw new Error('Sale not found')
