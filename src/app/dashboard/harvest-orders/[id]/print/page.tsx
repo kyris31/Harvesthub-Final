@@ -55,15 +55,19 @@ export default async function PrintHarvestOrderPage({ params }: Props) {
       {/* Printable content */}
       <div className="print-page mx-auto max-w-7xl px-8 pt-20 pb-12 print:pt-0">
         {/* Header */}
-        <div className="mb-8 border-b pb-4">
-          <h1 className="text-2xl font-bold">{order.name}</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Date: {format(new Date(order.orderDate), 'EEEE, dd MMMM yyyy')}
-            {order.notes && ` · ${order.notes}`}
-          </p>
-          <p className="mt-1 text-xs text-gray-400">
-            Printed: {format(new Date(), 'dd/MM/yyyy HH:mm')}
-          </p>
+        <div className="mb-8 flex items-start justify-between border-b pb-4">
+          <div>
+            <h1 className="text-2xl font-bold">{order.name}</h1>
+            <p className="mt-1 text-sm text-gray-600">
+              Date: {format(new Date(order.orderDate), 'EEEE, dd MMMM yyyy')}
+              {order.notes && ` · ${order.notes}`}
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              Printed: {format(new Date(), 'dd/MM/yyyy HH:mm')}
+            </p>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Bio & Fresh" style={{ height: '70px', objectFit: 'contain' }} />
         </div>
 
         {/* ── TABLE 1: Harvest Picking List ── */}

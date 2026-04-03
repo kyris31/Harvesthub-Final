@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { navigationSections } from '@/lib/navigation-items'
-import { Leaf } from 'lucide-react'
+import Image from 'next/image'
 
 interface AppSidebarProps {
   className?: string
@@ -23,9 +23,15 @@ export function AppSidebar({ className }: AppSidebarProps) {
     <div className={cn('bg-card flex h-full flex-col border-r', className)}>
       {/* Logo/Brand */}
       <div className="flex h-16 items-center border-b px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <Leaf className="h-6 w-6 text-green-600" />
-          <span className="text-xl">HarvestHub</span>
+        <Link href="/dashboard" className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="Bio & Fresh"
+            width={130}
+            height={52}
+            className="object-contain"
+            priority
+          />
         </Link>
       </div>
 

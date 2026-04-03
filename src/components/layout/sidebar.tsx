@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Sprout, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useState } from 'react'
 import { navigationSections } from '@/lib/navigation-items'
+import Image from 'next/image'
 
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
@@ -59,14 +60,15 @@ export function Sidebar() {
     <div className="bg-sidebar hidden flex-col border-r md:flex md:w-60 lg:w-64">
       {/* Logo */}
       <div className="flex h-14 shrink-0 items-center border-b px-4 lg:h-[60px] lg:px-5">
-        <Link href="/dashboard" className="group flex items-center gap-2.5">
-          <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg shadow-sm transition-opacity group-hover:opacity-90">
-            <Sprout className="text-primary-foreground h-4 w-4" />
-          </div>
-          <div className="flex flex-col leading-none">
-            <span className="text-sm font-bold tracking-tight">HarvestHub</span>
-            <span className="text-muted-foreground text-[10px]">Farm Manager</span>
-          </div>
+        <Link href="/dashboard" className="group flex items-center">
+          <Image
+            src="/logo.png"
+            alt="Bio & Fresh"
+            width={120}
+            height={48}
+            className="object-contain transition-opacity group-hover:opacity-80"
+            priority
+          />
         </Link>
       </div>
       {/* Nav */}
@@ -91,18 +93,15 @@ export function MobileNav() {
       <SheetContent side="left" className="bg-sidebar w-60 p-0">
         <div className="flex h-full flex-col">
           <div className="flex h-14 shrink-0 items-center border-b px-4">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2.5"
-              onClick={() => setOpen(false)}
-            >
-              <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg shadow-sm">
-                <Sprout className="text-primary-foreground h-4 w-4" />
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-sm font-bold tracking-tight">HarvestHub</span>
-                <span className="text-muted-foreground text-[10px]">Farm Manager</span>
-              </div>
+            <Link href="/dashboard" className="flex items-center" onClick={() => setOpen(false)}>
+              <Image
+                src="/logo.png"
+                alt="Bio & Fresh"
+                width={120}
+                height={48}
+                className="object-contain"
+                priority
+              />
             </Link>
           </div>
           <ScrollArea className="flex-1 px-2">

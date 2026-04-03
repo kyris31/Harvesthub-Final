@@ -1,27 +1,51 @@
 'use client'
 
 // PDF Export using CDN-loaded jsPDF
-// The libraries are loaded via script tags in the layout
 
-export function exportFinancialReportPDF(data: any, startDate: string, endDate: string) {
+async function loadLogoDataUrl(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new window.Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        resolve(null)
+        return
+      }
+      ctx.drawImage(img, 0, 0)
+      resolve(canvas.toDataURL('image/png'))
+    }
+    img.onerror = () => resolve(null)
+    img.src = '/logo.png'
+  })
+}
+
+function addLogoToPdf(doc: any, logoData: string | null) {
+  if (!logoData) return
+  // Logo at top-right, ~45mm wide, aspect ratio ~1.6:1
+  doc.addImage(logoData, 'PNG', 150, 5, 45, 28)
+}
+
+export async function exportFinancialReportPDF(data: any, startDate: string, endDate: string) {
   // @ts-ignore - jsPDF loaded from CDN
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
+  const logo = await loadLogoDataUrl()
+  addLogoToPdf(doc, logo)
 
-  // Add title
   doc.setFontSize(20)
   doc.text('Financial Report', 14, 22)
 
-  // Add date range
   doc.setFontSize(10)
   doc.text(`Period: ${startDate} to ${endDate}`, 14, 30)
   doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 35)
 
-  // Add summary
   doc.setFontSize(12)
   doc.text('Summary', 14, 45)
 
-  // @ts-ignore - autoTable from CDN
+  // @ts-ignore
   doc.autoTable({
     startY: 50,
     head: [['Metric', 'Value']],
@@ -37,10 +61,12 @@ export function exportFinancialReportPDF(data: any, startDate: string, endDate: 
   doc.save(fileName)
 }
 
-export function exportHarvestReportPDF(data: any, startDate: string, endDate: string) {
+export async function exportHarvestReportPDF(data: any, startDate: string, endDate: string) {
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
+  const logo = await loadLogoDataUrl()
+  addLogoToPdf(doc, logo)
 
   doc.setFontSize(20)
   doc.text('Harvest Report', 14, 22)
@@ -85,10 +111,12 @@ export function exportHarvestReportPDF(data: any, startDate: string, endDate: st
   doc.save(fileName)
 }
 
-export function exportInventoryReportPDF(data: any) {
+export async function exportInventoryReportPDF(data: any) {
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
+  const logo = await loadLogoDataUrl()
+  addLogoToPdf(doc, logo)
 
   doc.setFontSize(20)
   doc.text('Inventory Report', 14, 22)
@@ -165,10 +193,12 @@ export function exportInventoryReportPDF(data: any) {
   doc.save(fileName)
 }
 
-export function exportCultivationReportPDF(data: any, startDate: string, endDate: string) {
+export async function exportCultivationReportPDF(data: any, startDate: string, endDate: string) {
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
+  const logo = await loadLogoDataUrl()
+  addLogoToPdf(doc, logo)
 
   doc.setFontSize(20)
   doc.text('Cultivation Report', 14, 22)
