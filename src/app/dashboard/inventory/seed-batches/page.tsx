@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowUpDown } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -12,6 +12,15 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { SeedBatchFormDialog } from '@/components/inventory/seed-batch-form-dialog'
 
 interface SeedBatch {
@@ -32,6 +41,9 @@ export default function SeedBatchesPage() {
   const [batches, setBatches] = useState<SeedBatch[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState('cropName')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   const fetchBatches = async () => {
     try {
@@ -98,6 +110,33 @@ export default function SeedBatchesPage() {
     )
   }
 
+  const filtered = batches
+    .filter((b) => {
+      if (!search) return true
+      const q = search.toLowerCase()
+      return (
+        b.batchCode.toLowerCase().includes(q) ||
+        b.cropName.toLowerCase().includes(q) ||
+        (b.cropVariety?.toLowerCase().includes(q) ?? false)
+      )
+    })
+    .sort((a, b) => {
+      let valA: string
+      let valB: string
+      if (sortBy === 'batchCode') {
+        valA = a.batchCode
+        valB = b.batchCode
+      } else {
+        valA = a.cropName + (a.cropVariety ?? '')
+        valB = b.cropName + (b.cropVariety ?? '')
+      }
+      const cmp = valA.localeCompare(valB)
+      return sortOrder === 'desc' ? -cmp : cmp
+    })
+
+  const isDefault = sortBy === 'cropName' && sortOrder === 'asc'
+  const sortOrderLabel = sortOrder === 'asc' ? 'A → Z' : 'Z → A'
+
   const totalBatches = batches.length
   const depletedBatches = batches.filter((b) => parseFloat(b.currentQuantity) === 0).length
   const lowStockBatches = batches.filter((b) => {
@@ -124,6 +163,49 @@ export default function SeedBatchesPage() {
           </p>
         </div>
         <SeedBatchFormDialog onSuccess={fetchBatches} />
+      </div>
+
+      {/* Search + Filters */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Input
+          placeholder="Search by crop or batch code..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cropName">Crop Name</SelectItem>
+              <SelectItem value="batchCode">Batch Code</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
+            className="flex items-center gap-2"
+          >
+            <ArrowUpDown className="h-4 w-4" />
+            {sortOrderLabel}
+          </Button>
+          {!isDefault && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSortBy('cropName')
+                setSortOrder('asc')
+              }}
+              className="text-muted-foreground"
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -156,7 +238,17 @@ export default function SeedBatchesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {batches.map((batch) => {
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={8}
+                    className="text-muted-foreground py-10 text-center text-sm"
+                  >
+                    No batches match your search.
+                  </TableCell>
+                </TableRow>
+              ) : null}
+              {filtered.map((batch) => {
                 const stockStatus = getStockStatus(batch.currentQuantity, batch.initialQuantity)
                 return (
                   <TableRow key={batch.id} className="hover:bg-muted/50 transition-colors">
