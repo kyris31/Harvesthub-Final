@@ -130,7 +130,7 @@ export const navigationSections: NavSection[] = [
         title: 'Seedlings',
         href: '/dashboard/inventory/seedlings',
         icon: Sprout,
-        description: 'Purchased seedlings inventory',
+        description: 'Purchased and self-produced seedlings',
       },
       {
         title: 'Inventory',
