@@ -80,7 +80,7 @@ export function SeedBatchFormDialog({ onSuccess }: SeedBatchFormDialogProps) {
     try {
       setIsLoadingCrops(true)
       const [cropsRes, suppliersRes] = await Promise.all([
-        fetch('/api/crops'),
+        fetch('/api/crops?limit=500&sortBy=name&sortOrder=asc'),
         fetch('/api/suppliers'),
       ])
       if (cropsRes.ok) {
