@@ -1,7 +1,14 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { harvestOrders, harvestOrderItems, customers, plantingLogs, trees } from '@/lib/db/schema'
+import {
+  harvestOrders,
+  harvestOrderItems,
+  customers,
+  plantingLogs,
+  trees,
+  flocks,
+} from '@/lib/db/schema'
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { harvestOrderSchema, harvestOrderItemSchema } from '@/lib/validations/harvest-orders'
@@ -196,7 +203,7 @@ export async function getActiveProducts() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user?.id) throw new Error('Unauthorized')
 
-  const [activePlantings, activeTrees] = await Promise.all([
+  const [activePlantings, activeTrees, activeFlocks] = await Promise.all([
     // Active planting logs joined with crop name
     db.query.plantingLogs.findMany({
       where: and(
@@ -216,6 +223,16 @@ export async function getActiveProducts() {
       ),
       columns: { id: true, identifier: true, species: true, variety: true },
       orderBy: [trees.species, trees.identifier],
+    }),
+    // Active laying flocks
+    db.query.flocks.findMany({
+      where: and(
+        eq(flocks.userId, session.user.id),
+        sql`${flocks.deletedAt} IS NULL`,
+        eq(flocks.status, 'active')
+      ),
+      columns: { id: true, name: true, breed: true, purpose: true },
+      orderBy: [flocks.name],
     }),
   ])
 
@@ -237,5 +254,13 @@ export async function getActiveProducts() {
     productName: t.variety ? `${t.species} (${t.variety})` : t.species,
   }))
 
-  return { plantingOptions, treeOptions }
+  const eggOptions = activeFlocks
+    .filter((f) => f.purpose === 'layers' || f.purpose === 'dual_purpose')
+    .map((f) => ({
+      id: f.id,
+      label: f.breed ? `${f.name} (${f.breed}) — Eggs` : `${f.name} — Eggs`,
+      productName: `Eggs — ${f.name}`,
+    }))
+
+  return { plantingOptions, treeOptions, eggOptions }
 }

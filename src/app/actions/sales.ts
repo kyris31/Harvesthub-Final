@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { sales, saleItems, harvestLogs } from '@/lib/db/schema'
+import { sales, saleItems, harvestLogs, eggProduction } from '@/lib/db/schema'
 import { and, eq, isNull, desc, gte, lte, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { saleSchema, type SaleFormData } from '@/lib/validations/business'
@@ -101,14 +101,26 @@ export async function createSaleWithItems(data: {
 
   // Validate stock availability for all items first
   for (const item of data.items) {
-    const harvest = await db.query.harvestLogs.findFirst({
-      where: and(eq(harvestLogs.id, item.harvestLogId), eq(harvestLogs.userId, session.user.id)),
-    })
-    if (!harvest) throw new Error('Harvest record not found')
-    const available = parseFloat(harvest.currentStock)
-    const requested = parseFloat(item.quantity)
-    if (requested > available) {
-      throw new Error(`Insufficient stock: only ${available} ${harvest.quantityUnit} available`)
+    if (item.harvestLogId.startsWith('egg:')) {
+      const eggId = item.harvestLogId.slice(4)
+      const egg = await db.query.eggProduction.findFirst({
+        where: and(eq(eggProduction.id, eggId), eq(eggProduction.userId, session.user.id)),
+      })
+      if (!egg) throw new Error('Egg production record not found')
+      const requested = Math.round(parseFloat(item.quantity))
+      if (requested > egg.currentStock) {
+        throw new Error(`Insufficient egg stock: only ${egg.currentStock} eggs available`)
+      }
+    } else {
+      const harvest = await db.query.harvestLogs.findFirst({
+        where: and(eq(harvestLogs.id, item.harvestLogId), eq(harvestLogs.userId, session.user.id)),
+      })
+      if (!harvest) throw new Error('Harvest record not found')
+      const available = parseFloat(harvest.currentStock)
+      const requested = parseFloat(item.quantity)
+      if (requested > available) {
+        throw new Error(`Insufficient stock: only ${available} ${harvest.quantityUnit} available`)
+      }
     }
   }
 
@@ -132,31 +144,53 @@ export async function createSaleWithItems(data: {
     })
     .returning()
 
-  // Insert sale items and decrement harvest stock
+  // Insert sale items and decrement stock
   for (const item of data.items) {
-    const harvest = await db.query.harvestLogs.findFirst({
-      where: eq(harvestLogs.id, item.harvestLogId),
-      with: { plantingLog: { with: { crop: true } } },
-    })
-
     const qty = parseFloat(item.quantity)
     const price = parseFloat(item.pricePerUnit)
 
-    await db.insert(saleItems).values({
-      saleId: sale.id,
-      harvestLogId: item.harvestLogId,
-      productName: (harvest as any)?.plantingLog?.crop?.name ?? 'Product',
-      quantity: item.quantity,
-      unit: harvest?.quantityUnit ?? 'units',
-      unitPrice: item.pricePerUnit,
-      subtotal: (qty * price).toFixed(2),
-    })
+    if (item.harvestLogId.startsWith('egg:')) {
+      const eggId = item.harvestLogId.slice(4)
+      const egg = await db.query.eggProduction.findFirst({
+        where: eq(eggProduction.id, eggId),
+        with: { flock: { columns: { name: true } } },
+      })
 
-    // Decrement currentStock
-    await db
-      .update(harvestLogs)
-      .set({ currentStock: sql`${harvestLogs.currentStock} - ${qty}` })
-      .where(eq(harvestLogs.id, item.harvestLogId))
+      await db.insert(saleItems).values({
+        saleId: sale.id,
+        harvestLogId: null,
+        productName: `Eggs — ${(egg as any)?.flock?.name ?? 'Unknown Flock'}`,
+        quantity: item.quantity,
+        unit: 'eggs',
+        unitPrice: item.pricePerUnit,
+        subtotal: (qty * price).toFixed(2),
+      })
+
+      await db
+        .update(eggProduction)
+        .set({ currentStock: sql`${eggProduction.currentStock} - ${Math.round(qty)}` })
+        .where(eq(eggProduction.id, eggId))
+    } else {
+      const harvest = await db.query.harvestLogs.findFirst({
+        where: eq(harvestLogs.id, item.harvestLogId),
+        with: { plantingLog: { with: { crop: true } } },
+      })
+
+      await db.insert(saleItems).values({
+        saleId: sale.id,
+        harvestLogId: item.harvestLogId,
+        productName: (harvest as any)?.plantingLog?.crop?.name ?? 'Product',
+        quantity: item.quantity,
+        unit: harvest?.quantityUnit ?? 'units',
+        unitPrice: item.pricePerUnit,
+        subtotal: (qty * price).toFixed(2),
+      })
+
+      await db
+        .update(harvestLogs)
+        .set({ currentStock: sql`${harvestLogs.currentStock} - ${qty}` })
+        .where(eq(harvestLogs.id, item.harvestLogId))
+    }
   }
 
   revalidatePath('/dashboard/sales')

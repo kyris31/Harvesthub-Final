@@ -1033,6 +1033,7 @@ export const eggProduction = pgTable('egg_production', {
   eggsLarge: integer('eggs_large').default(0),
   eggsXLarge: integer('eggs_x_large').default(0),
   notes: text('notes'),
+  currentStock: integer('current_stock').default(0).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

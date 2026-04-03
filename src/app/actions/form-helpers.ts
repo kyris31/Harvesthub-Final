@@ -3,8 +3,8 @@
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { crops, plots, plantingLogs, suppliers, harvestLogs } from '@/lib/db/schema'
-import { and, eq, isNull, gt } from 'drizzle-orm'
+import { crops, plots, plantingLogs, suppliers, harvestLogs, eggProduction } from '@/lib/db/schema'
+import { and, eq, isNull, gt, sql } from 'drizzle-orm'
 
 export async function getCropsForSelect() {
   const session = await auth.api.getSession({
@@ -123,7 +123,7 @@ export async function getAvailableHarvestsForSale() {
     orderBy: (harvestLogs, { desc }) => [desc(harvestLogs.harvestDate)],
   })
 
-  return harvests.map((harvest) => ({
+  const harvestResults = harvests.map((harvest) => ({
     id: harvest.id,
     productName: `${harvest.plantingLog.crop.name}${harvest.plantingLog.crop.variety ? ` (${harvest.plantingLog.crop.variety})` : ''}`,
     currentStock: harvest.currentStock,
@@ -131,4 +131,22 @@ export async function getAvailableHarvestsForSale() {
     harvestDate: harvest.harvestDate,
     qualityGrade: harvest.qualityGrade || null,
   }))
+
+  // Also include egg production records with available stock
+  const eggRecords = await db.query.eggProduction.findMany({
+    where: and(eq(eggProduction.userId, session.user.id), sql`${eggProduction.currentStock} > 0`),
+    with: { flock: { columns: { name: true } } },
+    orderBy: (ep, { desc }) => [desc(ep.collectionDate)],
+  })
+
+  const eggResults = eggRecords.map((e) => ({
+    id: `egg:${e.id}`,
+    productName: `Eggs — ${e.flock.name}`,
+    currentStock: e.currentStock.toString(),
+    unit: 'eggs',
+    harvestDate: e.collectionDate,
+    qualityGrade: null,
+  }))
+
+  return [...harvestResults, ...eggResults]
 }

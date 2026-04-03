@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { addOrderItem, deleteOrderItem } from '@/app/actions/harvest-orders'
-import { Loader2, Save, Leaf, TreePine, X } from 'lucide-react'
+import { Loader2, Save, Leaf, TreePine, X, Egg } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface Customer {
@@ -31,6 +31,7 @@ interface Props {
   customers: Customer[]
   plantingOptions: ProductOption[]
   treeOptions: ProductOption[]
+  eggOptions: ProductOption[]
   // existing items so we can pre-fill cells
   existingItems: {
     id: string
@@ -50,6 +51,7 @@ export function OrderGrid({
   customers,
   plantingOptions,
   treeOptions,
+  eggOptions,
   existingItems,
 }: Props) {
   const router = useRouter()
@@ -76,10 +78,11 @@ export function OrderGrid({
     setSelectedCustomerIds((prev) => prev.filter((x) => x !== id))
   }
 
-  // All products combined — plantings first, then trees
-  const allProducts: (ProductOption & { type: 'planting' | 'tree' })[] = [
+  // All products combined — plantings first, then trees, then eggs
+  const allProducts: (ProductOption & { type: 'planting' | 'tree' | 'egg' })[] = [
     ...plantingOptions.map((p) => ({ ...p, type: 'planting' as const })),
     ...treeOptions.map((t) => ({ ...t, type: 'tree' as const })),
+    ...eggOptions.map((e) => ({ ...e, type: 'egg' as const })),
   ]
 
   // Initialise grid state from existing items
@@ -93,7 +96,7 @@ export function OrderGrid({
 
     for (const prod of allProducts) {
       cells[prod.productName] = {}
-      units[prod.productName] = 'kg'
+      units[prod.productName] = prod.type === 'egg' ? 'pieces' : 'kg'
       prices[prod.productName] = ''
     }
 
@@ -165,7 +168,7 @@ export function OrderGrid({
     return (
       <Card>
         <CardContent className="text-muted-foreground py-10 text-center text-sm">
-          No active plantings or trees found. Add plantings in the Cultivation section first.
+          No active plantings, trees, or laying flocks found.
         </CardContent>
       </Card>
     )
@@ -319,6 +322,33 @@ export function OrderGrid({
                   onPrice={(val) => setPrices((p) => ({ ...p, [prod.productName]: val }))}
                 />
               ))}
+
+              {/* ── Eggs section ── */}
+              {eggOptions.length > 0 && (
+                <tr className="bg-yellow-50/60 dark:bg-yellow-950/20">
+                  <td
+                    colSpan={3 + selectedCustomers.length}
+                    className="sticky left-0 border-t border-b px-3 py-1.5 text-[10px] font-bold tracking-wider text-yellow-700 uppercase dark:text-yellow-400"
+                  >
+                    <Egg className="mr-1 inline h-3 w-3" />
+                    Eggs
+                  </td>
+                </tr>
+              )}
+              {eggOptions.map((prod, i) => (
+                <ProductRow
+                  key={prod.id}
+                  prod={{ ...prod, type: 'egg' }}
+                  customers={selectedCustomers}
+                  cells={cells[prod.productName] ?? {}}
+                  unit={units[prod.productName] ?? 'pieces'}
+                  price={prices[prod.productName] ?? ''}
+                  striped={i % 2 === 1}
+                  onCell={(custId, val) => setCell(prod.productName, custId, val)}
+                  onUnit={(val) => setUnits((p) => ({ ...p, [prod.productName]: val }))}
+                  onPrice={(val) => setPrices((p) => ({ ...p, [prod.productName]: val }))}
+                />
+              ))}
             </tbody>
           </table>
         </div>
@@ -339,7 +369,7 @@ function ProductRow({
   onUnit,
   onPrice,
 }: {
-  prod: ProductOption & { type: 'planting' | 'tree' }
+  prod: ProductOption & { type: 'planting' | 'tree' | 'egg' }
   customers: { id: string; name: string }[]
   cells: Record<string, string>
   unit: string

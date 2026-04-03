@@ -25,7 +25,7 @@ export default async function HarvestOrderDetailPage({ params }: Props) {
     return notFound()
   }
 
-  const [customersList, { plantingOptions, treeOptions }] = await Promise.all([
+  const [customersList, { plantingOptions, treeOptions, eggOptions }] = await Promise.all([
     getCustomersForOrders(),
     getActiveProducts(),
   ])
@@ -71,6 +71,7 @@ export default async function HarvestOrderDetailPage({ params }: Props) {
         customers={customersList}
         plantingOptions={plantingOptions}
         treeOptions={treeOptions}
+        eggOptions={eggOptions}
         existingItems={summary.items.map((i) => ({
           id: i.id,
           customerName: i.customerName,

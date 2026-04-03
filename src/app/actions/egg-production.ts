@@ -113,6 +113,7 @@ export async function createEggProduction(data: unknown) {
     .values({
       ...validatedData,
       userId: session.user.id,
+      currentStock: validatedData.eggsCollected - (validatedData.eggsCracked ?? 0),
     })
     .returning()
 
