@@ -8,7 +8,11 @@ import { and, eq, isNull, desc, or, ilike, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { seedBatchSchema, type SeedBatchFormData } from '@/lib/validations/inventory'
 
-export async function getSeedBatches(search?: string) {
+export async function getSeedBatches(options?: {
+  search?: string
+  sortBy?: string
+  sortOrder?: string
+}) {
   const session = await auth.api.getSession({
     headers: await headers(),
   })
@@ -16,6 +20,8 @@ export async function getSeedBatches(search?: string) {
   if (!session) {
     throw new Error('Unauthorized')
   }
+
+  const { search, sortBy = 'cropName', sortOrder = 'asc' } = options ?? {}
 
   const whereConditions = [
     eq(seedBatches.userId, session.user.id),
@@ -27,13 +33,32 @@ export async function getSeedBatches(search?: string) {
     whereConditions.push(or(ilike(seedBatches.batchCode, `%${search}%`))!)
   }
 
-  return await db.query.seedBatches.findMany({
+  const results = await db.query.seedBatches.findMany({
     where: and(...whereConditions),
     orderBy: [desc(seedBatches.createdAt)],
     with: {
       crop: true,
       supplier: true,
     },
+  })
+
+  // Sort in JS (supports joined crop name)
+  return results.sort((a, b) => {
+    let valA: string
+    let valB: string
+    if (sortBy === 'batchCode') {
+      valA = a.batchCode
+      valB = b.batchCode
+    } else if (sortBy === 'createdAt') {
+      valA = a.createdAt.toISOString()
+      valB = b.createdAt.toISOString()
+    } else {
+      // cropName (default)
+      valA = a.crop.name + (a.crop.variety ?? '')
+      valB = b.crop.name + (b.crop.variety ?? '')
+    }
+    const cmp = valA.localeCompare(valB)
+    return sortOrder === 'desc' ? -cmp : cmp
   })
 }
 

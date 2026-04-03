@@ -12,9 +12,16 @@ import {
 import { Plus, Edit, Package } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { SeedBatchFilters } from '@/components/inventory/seed-batch-filters'
 
-export default async function SeedsInventoryPage() {
-  const seedBatches = await getSeedBatches()
+interface SeedsPageProps {
+  searchParams: Promise<{ search?: string; sortBy?: string; sortOrder?: string }>
+}
+
+export default async function SeedsInventoryPage({ searchParams }: SeedsPageProps) {
+  const { search, sortBy, sortOrder } = await searchParams
+  const seedBatches = await getSeedBatches({ search, sortBy, sortOrder })
 
   // Calculate low stock items (current < 20% of initial)
   const lowStockCount = seedBatches.filter(
@@ -35,6 +42,19 @@ export default async function SeedsInventoryPage() {
             Add Seed Batch
           </Link>
         </Button>
+      </div>
+
+      {/* Search + Filters */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <form className="flex-1">
+          <Input
+            name="search"
+            placeholder="Search by batch code..."
+            defaultValue={search}
+            className="max-w-sm"
+          />
+        </form>
+        <SeedBatchFilters />
       </div>
 
       {/* Summary Cards */}
@@ -86,7 +106,9 @@ export default async function SeedsInventoryPage() {
           {seedBatches.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-muted-foreground">
-                No seed batches yet. Add your first batch to get started!
+                {search
+                  ? 'No batches found matching your search.'
+                  : 'No seed batches yet. Add your first batch to get started!'}
               </p>
               <Button asChild className="mt-4">
                 <Link href="/dashboard/inventory/seeds/new">
