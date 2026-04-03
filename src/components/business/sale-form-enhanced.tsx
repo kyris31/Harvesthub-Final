@@ -205,38 +205,51 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
               return (
                 <Card key={field.id}>
                   <CardContent className="pt-6">
-                    <div className="grid grid-cols-12 gap-4">
-                      <div className="col-span-5">
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.harvestLogId`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Product *</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select product" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {availableHarvests.map((harvest) => (
-                                    <SelectItem key={harvest.id} value={harvest.id}>
-                                      {harvest.productName}
-                                      {harvest.qualityGrade && ` (${harvest.qualityGrade})`}
-                                      {' - Stock: '}
-                                      {harvest.currentStock} {harvest.unit}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.harvestLogId`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Product *</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Select product" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {availableHarvests.map((harvest) => (
+                                      <SelectItem key={harvest.id} value={harvest.id}>
+                                        {harvest.productName}
+                                        {harvest.qualityGrade && ` (${harvest.qualityGrade})`}
+                                        {' — '}
+                                        {harvest.currentStock} {harvest.unit} available
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        {fields.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="mt-8 shrink-0"
+                            onClick={() => remove(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
 
-                      <div className="col-span-3">
+                      <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
                           name={`items.${index}.quantity`}
@@ -255,9 +268,7 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
                             </FormItem>
                           )}
                         />
-                      </div>
 
-                      <div className="col-span-3">
                         <FormField
                           control={form.control}
                           name={`items.${index}.pricePerUnit`}
@@ -271,19 +282,6 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
                             </FormItem>
                           )}
                         />
-                      </div>
-
-                      <div className="col-span-1 flex items-end">
-                        {fields.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => remove(index)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
                       </div>
                     </div>
 
