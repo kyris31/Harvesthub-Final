@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { createSale } from '@/app/actions/sales'
+import { createSaleWithItems } from '@/app/actions/sales'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Loader2, Plus, Trash2 } from 'lucide-react'
@@ -97,17 +97,18 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
   async function onSubmit(data: EnhancedSaleFormData) {
     setIsLoading(true)
     try {
-      const totalAmount = calculateTotal().toFixed(2)
-
-      // Create the sale with calculated total
-      await createSale({
-        customerId: data.customerId || '',
+      await createSaleWithItems({
+        customerId: data.customerId || undefined,
         saleDate: data.saleDate,
-        totalAmount: totalAmount,
         paymentStatus: data.paymentStatus,
-        paymentMethod: data.paymentMethod || '',
+        paymentMethod: data.paymentMethod || undefined,
         amountPaid: data.amountPaid,
-        notes: data.notes || '',
+        notes: data.notes || undefined,
+        items: data.items.map((item) => ({
+          harvestLogId: item.harvestLogId,
+          quantity: item.quantity,
+          pricePerUnit: item.pricePerUnit,
+        })),
       })
 
       toast({ title: 'Sale recorded successfully!' })
