@@ -24,7 +24,13 @@ interface Plot {
   name: string
 }
 
-export function NewTreeForm({ plots }: { plots: Plot[] }) {
+export function NewTreeForm({
+  plots,
+  defaultIdentifier,
+}: {
+  plots: Plot[]
+  defaultIdentifier?: string
+}) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
@@ -76,10 +82,11 @@ export function NewTreeForm({ plots }: { plots: Plot[] }) {
               id="identifier"
               name="identifier"
               required
+              defaultValue={defaultIdentifier}
               placeholder="e.g. T-001, Olive-North-1"
             />
             <p className="text-muted-foreground text-xs">
-              Unique name you'll use to identify this tree
+              Auto-generated — you can change it if needed
             </p>
           </div>
           <div className="space-y-1.5">
