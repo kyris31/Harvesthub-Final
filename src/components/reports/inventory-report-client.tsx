@@ -40,13 +40,13 @@ export default function InventoryReportClient({ initialData }: InventoryReportPr
         category: 'Seeds',
         item: s.batchCode,
         quantity: `${s.currentQuantity} ${s.quantityUnit}`,
-        value: `$${(s.currentQuantity * Number(s.costPerUnit || 0)).toFixed(2)}`,
+        value: `€${(s.currentQuantity * Number(s.costPerUnit || 0)).toFixed(2)}`,
       })),
       ...data.inputs.items.map((i: any) => ({
         category: 'Inputs',
         item: i.name,
         quantity: `${i.currentQuantity || 0} ${i.quantityUnit || ''}`,
-        value: `$${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
+        value: `€${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
       })),
     ]
     exportToCSV(csvData, 'inventory-report')

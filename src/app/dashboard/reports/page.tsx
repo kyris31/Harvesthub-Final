@@ -35,11 +35,11 @@ export default async function ReportsPage() {
       icon: DollarSign,
       href: '/dashboard/reports/financial',
       stats: [
-        { label: 'Revenue', value: `$${financial.revenue.total.toFixed(2)}` },
-        { label: 'Expenses', value: `$${financial.expenses.total.toFixed(2)}` },
+        { label: 'Revenue', value: `€${financial.revenue.total.toFixed(2)}` },
+        { label: 'Expenses', value: `€${financial.expenses.total.toFixed(2)}` },
         {
           label: 'Net Profit',
-          value: `$${financial.profit.total.toFixed(2)}`,
+          value: `€${financial.profit.total.toFixed(2)}`,
           trend: financial.profit.total >= 0 ? 'up' : 'down',
         },
       ],
@@ -60,7 +60,7 @@ export default async function ReportsPage() {
       icon: Package,
       href: '/dashboard/reports/inventory',
       stats: [
-        { label: 'Total Value', value: `$${inventory.totalValue.toFixed(2)}` },
+        { label: 'Total Value', value: `€${inventory.totalValue.toFixed(2)}` },
         {
           label: 'Low Stock Items',
           value: inventory.lowStockCount.toString(),

@@ -103,9 +103,9 @@ export async function exportFinancialReportPDF(data: any, startDate: string, end
     startY: startY + 8,
     head: [['Metric', 'Value']],
     body: [
-      ['Total Revenue', `$${data.revenue.total.toFixed(2)}`],
-      ['Total Expenses', `$${data.expenses.total.toFixed(2)}`],
-      ['Net Profit', `$${data.profit.total.toFixed(2)}`],
+      ['Total Revenue', `€${data.revenue.total.toFixed(2)}`],
+      ['Total Expenses', `€${data.expenses.total.toFixed(2)}`],
+      ['Net Profit', `€${data.profit.total.toFixed(2)}`],
       ['Profit Margin', `${data.profit.margin.toFixed(1)}%`],
     ],
     styles: { font: 'NotoSans', fontSize: 9 },
@@ -175,11 +175,11 @@ export async function exportInventoryReportPDF(data: any) {
     startY,
     head: [['Metric', 'Value']],
     body: [
-      ['Total Inventory Value', `$${data.totalValue.toFixed(2)}`],
+      ['Total Inventory Value', `€${data.totalValue.toFixed(2)}`],
       ['Low Stock Items', data.lowStockCount.toString()],
-      ['Seeds Value', `$${data.seeds.totalValue.toFixed(2)}`],
-      ['Inputs Value', `$${data.inputs.totalValue.toFixed(2)}`],
-      ['Seedlings Value', `$${data.seedlings.totalValue.toFixed(2)}`],
+      ['Seeds Value', `€${data.seeds.totalValue.toFixed(2)}`],
+      ['Inputs Value', `€${data.inputs.totalValue.toFixed(2)}`],
+      ['Seedlings Value', `€${data.seedlings.totalValue.toFixed(2)}`],
     ],
     styles: { font: 'NotoSans', fontSize: 9 },
     headStyles: { fillColor: [34, 139, 34] },
@@ -212,7 +212,7 @@ export async function exportInventoryReportPDF(data: any) {
       i.name,
       i.type,
       `${Number(i.currentQuantity || 0).toFixed(2)} ${i.quantityUnit || ''}`,
-      `$${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
+      `€${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
     ])
 
     doc.addPage()
@@ -249,8 +249,8 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     head: [['Metric', 'Value']],
     body: [
       ['Total Activities', data.totalActivities.toString()],
-      ['Total Cost', `$${data.totalCost.toFixed(2)}`],
-      ['Average Cost', `$${(data.totalCost / data.totalActivities).toFixed(2)}`],
+      ['Total Cost', `€${data.totalCost.toFixed(2)}`],
+      ['Average Cost', `€${(data.totalCost / data.totalActivities).toFixed(2)}`],
     ],
     styles: { font: 'NotoSans', fontSize: 9 },
     headStyles: { fillColor: [34, 139, 34] },
@@ -259,8 +259,8 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
   const activityData = Object.entries(data.activityByType).map(([type, stats]: [string, any]) => [
     type.replace('_', ' ').toUpperCase(),
     stats.count.toString(),
-    `$${stats.totalCost.toFixed(2)}`,
-    `$${(stats.totalCost / stats.count).toFixed(2)}`,
+    `€${stats.totalCost.toFixed(2)}`,
+    `€${(stats.totalCost / stats.count).toFixed(2)}`,
   ])
 
   // @ts-ignore
@@ -279,7 +279,7 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
         new Date(a.activityDate).toLocaleDateString(),
         a.activityType.replace('_', ' '),
         a.quantityUsed ? `${a.quantityUsed} ${a.quantityUnit}` : 'N/A',
-        a.cost ? `$${Number(a.cost).toFixed(2)}` : 'N/A',
+        a.cost ? `€${Number(a.cost).toFixed(2)}` : 'N/A',
       ])
 
     doc.addPage()

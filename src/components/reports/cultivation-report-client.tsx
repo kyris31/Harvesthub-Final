@@ -44,7 +44,7 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
       type: a.activityType.replace('_', ' '),
       date: new Date(a.activityDate).toLocaleDateString(),
       quantity: a.quantityUsed ? `${a.quantityUsed} ${a.quantityUnit}` : 'N/A',
-      cost: a.cost ? `$${Number(a.cost).toFixed(2)}` : 'N/A',
+      cost: a.cost ? `€${Number(a.cost).toFixed(2)}` : 'N/A',
       notes: a.notes || '',
     }))
     exportToCSV(csvData, 'cultivation-report')
