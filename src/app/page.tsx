@@ -1,65 +1,114 @@
-import Image from "next/image";
+import { auth } from '@/lib/auth/auth'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { Sprout, Leaf, BarChart3, Users } from 'lucide-react'
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  // If user is logged in, redirect to dashboard
+  if (session) {
+    redirect('/dashboard')
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-green-50 to-emerald-50">
+      {/* Header */}
+      <header className="border-b bg-white/80 backdrop-blur-sm">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <Sprout className="h-8 w-8 text-green-600" />
+            <span className="text-2xl font-bold text-green-600">HarvestHub</span>
+          </div>
+          <div className="flex gap-3">
+            <Link
+              href="/login"
+              className="rounded-md px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              Log in
+            </Link>
+            <Link
+              href="/signup"
+              className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              Sign up
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      {/* Hero Section */}
+      <main className="flex flex-1 items-center justify-center px-4 py-12">
+        <div className="max-w-4xl space-y-8 text-center">
+          <div className="space-y-4">
+            <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+              Manage Your Farm with <span className="text-green-600">Confidence</span>
+            </h1>
+            <p className="mx-auto max-w-2xl text-xl text-gray-600">
+              A comprehensive farm management system to track crops, livestock, sales, expenses, and
+              more. All in one place.
+            </p>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              href="/signup"
+              className="rounded-lg bg-green-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-colors hover:bg-green-700 hover:shadow-xl"
+            >
+              Get Started Free
+            </Link>
+            <Link
+              href="/login"
+              className="rounded-lg border-2 border-green-600 px-8 py-4 text-lg font-semibold text-green-600 transition-colors hover:bg-green-50"
+            >
+              Sign In
+            </Link>
+          </div>
+
+          {/* Features Grid */}
+          <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+              <Leaf className="mb-3 h-10 w-10 text-green-600" />
+              <h3 className="mb-2 font-semibold text-gray-900">Crop Management</h3>
+              <p className="text-sm text-gray-600">
+                Track planting, growth, and harvest schedules for all your crops
+              </p>
+            </div>
+            <div className="rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+              <Users className="mb-3 h-10 w-10 text-green-600" />
+              <h3 className="mb-2 font-semibold text-gray-900">Flock Tracking</h3>
+              <p className="text-sm text-gray-600">
+                Monitor livestock health, breeding, and production records
+              </p>
+            </div>
+            <div className="rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+              <BarChart3 className="mb-3 h-10 w-10 text-green-600" />
+              <h3 className="mb-2 font-semibold text-gray-900">Financial Reports</h3>
+              <p className="text-sm text-gray-600">
+                Track sales, expenses, and profitability with detailed analytics
+              </p>
+            </div>
+            <div className="rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+              <Sprout className="mb-3 h-10 w-10 text-green-600" />
+              <h3 className="mb-2 font-semibold text-gray-900">Inventory Control</h3>
+              <p className="text-sm text-gray-600">
+                Manage supplies, equipment, and resources efficiently
+              </p>
+            </div>
+          </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t bg-white/80 py-6 backdrop-blur-sm">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-600">
+          © {new Date().getFullYear()} HarvestHub. Your complete farm management solution.
+        </div>
+      </footer>
     </div>
-  );
+  )
 }

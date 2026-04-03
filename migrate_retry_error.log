@@ -1,0 +1,139 @@
+﻿Running drizzle-kit migrate...
+No config path provided, using default 'drizzle.config.ts'
+Reading config file 'C:\Users\e53638\Desktop\FarmManagement\harvesthub-v2\drizzle.config.ts'
+Using 'pg' driver for database querying
+node.exe : DrizzleQue
+ryError: Failed query
+: CREATE SCHEMA IF NO
+T EXISTS "drizzle"
+At C:\Program Files\n
+odejs\npx.ps1:29 char
+:3
++   & $NODE_EXE $NPX_
+CLI_JS $args
++   ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Drizzle   
+ QueryErr...XISTS    
+ "drizzle":Strin    g
+) [], RemoteExc    ep
+tion
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+params: 
+    at NodePgPrepared
+Query.queryWithCache 
+(C:\Users\e53638\Desk
+top\FarmManagement\ha
+rvesthub-v2\node_modu
+les\.pnpm\drizzle-orm
+@0.44.7_@neondat_9ad8
+a62e4993a41f6fd5a207a
+a19f87e\node_modules\
+src\pg-core\session.t
+s:73:11)
+    at process.proces
+sTicksAndRejections (
+node:internal/process
+/task_queues:105:5)
+    at async PgDialec
+t.migrate (C:\Users\e
+53638\Desktop\FarmMan
+agement\harvesthub-v2
+\node_modules\.pnpm\d
+rizzle-orm@0.44.7_@ne
+ondat_9ad8a62e4993a41
+f6fd5a207aa19f87e\nod
+e_modules\src\pg-core
+\dialect.ts:85:3)
+    at async migrate 
+(C:\Users\e53638\Desk
+top\FarmManagement\ha
+rvesthub-v2\node_modu
+les\.pnpm\drizzle-orm
+@0.44.7_@neondat_9ad8
+a62e4993a41f6fd5a207a
+a19f87e\node_modules\
+src\node-postgres\mig
+rator.ts:10:2) {
+  query: 'CREATE SCHE
+MA IF NOT EXISTS "dri
+zzle"',
+  params: [],
+  cause: AggregateErr
+or [ETIMEDOUT]: 
+      at C:\Users\e53
+638\Desktop\FarmManag
+ement\harvesthub-v2\n
+ode_modules\.pnpm\pg-
+pool@3.10.1_pg@8.16.3
+\node_modules\pg-pool
+\index.js:45:11
+      at process.proc
+essTicksAndRejections
+ (node:internal/proce
+ss/task_queues:105:5)
+      at async <anony
+mous> (C:\Users\e5363
+8\Desktop\FarmManagem
+ent\harvesthub-v2\nod
+e_modules\.pnpm\drizz
+le-orm@0.44.7_@neonda
+t_9ad8a62e4993a41f6fd
+5a207aa19f87e\node_mo
+dules\src\node-postgr
+es\session.ts:149:14)
+      at async NodePg
+PreparedQuery.queryWi
+thCache (C:\Users\e53
+638\Desktop\FarmManag
+ement\harvesthub-v2\n
+ode_modules\.pnpm\dri
+zzle-orm@0.44.7_@neon
+dat_9ad8a62e4993a41f6
+fd5a207aa19f87e\node_
+modules\src\pg-core\s
+ession.ts:71:12)
+      at async PgDial
+ect.migrate (C:\Users
+\e53638\Desktop\FarmM
+anagement\harvesthub-
+v2\node_modules\.pnpm
+\drizzle-orm@0.44.7_@
+neondat_9ad8a62e4993a
+41f6fd5a207aa19f87e\n
+ode_modules\src\pg-co
+re\dialect.ts:85:3)
+      at async migrat
+e (C:\Users\e53638\De
+sktop\FarmManagement\
+harvesthub-v2\node_mo
+dules\.pnpm\drizzle-o
+rm@0.44.7_@neondat_9a
+d8a62e4993a41f6fd5a20
+7aa19f87e\node_module
+s\src\node-postgres\m
+igrator.ts:10:2) {
+    code: 'ETIMEDOUT'
+,
+    [errors]: [ [Erro
+r], [Error], [Error] 
+]
+  }
+}
+Migration failed: Com
+mand failed: npx cros
+s-env DATABASE_URL="p
+ostgresql://neondb_ow
+ner:npg_cqj0v2MKGxJr@
+ep-soft-haze-abee6p4h
+-pooler.eu-west-2.aws
+.neon.tech/neondb?ssl
+mode=require&channel_
+binding=require" driz
+zle-kit migrate
+[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...[2K[1G[έμ╜] applying migrations...[2K[1G[έμ╖] applying migrations...[2K[1G[έμψ] applying migrations...[2K[1G[έμθ] applying migrations...[2K[1G[έκ┐] applying migrations...[2K[1G[έλ┐] applying migrations...[2K[1G[έμ╗] applying migrations...

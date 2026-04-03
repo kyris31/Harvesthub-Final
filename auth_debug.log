@@ -1,0 +1,133 @@
+[2025-12-05T06:21:25.765Z] Starting POST request
+[2025-12-05T06:21:27.900Z] Request successful, status: 422
+[2025-12-05T06:22:06.240Z] Starting POST request
+[2025-12-05T06:22:08.062Z] Request successful, status: 422
+[2025-12-05T06:22:08.063Z] Response body: {"code":"FAILED_TO_CREATE_USER","message":"Failed to create user","details":{"query":"insert into \"users\" (\"id\", \"email\", \"email_verified\", \"password_hash\", \"name\", \"image\", \"farm_name\", \"farm_logo_url\", \"created_at\", \"updated_at\") values ($1, $2, $3, default, $4, default, default, default, $5, $6) returning \"id\", \"email\", \"email_verified\", \"password_hash\", \"name\", \"image\", \"farm_name\", \"farm_logo_url\", \"created_at\", \"updated_at\"","params":["moROLHWJrCE9Dxh933qysgG5Ywt9Ko9J","test-422@example.com",false,"Test 422","2025-12-05T06:22:07.764Z","2025-12-05T06:22:07.764Z"],"cause":{"name":"NeonDbError","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"}}}
+[2025-12-05T06:23:45.192Z] Starting POST request
+[2025-12-05T06:23:47.204Z] Request successful, status: 422
+[2025-12-05T06:23:47.205Z] Response body: {"code":"FAILED_TO_CREATE_USER","message":"Failed to create user","details":{"query":"insert into \"users\" (\"id\", \"email\", \"email_verified\", \"password_hash\", \"name\", \"image\", \"farm_name\", \"farm_logo_url\", \"created_at\", \"updated_at\") values ($1, $2, $3, default, $4, default, default, default, $5, $6) returning \"id\", \"email\", \"email_verified\", \"password_hash\", \"name\", \"image\", \"farm_name\", \"farm_logo_url\", \"created_at\", \"updated_at\"","params":["5A9C2OzSLX4h2RBCa0SYDnoMf3N7aC6p","kyris31@hotmail.com",false,"Kyriacos Kyriacou","2025-12-05T06:23:46.910Z","2025-12-05T06:23:46.910Z"],"cause":{"name":"NeonDbError","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"}}}
+[2025-12-05T06:41:53.554Z] Starting POST request
+[2025-12-05T06:41:53.988Z] Request successful, status: 500
+[2025-12-05T06:41:53.988Z] Response body: 
+[2025-12-05T06:42:51.665Z] Starting POST request
+[2025-12-05T06:42:53.230Z] Request successful, status: 401
+[2025-12-05T06:42:53.231Z] Response body: {"code":"INVALID_EMAIL_OR_PASSWORD","message":"Invalid email or password"}
+[2025-12-05T06:43:03.320Z] Starting POST request
+[2025-12-05T06:43:04.994Z] Request successful, status: 401
+[2025-12-05T06:43:04.997Z] Response body: {"code":"INVALID_EMAIL_OR_PASSWORD","message":"Invalid email or password"}
+[2025-12-05T06:43:16.446Z] Starting POST request
+[2025-12-05T06:43:18.472Z] Request successful, status: 500
+[2025-12-05T06:43:18.473Z] Response body: 
+[2025-12-05T07:24:31.321Z] Starting POST request
+[2025-12-05T07:24:32.238Z] Request successful, status: 200
+[2025-12-05T07:49:31.496Z] Starting POST request
+[2025-12-05T07:49:33.475Z] Request successful, status: 200
+[2025-12-05T09:47:29.310Z] Starting POST request
+[2025-12-05T09:47:31.921Z] Request successful, status: 200
+[2025-12-05T10:28:16.939Z] Starting POST request
+[2025-12-05T10:28:18.786Z] Request successful, status: 200
+[2025-12-05T10:31:29.258Z] Starting POST request
+[2025-12-05T10:31:31.324Z] Request successful, status: 200
+[2025-12-05T10:52:04.354Z] Starting POST request
+[2025-12-05T10:52:06.753Z] Request successful, status: 200
+[2025-12-05T11:07:07.615Z] Starting POST request
+[2025-12-05T11:07:10.372Z] Request successful, status: 200
+[2025-12-12T10:57:32.457Z] Starting POST request
+[2025-12-12T10:57:34.992Z] Request successful, status: 200
+[2025-12-12T11:10:52.369Z] Starting POST request
+[2025-12-12T11:10:52.595Z] Request successful, status: 200
+[2025-12-12T11:10:57.021Z] Starting POST request
+[2025-12-12T11:10:58.982Z] Request successful, status: 200
+[2025-12-12T11:13:23.064Z] Starting POST request
+[2025-12-12T11:13:24.982Z] Request successful, status: 200
+[2025-12-12T11:17:18.804Z] Starting POST request
+[2025-12-12T11:17:20.868Z] Request successful, status: 200
+[2025-12-12T11:45:38.346Z] Starting POST request
+[2025-12-12T11:45:40.319Z] Request successful, status: 200
+[2025-12-19T16:37:12.697Z] Starting POST request
+[2025-12-19T16:37:17.093Z] Request successful, status: 200
+[2025-12-19T16:48:46.671Z] Starting POST request
+[2025-12-19T16:48:50.465Z] Request successful, status: 200
+[2025-12-19T17:00:22.215Z] Starting POST request
+[2025-12-19T17:00:24.263Z] Request successful, status: 200
+[2025-12-26T09:33:25.633Z] Starting POST request
+[2025-12-26T09:33:26.431Z] Request successful, status: 422
+[2025-12-26T09:33:26.433Z] Response body: {"code":"USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL","message":"User already exists. Use another email."}
+[2025-12-26T09:33:41.464Z] Starting POST request
+[2025-12-26T09:33:41.769Z] Request successful, status: 422
+[2025-12-26T09:33:41.770Z] Response body: {"code":"USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL","message":"User already exists. Use another email."}
+[2025-12-26T09:33:54.623Z] Starting POST request
+[2025-12-26T09:33:56.836Z] Request successful, status: 200
+[2025-12-26T09:38:07.244Z] Starting POST request
+[2025-12-26T09:38:09.302Z] Request successful, status: 200
+[2025-12-26T10:26:47.139Z] Starting POST request
+[2025-12-26T10:26:47.919Z] Request successful, status: 200
+[2025-12-26T10:39:46.905Z] Starting POST request
+[2025-12-26T10:39:47.654Z] Request successful, status: 200
+[2025-12-30T08:32:29.636Z] Starting POST request
+[2025-12-30T08:32:33.881Z] Request successful, status: 200
+[2026-01-01T12:42:41.897Z] Starting POST request
+[2026-01-01T12:42:42.150Z] Request successful, status: 200
+[2026-01-01T12:43:13.044Z] Starting POST request
+[2026-01-01T12:43:15.302Z] Request successful, status: 200
+[2026-01-02T08:12:03.683Z] Starting POST request
+[2026-01-02T08:12:04.441Z] Request successful, status: 200
+[2026-01-10T15:48:17.052Z] Starting POST request
+[2026-01-10T15:48:22.745Z] Request successful, status: 200
+[2026-01-10T15:48:26.719Z] Starting POST request
+[2026-01-10T15:48:29.437Z] Request successful, status: 200
+[2026-01-10T16:49:16.816Z] Starting POST request
+[2026-01-10T16:49:21.720Z] Request successful, status: 200
+[2026-01-17T17:05:42.519Z] Starting POST request
+[2026-01-17T17:05:45.032Z] Request successful, status: 200
+[2026-01-17T17:17:06.047Z] Starting POST request
+[2026-01-17T17:17:08.646Z] Request successful, status: 200
+[2026-01-17T17:34:16.369Z] Starting POST request
+[2026-01-17T17:34:18.911Z] Request successful, status: 200
+[2026-01-17T17:45:40.934Z] Starting POST request
+[2026-01-17T17:45:42.970Z] Request successful, status: 200
+[2026-01-17T17:45:59.712Z] Starting POST request
+[2026-01-17T17:46:01.663Z] Request successful, status: 200
+[2026-01-17T17:46:18.826Z] Starting POST request
+[2026-01-17T17:46:20.987Z] Request successful, status: 200
+[2026-01-24T17:32:28.557Z] Starting POST request
+[2026-01-24T17:32:30.458Z] Request successful, status: 200
+[2026-01-24T17:38:36.733Z] Starting POST request
+[2026-01-24T17:38:47.467Z] Request successful, status: 500
+[2026-01-24T17:38:47.468Z] Response body: 
+[2026-01-24T17:38:52.579Z] Starting POST request
+[2026-01-24T17:39:03.278Z] Request successful, status: 500
+[2026-01-24T17:39:03.279Z] Response body: 
+[2026-01-24T17:40:21.780Z] Starting POST request
+[2026-01-24T17:40:32.511Z] Request successful, status: 500
+[2026-01-24T17:40:32.512Z] Response body: 
+[2026-01-24T17:49:41.156Z] Starting POST request
+[2026-01-24T17:49:51.930Z] Request successful, status: 500
+[2026-01-24T17:49:51.934Z] Response body: 
+[2026-01-24T18:04:53.748Z] Starting POST request
+[2026-01-24T18:04:56.724Z] Request successful, status: 200
+[2026-01-24T18:36:04.802Z] Starting POST request
+[2026-01-24T18:36:07.267Z] Request successful, status: 200
+[2026-02-09T18:23:09.037Z] Starting POST request
+[2026-02-09T18:23:14.045Z] Request successful, status: 200
+[2026-02-16T20:12:16.976Z] Starting POST request
+[2026-02-16T20:12:19.996Z] Request successful, status: 422
+[2026-02-16T20:12:19.996Z] Response body: {"code":"USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL","message":"User already exists. Use another email."}
+[2026-02-16T20:12:21.656Z] Starting POST request
+[2026-02-16T20:12:24.087Z] Request successful, status: 200
+[2026-02-16T20:27:54.622Z] Starting POST request
+[2026-02-16T20:27:56.638Z] Request successful, status: 200
+[2026-03-02T19:05:35.831Z] Starting POST request
+[2026-03-02T19:05:41.808Z] Request successful, status: 200
+[2026-03-02T20:03:50.974Z] Starting POST request
+[2026-03-02T20:03:54.213Z] Request successful, status: 200
+[2026-03-02T20:17:57.452Z] Starting POST request
+[2026-03-02T20:18:01.525Z] Request successful, status: 200
+[2026-03-10T18:07:43.620Z] Starting POST request
+[2026-03-10T18:07:48.638Z] Request successful, status: 200
+[2026-03-17T18:13:37.327Z] Starting POST request
+[2026-03-17T18:13:41.566Z] Request successful, status: 200
+[2026-03-24T19:50:30.260Z] Starting POST request
+[2026-03-24T19:50:33.845Z] Request successful, status: 200
+[2026-03-31T18:25:19.156Z] Starting POST request
+[2026-03-31T18:25:22.928Z] Request successful, status: 200

@@ -1,0 +1,134 @@
+'use server'
+
+import { auth } from '@/lib/auth/auth'
+import { headers } from 'next/headers'
+import { db } from '@/lib/db'
+import { crops, plots, plantingLogs, suppliers, harvestLogs } from '@/lib/db/schema'
+import { and, eq, isNull, gt } from 'drizzle-orm'
+
+export async function getCropsForSelect() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  return await db.query.crops.findMany({
+    where: and(eq(crops.userId, session.user.id), isNull(crops.deletedAt)),
+    columns: {
+      id: true,
+      name: true,
+      variety: true,
+    },
+  })
+}
+
+export async function getPlotsForSelect() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  return await db.query.plots.findMany({
+    where: and(eq(plots.userId, session.user.id), isNull(plots.deletedAt)),
+    columns: {
+      id: true,
+      name: true,
+      areaSqm: true,
+    },
+  })
+}
+
+export async function getActivePlantingsForSelect() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  return await db.query.plantingLogs.findMany({
+    where: and(
+      eq(plantingLogs.userId, session.user.id),
+      eq(plantingLogs.status, 'active'),
+      isNull(plantingLogs.deletedAt)
+    ),
+    with: {
+      crop: {
+        columns: {
+          name: true,
+          variety: true,
+        },
+      },
+      plot: {
+        columns: {
+          name: true,
+        },
+      },
+    },
+    columns: {
+      id: true,
+      plantingDate: true,
+    },
+  })
+}
+
+export async function getSuppliersForSelect() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  return await db.query.suppliers.findMany({
+    where: and(eq(suppliers.userId, session.user.id), isNull(suppliers.deletedAt)),
+    columns: {
+      id: true,
+      name: true,
+    },
+  })
+}
+
+export async function getAvailableHarvestsForSale() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  // Get harvests with current stock > 0
+  const harvests = await db.query.harvestLogs.findMany({
+    where: and(
+      eq(harvestLogs.userId, session.user.id),
+      isNull(harvestLogs.deletedAt),
+      gt(harvestLogs.currentStock, '0')
+    ),
+    with: {
+      plantingLog: {
+        with: {
+          crop: true,
+        },
+      },
+    },
+    orderBy: (harvestLogs, { desc }) => [desc(harvestLogs.harvestDate)],
+  })
+
+  return harvests.map((harvest) => ({
+    id: harvest.id,
+    productName: `${harvest.plantingLog.crop.name}${harvest.plantingLog.crop.variety ? ` (${harvest.plantingLog.crop.variety})` : ''}`,
+    currentStock: harvest.currentStock,
+    unit: harvest.quantityUnit,
+    harvestDate: harvest.harvestDate,
+    qualityGrade: harvest.qualityGrade || null,
+  }))
+}

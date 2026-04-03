@@ -1,0 +1,100 @@
+﻿
+> harvesthub-v2@0.1.0 build C:\Users\e53638\Desktop\FarmManagement\harvesthub-v2
+> next build
+
+node.exe :  έγι Warni
+ng: Next.js inferred 
+your workspace root, 
+but it may not be cor
+rect.
+At C:\Users\e53638\Ap
+pData\Roaming\npm\pnp
+m.ps1:24 char:5
++     & "node$exe"  "
+$basedir/node_modules
+/pnpm/bin/pnpm.cjs" $
+args
++     ~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~
+    + CategoryInfo   
+           : NotSpeci
+fi    ed: ( έγι Warni
+ng:     N...not be co
+rrec    t.:String) []
+, Rem    oteException
+    + FullyQualifiedE
+r    rorId : NativeCo
+mm    andError
+ 
+ We detected multiple
+ lockfiles and select
+ed the directory of C
+:\Users\e53638\packag
+e-lock.json as the ro
+ot directory.
+ To silence this warn
+ing, set `turbopack.r
+oot` in your Next.js 
+config, or consider r
+emoving one of the lo
+ckfiles if it's not n
+eeded.
+   See https://nextjs
+.org/docs/app/api-ref
+erence/config/next-co
+nfig-js/turbopack#roo
+t-directory for more 
+information.
+ Detected additional 
+lockfiles: 
+   * C:\Users\e53638\
+Desktop\FarmManagemen
+t\harvesthub-v2\pnpm-
+lock.yaml
+
+   έΨ▓ Next.js 16.0.7 (Turbopack)
+   - Environments: .env.local
+
+ έγι The "middleware"
+ file convention is d
+eprecated. Please use
+ "proxy" instead. Lea
+rn more: https://next
+js.org/docs/messages/
+middleware-to-proxy
+   Creating an optimized production build ...
+ έεΥ Compiled successfully in 5.5s
+   Running TypeScript ...
+Failed to compile.
+
+./scripts/fix-db-url.
+ts:1:7
+Type error: Cannot re
+declare block-scoped 
+variable 'fs'.
+
+[0m[31m[1m>[22m[
+39m[90m 1 |[39m [3
+6mconst[39m fs [33m
+=[39m require([32m'
+fs'[39m)
+ [90m   |[39m      
+ [31m[1m^[22m[39m
+ [90m 2 |[39m [36m
+const[39m path [33m
+=[39m require([32m'
+path'[39m)
+ [90m 3 |[39m
+ [90m 4 |[39m [36m
+const[39m envPath [
+33m=[39m path[33m.
+[39mresolve(process[
+33m.[39mcwd()[33m,
+[39m [32m'.env.local
+'[39m)[0m
+Next.js build worker 
+exited with code: 1 a
+nd signal: null
+έΑΚELIFECYCLEέΑΚ Command failed with exit code 1.

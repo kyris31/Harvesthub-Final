@@ -1,0 +1,46 @@
+﻿[dotenv@17.2.3] injecting env (5) from .env.local -- tip: ΏθΦΡ prevent building .env in docker: https://dotenvx.com/prebuild
+Running manual migration...
+Reading migration file: C:\Users\e53638\Desktop\FarmManagement\harvesthub-v2\drizzle\0000_noisy_owl.sql
+node.exe : Failed to 
+execute migration: Er
+ror: ENOENT: no such 
+file or directory, op
+en 'C:\Users\e53638\D
+esktop\FarmManagement
+\harvesthub-v2\drizzl
+e\0000_noisy_owl.sql'
+At C:\Program Files\n
+odejs\npx.ps1:29 char
+:3
++   & $NODE_EXE $NPX_
+CLI_JS $args
++   ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Failed    
+ to execu..._nois    
+y_owl.sql':Strin    g
+) [], RemoteExc    ep
+tion
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+    at Object.readFil
+eSync (node:fs:442:20
+)
+    at main (C:\Users
+\e53638\Desktop\FarmM
+anagement\harvesthub-
+v2\scripts\manual-mig
+rate.ts:16:31) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\e
+53638\\Desktop\\FarmM
+anagement\\harvesthub
+-v2\\drizzle\\0000_no
+isy_owl.sql'
+}

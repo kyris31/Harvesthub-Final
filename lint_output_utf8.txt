@@ -1,0 +1,77 @@
+﻿
+> harvesthub-v2@0.1.0 lint C:\Users\e53638\Desktop\FarmManagement\harvesthub-v2
+> eslint
+
+node.exe : 
+At C:\Users\e53638\Ap
+pData\Roaming\npm\pnp
+m.ps1:24 char:5
++     & "node$exe"  "
+$basedir/node_modules
+/pnpm/bin/pnpm.cjs" $
+args
++     ~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (:String   
+ ) [], RemoteExce    
+ption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+Oops! Something went 
+wrong! :(
+
+ESLint: 9.39.1
+
+Error [ERR_MODULE_NOT
+_FOUND]: Cannot find 
+package '@eslint/esli
+ntrc' imported from C
+:\Users\e53638\Deskto
+p\FarmManagement\harv
+esthub-v2\eslint.conf
+ig.mjs
+Did you mean to impor
+t "@eslint/eslintrc/d
+ist/eslintrc.cjs"?
+    at Object.getPack
+ageJSONURL (node:inte
+rnal/modules/package_
+json_reader:268:9)
+    at packageResolve
+ (node:internal/modul
+es/esm/resolve:768:81
+)
+    at moduleResolve 
+(node:internal/module
+s/esm/resolve:854:18)
+    at defaultResolve
+ (node:internal/modul
+es/esm/resolve:984:11
+)
+    at ModuleLoader.d
+efaultResolve (node:i
+nternal/modules/esm/l
+oader:780:12)
+    at #cachedDefault
+Resolve (node:interna
+l/modules/esm/loader:
+704:25)
+    at ModuleLoader.r
+esolve (node:internal
+/modules/esm/loader:6
+87:38)
+    at ModuleLoader.g
+etModuleJobForImport 
+(node:internal/module
+s/esm/loader:305:38)
+    at ModuleJob._lin
+k (node:internal/modu
+les/esm/module_job:13
+7:49)
+έΑΚELIFECYCLEέΑΚ Command failed with exit code 2.

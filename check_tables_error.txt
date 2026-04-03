@@ -1,0 +1,76 @@
+﻿node.exe : C:\Users\e
+53638\Desktop\FarmMan
+agement\harvesthub-v2
+\src\lib\db\index.ts:
+6
+At C:\Program Files\n
+odejs\npx.ps1:29 char
+:3
++   & $NODE_EXE $NPX_
+CLI_JS $args
++   ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (C:\User   
+ s\e53638...b\db\    
+index.ts:6:Strin    g
+) [], RemoteExc    ep
+tion
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+    throw new Error('
+DATABASE_URL is not d
+efined')
+          ^
+
+
+Error: DATABASE_URL i
+s not defined
+    at <anonymous> (C
+:\Users\e53638\Deskto
+p\FarmManagement\harv
+esthub-v2\src\lib\db\
+index.ts:6:11)
+    at Object.<anonym
+ous> (C:\Users\e53638
+\Desktop\FarmManageme
+nt\harvesthub-v2\src\
+lib\db\index.ts:10:45
+)
+    at Module._compil
+e (node:internal/modu
+les/cjs/loader:1730:1
+4)
+    at Object.transfo
+rmer (C:\Users\e53638
+\AppData\Local\npm-ca
+che\_npx\fd45a72a5455
+57e9\node_modules\tsx
+\dist\register-D46fvs
+V_.cjs:3:1104)
+    at Module.load (n
+ode:internal/modules/
+cjs/loader:1465:32)
+    at Function._load
+ (node:internal/modul
+es/cjs/loader:1282:12
+)
+    at TracingChannel
+.traceSync (node:diag
+nostics_channel:322:1
+4)
+    at wrapModuleLoad
+ (node:internal/modul
+es/cjs/loader:235:24)
+    at Module.require
+ (node:internal/modul
+es/cjs/loader:1487:12
+)
+    at require (node:
+internal/modules/help
+ers:135:16)
+
+Node.js v22.15.0

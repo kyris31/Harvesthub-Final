@@ -1,0 +1,2261 @@
+﻿[dotenv@17.2.3] injecting env (5) from .env.local -- tip: έγβΎ╕Π  override existing env vars with { override: true }
+Running manual migration...
+Reading migration file: C:\Users\e53638\Desktop\FarmManagement\harvesthub-v2\drizzle\0000_noisy_owl.sql
+Executing SQL...
+node.exe : Failed to 
+execute migration: Dr
+izzleQueryError: Fail
+ed query: CREATE TABL
+E "accounts" (
+At C:\Program Files\n
+odejs\npx.ps1:29 char
+:3
++   & $NODE_EXE $NPX_
+CLI_JS $args
++   ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Failed    
+ to execu...LE "a    
+ccounts" (:Strin    g
+) [], RemoteExc    ep
+tion
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+	"id" text PRIMARY KE
+Y NOT NULL,
+	"account_id" text NO
+T NULL,
+	"provider_id" text N
+OT NULL,
+	"user_id" uuid NOT N
+ULL,
+	"access_token" text,
+	"refresh_token" text
+,
+	"id_token" text,
+	"access_token_expire
+s_at" timestamp,
+	"refresh_token_expir
+es_at" timestamp,
+	"scope" text,
+	"password" text,
+	"created_at" timesta
+mp NOT NULL,
+	"updated_at" timesta
+mp NOT NULL
+);
+--> statement-breakpo
+int
+CREATE TABLE "crop_pl
+ans" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"season_id" uuid,
+	"crop_id" uuid NOT N
+ULL,
+	"plot_id" uuid,
+	"planned_planting_da
+te" date,
+	"planned_harvest_dat
+e" date,
+	"target_quantity" nu
+meric(10, 2),
+	"target_unit" text,
+	"estimated_cost" num
+eric(10, 2),
+	"status" text DEFAUL
+T 'planned',
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_plan
+_dates" CHECK ("crop_
+plans"."planned_harve
+st_date" IS NULL OR "
+crop_plans"."planned_
+planting_date" IS NUL
+L OR "crop_plans"."pl
+anned_harvest_date" >
+ "crop_plans"."planne
+d_planting_date")
+);
+--> statement-breakpo
+int
+CREATE TABLE "crop_se
+asons" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"name" text NOT NULL
+,
+	"start_date" date NO
+T NULL,
+	"end_date" date NOT 
+NULL,
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_seas
+on_dates" CHECK ("cro
+p_seasons"."end_date"
+ > "crop_seasons"."st
+art_date")
+);
+--> statement-breakpo
+int
+CREATE TABLE "crops" 
+(
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"name" text NOT NULL
+,
+	"variety" text,
+	"category" text NOT 
+NULL,
+	"description" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp
+);
+--> statement-breakpo
+int
+CREATE TABLE "cultiva
+tion_activities" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"planting_log_id" uu
+id,
+	"activity_type" text
+ NOT NULL,
+	"activity_date" date
+ NOT NULL,
+	"input_inventory_id"
+ uuid,
+	"quantity_used" nume
+ric(10, 2),
+	"quantity_unit" text
+,
+	"cost" numeric(10, 2
+),
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp
+);
+--> statement-breakpo
+int
+CREATE TABLE "custome
+rs" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"name" text NOT NULL
+,
+	"customer_type" text
+,
+	"email" text,
+	"phone" text,
+	"address" text,
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp
+);
+--> statement-breakpo
+int
+CREATE TABLE "expense
+s" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"expense_date" date 
+NOT NULL,
+	"category" text NOT 
+NULL,
+	"subcategory" text,
+	"description" text N
+OT NULL,
+	"amount" numeric(10,
+ 2) NOT NULL,
+	"supplier_id" uuid,
+	"payment_method" tex
+t,
+	"receipt_url" text,
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_expe
+nse_amount" CHECK ("e
+xpenses"."amount" > 0
+)
+);
+--> statement-breakpo
+int
+CREATE TABLE "feed_lo
+gs" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"flock_id" uuid NOT 
+NULL,
+	"feed_date" date NOT
+ NULL,
+	"feed_type" text NOT
+ NULL,
+	"quantity_kg" numeri
+c(10, 2) NOT NULL,
+	"cost" numeric(10, 2
+),
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_feed
+_quantity" CHECK ("fe
+ed_logs"."quantity_kg
+" > 0),
+	CONSTRAINT "chk_feed
+_cost" CHECK ("feed_l
+ogs"."cost" IS NULL O
+R "feed_logs"."cost" 
+>= 0)
+);
+--> statement-breakpo
+int
+CREATE TABLE "flock_r
+ecords" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"flock_id" uuid NOT 
+NULL,
+	"record_date" date N
+OT NULL,
+	"record_type" text N
+OT NULL,
+	"eggs_collected" int
+eger,
+	"mortality_count" in
+teger,
+	"mortality_reason" t
+ext,
+	"health_status" text
+,
+	"health_issues" text
+,
+	"average_weight_kg" 
+numeric(10, 2),
+	"birds_weighed" inte
+ger,
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_eggs
+_positive" CHECK ("fl
+ock_records"."eggs_co
+llected" IS NULL OR "
+flock_records"."eggs_
+collected" >= 0),
+	CONSTRAINT "chk_mort
+ality_positive" CHECK
+ ("flock_records"."mo
+rtality_count" IS NUL
+L OR "flock_records".
+"mortality_count" > 0
+),
+	CONSTRAINT "chk_weig
+ht_positive" CHECK ("
+flock_records"."avera
+ge_weight_kg" IS NULL
+ OR "flock_records"."
+average_weight_kg" > 
+0)
+);
+--> statement-breakpo
+int
+CREATE TABLE "flocks"
+ (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"name" text NOT NULL
+,
+	"flock_type" text NO
+T NULL,
+	"species" text NOT N
+ULL,
+	"breed" text,
+	"hatch_date" date,
+	"initial_count" inte
+ger NOT NULL,
+	"current_count" inte
+ger NOT NULL,
+	"status" text DEFAUL
+T 'active',
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_floc
+k_counts" CHECK ("flo
+cks"."initial_count" 
+> 0 AND "flocks"."cur
+rent_count" >= 0)
+);
+--> statement-breakpo
+int
+CREATE TABLE "harvest
+_logs" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"planting_log_id" uu
+id NOT NULL,
+	"harvest_date" date 
+NOT NULL,
+	"quantity_harvested"
+ numeric(10, 2) NOT N
+ULL,
+	"quantity_unit" text
+ NOT NULL,
+	"current_stock" nume
+ric(10, 2) NOT NULL,
+	"quality_grade" text
+,
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_harv
+est_quantities" CHECK
+ ("harvest_logs"."qua
+ntity_harvested" > 0 
+AND "harvest_logs"."c
+urrent_stock" >= 0 AN
+D "harvest_logs"."cur
+rent_stock" <= "harve
+st_logs"."quantity_ha
+rvested")
+);
+--> statement-breakpo
+int
+CREATE TABLE "input_i
+nventory" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"name" text NOT NULL
+,
+	"type" text NOT NULL
+,
+	"supplier_id" uuid,
+	"purchase_date" date
+,
+	"initial_quantity" n
+umeric(10, 2),
+	"current_quantity" n
+umeric(10, 2) NOT NUL
+L,
+	"quantity_unit" text
+ NOT NULL,
+	"cost_per_unit" nume
+ric(10, 2),
+	"total_cost" numeric
+(10, 2),
+	"minimum_stock_level
+" numeric(10, 2),
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_inpu
+t_quantity" CHECK ("i
+nput_inventory"."curr
+ent_quantity" >= 0)
+);
+--> statement-breakpo
+int
+CREATE TABLE "plantin
+g_logs" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"crop_id" uuid NOT N
+ULL,
+	"plot_id" uuid,
+	"seed_batch_id" uuid
+,
+	"purchased_seedling_
+id" uuid,
+	"planting_date" date
+ NOT NULL,
+	"quantity_planted" n
+umeric(10, 2) NOT NUL
+L,
+	"quantity_unit" text
+ NOT NULL,
+	"expected_harvest_da
+te" date,
+	"actual_harvest_date
+" date,
+	"status" text DEFAUL
+T 'active',
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_harv
+est_dates" CHECK ("pl
+anting_logs"."actual_
+harvest_date" IS NULL
+ OR "planting_logs"."
+actual_harvest_date" 
+>= "planting_logs"."p
+lanting_date")
+);
+--> statement-breakpo
+int
+CREATE TABLE "plots" 
+(
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"name" text NOT NULL
+,
+	"description" text,
+	"area_sqm" numeric(1
+0, 2),
+	"status" text DEFAUL
+T 'available',
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp
+);
+--> statement-breakpo
+int
+CREATE TABLE "purchas
+ed_seedlings" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"crop_id" uuid NOT N
+ULL,
+	"supplier_id" uuid,
+	"purchase_date" date
+ NOT NULL,
+	"quantity_purchased"
+ integer NOT NULL,
+	"current_quantity" i
+nteger NOT NULL,
+	"cost_per_seedling" 
+numeric(10, 2),
+	"total_cost" numeric
+(10, 2),
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_seed
+ling_quantities" CHEC
+K ("purchased_seedlin
+gs"."current_quantity
+" >= 0 AND "purchased
+_seedlings"."current_
+quantity" <= "purchas
+ed_seedlings"."quanti
+ty_purchased")
+);
+--> statement-breakpo
+int
+CREATE TABLE "reminde
+rs" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"planting_log_id" uu
+id,
+	"flock_id" uuid,
+	"tree_id" uuid,
+	"title" text NOT NUL
+L,
+	"description" text,
+	"reminder_date" date
+ NOT NULL,
+	"reminder_time" time
+,
+	"is_completed" boole
+an DEFAULT false,
+	"completed_at" times
+tamp,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp
+);
+--> statement-breakpo
+int
+CREATE TABLE "sale_it
+ems" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"sale_id" uuid NOT N
+ULL,
+	"harvest_log_id" uui
+d,
+	"product_name" text 
+NOT NULL,
+	"product_description
+" text,
+	"quantity" numeric(1
+0, 2) NOT NULL,
+	"unit" text NOT NULL
+,
+	"unit_price" numeric
+(10, 2) NOT NULL,
+	"discount_percent" n
+umeric(5, 2) DEFAULT 
+'0',
+	"discount_amount" nu
+meric(10, 2) DEFAULT 
+'0',
+	"subtotal" numeric(1
+0, 2) NOT NULL,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	CONSTRAINT "chk_sale
+_item_amounts" CHECK 
+("sale_items"."quanti
+ty" > 0 AND "sale_ite
+ms"."unit_price" >= 0
+ AND "sale_items"."di
+scount_percent" >= 0 
+AND "sale_items"."dis
+count_percent" <= 100
+ AND "sale_items"."di
+scount_amount" >= 0 A
+ND "sale_items"."subt
+otal" >= 0)
+);
+--> statement-breakpo
+int
+CREATE TABLE "sales" 
+(
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"customer_id" uuid,
+	"sale_date" date NOT
+ NULL,
+	"total_amount" numer
+ic(10, 2) NOT NULL,
+	"payment_status" tex
+t DEFAULT 'pending',
+	"payment_method" tex
+t,
+	"amount_paid" numeri
+c(10, 2) DEFAULT '0',
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_amou
+nts" CHECK ("sales"."
+total_amount" >= 0 AN
+D "sales"."amount_pai
+d" >= 0 AND "sales"."
+amount_paid" <= "sale
+s"."total_amount")
+);
+--> statement-breakpo
+int
+CREATE TABLE "seed_ba
+tches" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"crop_id" uuid NOT N
+ULL,
+	"supplier_id" uuid,
+	"batch_code" text NO
+T NULL,
+	"purchase_date" date
+,
+	"initial_quantity" n
+umeric(10, 2) NOT NUL
+L,
+	"current_quantity" n
+umeric(10, 2) NOT NUL
+L,
+	"quantity_unit" text
+ NOT NULL,
+	"cost_per_unit" nume
+ric(10, 2),
+	"total_cost" numeric
+(10, 2),
+	"organic_certified" 
+boolean DEFAULT false
+,
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "seed_bat
+ches_batch_code_uniqu
+e" UNIQUE("batch_code
+"),
+	CONSTRAINT "chk_quan
+tities" CHECK ("seed_
+batches"."current_qua
+ntity" >= 0),
+	CONSTRAINT "chk_quan
+tity_consistency" CHE
+CK ("seed_batches"."c
+urrent_quantity" <= "
+seed_batches"."initia
+l_quantity")
+);
+--> statement-breakpo
+int
+CREATE TABLE "seedlin
+g_production_logs" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"seed_batch_id" uuid
+ NOT NULL,
+	"crop_id" uuid NOT N
+ULL,
+	"sowing_date" date N
+OT NULL,
+	"quantity_sown" nume
+ric(10, 2) NOT NULL,
+	"sowing_unit" text N
+OT NULL,
+	"nursery_location" t
+ext,
+	"expected_seedlings"
+ integer,
+	"actual_seedlings_pr
+oduced" integer DEFAU
+LT 0,
+	"current_seedlings_a
+vailable" integer DEF
+AULT 0,
+	"ready_for_transplan
+t_date" date,
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp,
+	CONSTRAINT "chk_seed
+ling_production" CHEC
+K ("seedling_producti
+on_logs"."current_see
+dlings_available" >= 
+0 AND "seedling_produ
+ction_logs"."current_
+seedlings_available" 
+<= "seedling_producti
+on_logs"."actual_seed
+lings_produced" AND "
+seedling_production_l
+ogs"."actual_seedling
+s_produced" >= 0)
+);
+--> statement-breakpo
+int
+CREATE TABLE "session
+s" (
+	"id" text PRIMARY KE
+Y NOT NULL,
+	"expires_at" timesta
+mp NOT NULL,
+	"token" text NOT NUL
+L,
+	"created_at" timesta
+mp NOT NULL,
+	"updated_at" timesta
+mp NOT NULL,
+	"ip_address" text,
+	"user_agent" text,
+	"user_id" uuid NOT N
+ULL,
+	CONSTRAINT "sessions
+_token_unique" UNIQUE
+("token")
+);
+--> statement-breakpo
+int
+CREATE TABLE "supplie
+rs" (
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"name" text NOT NULL
+,
+	"contact_person" tex
+t,
+	"email" text,
+	"phone" text,
+	"address" text,
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp
+);
+--> statement-breakpo
+int
+CREATE TABLE "trees" 
+(
+	"id" uuid PRIMARY KE
+Y DEFAULT gen_random_
+uuid() NOT NULL,
+	"user_id" text NOT N
+ULL,
+	"identifier" text NO
+T NULL,
+	"species" text NOT N
+ULL,
+	"variety" text,
+	"planting_date" date
+,
+	"plot_id" uuid,
+	"location_descriptio
+n" text,
+	"status" text DEFAUL
+T 'healthy',
+	"health_notes" text,
+	"last_harvest_date" 
+date,
+	"estimated_annual_yi
+eld" numeric(10, 2),
+	"yield_unit" text,
+	"notes" text,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"deleted_at" timesta
+mp
+);
+--> statement-breakpo
+int
+CREATE TABLE "users" 
+(
+	"id" text PRIMARY KE
+Y NOT NULL,
+	"email" text NOT NUL
+L,
+	"email_verified" boo
+lean DEFAULT false NO
+T NULL,
+	"password_hash" text
+,
+	"name" text NOT NULL
+,
+	"image" text,
+	"farm_name" text,
+	"farm_logo_url" text
+,
+	"created_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	"updated_at" timesta
+mp DEFAULT now() NOT 
+NULL,
+	CONSTRAINT "users_em
+ail_unique" UNIQUE("e
+mail")
+);
+--> statement-breakpo
+int
+CREATE TABLE "verific
+ations" (
+	"id" text PRIMARY KE
+Y NOT NULL,
+	"identifier" text NO
+T NULL,
+	"value" text NOT NUL
+L,
+	"expires_at" timesta
+mp NOT NULL,
+	"created_at" timesta
+mp,
+	"updated_at" timesta
+mp
+);
+--> statement-breakpo
+int
+ALTER TABLE "accounts
+" ADD CONSTRAINT "acc
+ounts_user_id_users_i
+d_fk" FOREIGN KEY ("u
+ser_id") REFERENCES "
+public"."users"("id")
+ ON DELETE cascade ON
+ UPDATE no action;-->
+ statement-breakpoint
+ALTER TABLE "crop_pla
+ns" ADD CONSTRAINT "c
+rop_plans_user_id_use
+rs_id_fk" FOREIGN KEY
+ ("user_id") REFERENC
+ES "public"."users"("
+id") ON DELETE cascad
+e ON UPDATE no action
+;--> statement-breakp
+oint
+ALTER TABLE "crop_pla
+ns" ADD CONSTRAINT "c
+rop_plans_season_id_c
+rop_seasons_id_fk" FO
+REIGN KEY ("season_id
+") REFERENCES "public
+"."crop_seasons"("id"
+) ON DELETE set null 
+ON UPDATE no action;-
+-> statement-breakpoi
+nt
+ALTER TABLE "crop_pla
+ns" ADD CONSTRAINT "c
+rop_plans_crop_id_cro
+ps_id_fk" FOREIGN KEY
+ ("crop_id") REFERENC
+ES "public"."crops"("
+id") ON DELETE restri
+ct ON UPDATE no actio
+n;--> statement-break
+point
+ALTER TABLE "crop_pla
+ns" ADD CONSTRAINT "c
+rop_plans_plot_id_plo
+ts_id_fk" FOREIGN KEY
+ ("plot_id") REFERENC
+ES "public"."plots"("
+id") ON DELETE set nu
+ll ON UPDATE no actio
+n;--> statement-break
+point
+ALTER TABLE "crop_sea
+sons" ADD CONSTRAINT 
+"crop_seasons_user_id
+_users_id_fk" FOREIGN
+ KEY ("user_id") REFE
+RENCES "public"."user
+s"("id") ON DELETE ca
+scade ON UPDATE no ac
+tion;--> statement-br
+eakpoint
+ALTER TABLE "crops" A
+DD CONSTRAINT "crops_
+user_id_users_id_fk" 
+FOREIGN KEY ("user_id
+") REFERENCES "public
+"."users"("id") ON DE
+LETE cascade ON UPDAT
+E no action;--> state
+ment-breakpoint
+ALTER TABLE "cultivat
+ion_activities" ADD C
+ONSTRAINT "cultivatio
+n_activities_user_id_
+users_id_fk" FOREIGN 
+KEY ("user_id") REFER
+ENCES "public"."users
+"("id") ON DELETE cas
+cade ON UPDATE no act
+ion;--> statement-bre
+akpoint
+ALTER TABLE "cultivat
+ion_activities" ADD C
+ONSTRAINT "cultivatio
+n_activities_planting
+_log_id_planting_logs
+_id_fk" FOREIGN KEY (
+"planting_log_id") RE
+FERENCES "public"."pl
+anting_logs"("id") ON
+ DELETE set null ON U
+PDATE no action;--> s
+tatement-breakpoint
+ALTER TABLE "cultivat
+ion_activities" ADD C
+ONSTRAINT "cultivatio
+n_activities_input_in
+ventory_id_input_inve
+ntory_id_fk" FOREIGN 
+KEY ("input_inventory
+_id") REFERENCES "pub
+lic"."input_inventory
+"("id") ON DELETE set
+ null ON UPDATE no ac
+tion;--> statement-br
+eakpoint
+ALTER TABLE "customer
+s" ADD CONSTRAINT "cu
+stomers_user_id_users
+_id_fk" FOREIGN KEY (
+"user_id") REFERENCES
+ "public"."users"("id
+") ON DELETE cascade 
+ON UPDATE no action;-
+-> statement-breakpoi
+nt
+ALTER TABLE "expenses
+" ADD CONSTRAINT "exp
+enses_user_id_users_i
+d_fk" FOREIGN KEY ("u
+ser_id") REFERENCES "
+public"."users"("id")
+ ON DELETE cascade ON
+ UPDATE no action;-->
+ statement-breakpoint
+ALTER TABLE "expenses
+" ADD CONSTRAINT "exp
+enses_supplier_id_sup
+pliers_id_fk" FOREIGN
+ KEY ("supplier_id") 
+REFERENCES "public"."
+suppliers"("id") ON D
+ELETE set null ON UPD
+ATE no action;--> sta
+tement-breakpoint
+ALTER TABLE "feed_log
+s" ADD CONSTRAINT "fe
+ed_logs_user_id_users
+_id_fk" FOREIGN KEY (
+"user_id") REFERENCES
+ "public"."users"("id
+") ON DELETE cascade 
+ON UPDATE no action;-
+-> statement-breakpoi
+nt
+ALTER TABLE "feed_log
+s" ADD CONSTRAINT "fe
+ed_logs_flock_id_floc
+ks_id_fk" FOREIGN KEY
+ ("flock_id") REFEREN
+CES "public"."flocks"
+("id") ON DELETE casc
+ade ON UPDATE no acti
+on;--> statement-brea
+kpoint
+ALTER TABLE "flock_re
+cords" ADD CONSTRAINT
+ "flock_records_user_
+id_users_id_fk" FOREI
+GN KEY ("user_id") RE
+FERENCES "public"."us
+ers"("id") ON DELETE 
+cascade ON UPDATE no 
+action;--> statement-
+breakpoint
+ALTER TABLE "flock_re
+cords" ADD CONSTRAINT
+ "flock_records_flock
+_id_flocks_id_fk" FOR
+EIGN KEY ("flock_id")
+ REFERENCES "public".
+"flocks"("id") ON DEL
+ETE cascade ON UPDATE
+ no action;--> statem
+ent-breakpoint
+ALTER TABLE "flocks" 
+ADD CONSTRAINT "flock
+s_user_id_users_id_fk
+" FOREIGN KEY ("user_
+id") REFERENCES "publ
+ic"."users"("id") ON 
+DELETE cascade ON UPD
+ATE no action;--> sta
+tement-breakpoint
+ALTER TABLE "harvest_
+logs" ADD CONSTRAINT 
+"harvest_logs_user_id
+_users_id_fk" FOREIGN
+ KEY ("user_id") REFE
+RENCES "public"."user
+s"("id") ON DELETE ca
+scade ON UPDATE no ac
+tion;--> statement-br
+eakpoint
+ALTER TABLE "harvest_
+logs" ADD CONSTRAINT 
+"harvest_logs_plantin
+g_log_id_planting_log
+s_id_fk" FOREIGN KEY 
+("planting_log_id") R
+EFERENCES "public"."p
+lanting_logs"("id") O
+N DELETE cascade ON U
+PDATE no action;--> s
+tatement-breakpoint
+ALTER TABLE "input_in
+ventory" ADD CONSTRAI
+NT "input_inventory_u
+ser_id_users_id_fk" F
+OREIGN KEY ("user_id"
+) REFERENCES "public"
+."users"("id") ON DEL
+ETE cascade ON UPDATE
+ no action;--> statem
+ent-breakpoint
+ALTER TABLE "input_in
+ventory" ADD CONSTRAI
+NT "input_inventory_s
+upplier_id_suppliers_
+id_fk" FOREIGN KEY ("
+supplier_id") REFEREN
+CES "public"."supplie
+rs"("id") ON DELETE s
+et null ON UPDATE no 
+action;--> statement-
+breakpoint
+ALTER TABLE "planting
+_logs" ADD CONSTRAINT
+ "planting_logs_user_
+id_users_id_fk" FOREI
+GN KEY ("user_id") RE
+FERENCES "public"."us
+ers"("id") ON DELETE 
+cascade ON UPDATE no 
+action;--> statement-
+breakpoint
+ALTER TABLE "planting
+_logs" ADD CONSTRAINT
+ "planting_logs_crop_
+id_crops_id_fk" FOREI
+GN KEY ("crop_id") RE
+FERENCES "public"."cr
+ops"("id") ON DELETE 
+restrict ON UPDATE no
+ action;--> statement
+-breakpoint
+ALTER TABLE "planting
+_logs" ADD CONSTRAINT
+ "planting_logs_plot_
+id_plots_id_fk" FOREI
+GN KEY ("plot_id") RE
+FERENCES "public"."pl
+ots"("id") ON DELETE 
+set null ON UPDATE no
+ action;--> statement
+-breakpoint
+ALTER TABLE "planting
+_logs" ADD CONSTRAINT
+ "planting_logs_seed_
+batch_id_seed_batches
+_id_fk" FOREIGN KEY (
+"seed_batch_id") REFE
+RENCES "public"."seed
+_batches"("id") ON DE
+LETE set null ON UPDA
+TE no action;--> stat
+ement-breakpoint
+ALTER TABLE "planting
+_logs" ADD CONSTRAINT
+ "planting_logs_purch
+ased_seedling_id_purc
+hased_seedlings_id_fk
+" FOREIGN KEY ("purch
+ased_seedling_id") RE
+FERENCES "public"."pu
+rchased_seedlings"("i
+d") ON DELETE set nul
+l ON UPDATE no action
+;--> statement-breakp
+oint
+ALTER TABLE "plots" A
+DD CONSTRAINT "plots_
+user_id_users_id_fk" 
+FOREIGN KEY ("user_id
+") REFERENCES "public
+"."users"("id") ON DE
+LETE cascade ON UPDAT
+E no action;--> state
+ment-breakpoint
+ALTER TABLE "purchase
+d_seedlings" ADD CONS
+TRAINT "purchased_see
+dlings_user_id_users_
+id_fk" FOREIGN KEY ("
+user_id") REFERENCES 
+"public"."users"("id"
+) ON DELETE cascade O
+N UPDATE no action;--
+> statement-breakpoin
+t
+ALTER TABLE "purchase
+d_seedlings" ADD CONS
+TRAINT "purchased_see
+dlings_crop_id_crops_
+id_fk" FOREIGN KEY ("
+crop_id") REFERENCES 
+"public"."crops"("id"
+) ON DELETE restrict 
+ON UPDATE no action;-
+-> statement-breakpoi
+nt
+ALTER TABLE "purchase
+d_seedlings" ADD CONS
+TRAINT "purchased_see
+dlings_supplier_id_su
+ppliers_id_fk" FOREIG
+N KEY ("supplier_id")
+ REFERENCES "public".
+"suppliers"("id") ON 
+DELETE set null ON UP
+DATE no action;--> st
+atement-breakpoint
+ALTER TABLE "reminder
+s" ADD CONSTRAINT "re
+minders_user_id_users
+_id_fk" FOREIGN KEY (
+"user_id") REFERENCES
+ "public"."users"("id
+") ON DELETE cascade 
+ON UPDATE no action;-
+-> statement-breakpoi
+nt
+ALTER TABLE "reminder
+s" ADD CONSTRAINT "re
+minders_planting_log_
+id_planting_logs_id_f
+k" FOREIGN KEY ("plan
+ting_log_id") REFEREN
+CES "public"."plantin
+g_logs"("id") ON DELE
+TE set null ON UPDATE
+ no action;--> statem
+ent-breakpoint
+ALTER TABLE "reminder
+s" ADD CONSTRAINT "re
+minders_flock_id_floc
+ks_id_fk" FOREIGN KEY
+ ("flock_id") REFEREN
+CES "public"."flocks"
+("id") ON DELETE set 
+null ON UPDATE no act
+ion;--> statement-bre
+akpoint
+ALTER TABLE "reminder
+s" ADD CONSTRAINT "re
+minders_tree_id_trees
+_id_fk" FOREIGN KEY (
+"tree_id") REFERENCES
+ "public"."trees"("id
+") ON DELETE set null
+ ON UPDATE no action;
+--> statement-breakpo
+int
+ALTER TABLE "sale_ite
+ms" ADD CONSTRAINT "s
+ale_items_sale_id_sal
+es_id_fk" FOREIGN KEY
+ ("sale_id") REFERENC
+ES "public"."sales"("
+id") ON DELETE cascad
+e ON UPDATE no action
+;--> statement-breakp
+oint
+ALTER TABLE "sale_ite
+ms" ADD CONSTRAINT "s
+ale_items_harvest_log
+_id_harvest_logs_id_f
+k" FOREIGN KEY ("harv
+est_log_id") REFERENC
+ES "public"."harvest_
+logs"("id") ON DELETE
+ set null ON UPDATE n
+o action;--> statemen
+t-breakpoint
+ALTER TABLE "sales" A
+DD CONSTRAINT "sales_
+user_id_users_id_fk" 
+FOREIGN KEY ("user_id
+") REFERENCES "public
+"."users"("id") ON DE
+LETE cascade ON UPDAT
+E no action;--> state
+ment-breakpoint
+ALTER TABLE "sales" A
+DD CONSTRAINT "sales_
+customer_id_customers
+_id_fk" FOREIGN KEY (
+"customer_id") REFERE
+NCES "public"."custom
+ers"("id") ON DELETE 
+set null ON UPDATE no
+ action;--> statement
+-breakpoint
+ALTER TABLE "seed_bat
+ches" ADD CONSTRAINT 
+"seed_batches_user_id
+_users_id_fk" FOREIGN
+ KEY ("user_id") REFE
+RENCES "public"."user
+s"("id") ON DELETE ca
+scade ON UPDATE no ac
+tion;--> statement-br
+eakpoint
+ALTER TABLE "seed_bat
+ches" ADD CONSTRAINT 
+"seed_batches_crop_id
+_crops_id_fk" FOREIGN
+ KEY ("crop_id") REFE
+RENCES "public"."crop
+s"("id") ON DELETE re
+strict ON UPDATE no a
+ction;--> statement-b
+reakpoint
+ALTER TABLE "seed_bat
+ches" ADD CONSTRAINT 
+"seed_batches_supplie
+r_id_suppliers_id_fk"
+ FOREIGN KEY ("suppli
+er_id") REFERENCES "p
+ublic"."suppliers"("i
+d") ON DELETE set nul
+l ON UPDATE no action
+;--> statement-breakp
+oint
+ALTER TABLE "seedling
+_production_logs" ADD
+ CONSTRAINT "seedling
+_production_logs_user
+_id_users_id_fk" FORE
+IGN KEY ("user_id") R
+EFERENCES "public"."u
+sers"("id") ON DELETE
+ cascade ON UPDATE no
+ action;--> statement
+-breakpoint
+ALTER TABLE "seedling
+_production_logs" ADD
+ CONSTRAINT "seedling
+_production_logs_seed
+_batch_id_seed_batche
+s_id_fk" FOREIGN KEY 
+("seed_batch_id") REF
+ERENCES "public"."see
+d_batches"("id") ON D
+ELETE restrict ON UPD
+ATE no action;--> sta
+tement-breakpoint
+ALTER TABLE "seedling
+_production_logs" ADD
+ CONSTRAINT "seedling
+_production_logs_crop
+_id_crops_id_fk" FORE
+IGN KEY ("crop_id") R
+EFERENCES "public"."c
+rops"("id") ON DELETE
+ restrict ON UPDATE n
+o action;--> statemen
+t-breakpoint
+ALTER TABLE "sessions
+" ADD CONSTRAINT "ses
+sions_user_id_users_i
+d_fk" FOREIGN KEY ("u
+ser_id") REFERENCES "
+public"."users"("id")
+ ON DELETE cascade ON
+ UPDATE no action;-->
+ statement-breakpoint
+ALTER TABLE "supplier
+s" ADD CONSTRAINT "su
+ppliers_user_id_users
+_id_fk" FOREIGN KEY (
+"user_id") REFERENCES
+ "public"."users"("id
+") ON DELETE cascade 
+ON UPDATE no action;-
+-> statement-breakpoi
+nt
+ALTER TABLE "trees" A
+DD CONSTRAINT "trees_
+user_id_users_id_fk" 
+FOREIGN KEY ("user_id
+") REFERENCES "public
+"."users"("id") ON DE
+LETE cascade ON UPDAT
+E no action;--> state
+ment-breakpoint
+ALTER TABLE "trees" A
+DD CONSTRAINT "trees_
+plot_id_plots_id_fk" 
+FOREIGN KEY ("plot_id
+") REFERENCES "public
+"."plots"("id") ON DE
+LETE set null ON UPDA
+TE no action;
+params: 
+    at NeonHttpPrepar
+edQuery.queryWithCach
+e (C:\Users\e53638\De
+sktop\FarmManagement\
+harvesthub-v2\node_mo
+dules\.pnpm\drizzle-o
+rm@0.44.7_@neondat_9a
+d8a62e4993a41f6fd5a20
+7aa19f87e\node_module
+s\src\pg-core\session
+.ts:73:11)
+    at process.proces
+sTicksAndRejections (
+node:internal/process
+/task_queues:105:5)
+    at async main (C:
+\Users\e53638\Desktop
+\FarmManagement\harve
+sthub-v2\scripts\manu
+al-migrate.ts:22:9) {
+  query: 'CREATE TABL
+E "accounts" (\n' +
+    '\t"id" text PRIM
+ARY KEY NOT NULL,\n' 
++
+    '\t"account_id" t
+ext NOT NULL,\n' +
+    '\t"provider_id" 
+text NOT NULL,\n' +
+    '\t"user_id" uuid
+ NOT NULL,\n' +
+    '\t"access_token"
+ text,\n' +
+    '\t"refresh_token
+" text,\n' +
+    '\t"id_token" tex
+t,\n' +
+    '\t"access_token_
+expires_at" timestamp
+,\n' +
+    '\t"refresh_token
+_expires_at" timestam
+p,\n' +
+    '\t"scope" text,\
+n' +
+    '\t"password" tex
+t,\n' +
+    '\t"created_at" t
+imestamp NOT NULL,\n'
+ +
+    '\t"updated_at" t
+imestamp NOT NULL\n' 
++
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "cr
+op_plans" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"season_id" uu
+id,\n' +
+    '\t"crop_id" uuid
+ NOT NULL,\n' +
+    '\t"plot_id" uuid
+,\n' +
+    '\t"planned_plant
+ing_date" date,\n' +
+    '\t"planned_harve
+st_date" date,\n' +
+    '\t"target_quanti
+ty" numeric(10, 2),\n
+' +
+    '\t"target_unit" 
+text,\n' +
+    '\t"estimated_cos
+t" numeric(10, 2),\n'
+ +
+    `\t"status" text 
+DEFAULT 'planned',\n`
+ +
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp,\n' +
+    '\tCONSTRAINT "ch
+k_plan_dates" CHECK (
+"crop_plans"."planned
+_harvest_date" IS NUL
+L OR "crop_plans"."pl
+anned_planting_date" 
+IS NULL OR "crop_plan
+s"."planned_harvest_d
+ate" > "crop_plans"."
+planned_planting_date
+")\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "cr
+op_seasons" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"name" text NO
+T NULL,\n' +
+    '\t"start_date" d
+ate NOT NULL,\n' +
+    '\t"end_date" dat
+e NOT NULL,\n' +
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp,\n' +
+    '\tCONSTRAINT "ch
+k_season_dates" CHECK
+ ("crop_seasons"."end
+_date" > "crop_season
+s"."start_date")\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "cr
+ops" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"name" text NO
+T NULL,\n' +
+    '\t"variety" text
+,\n' +
+    '\t"category" tex
+t NOT NULL,\n' +
+    '\t"description" 
+text,\n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "cu
+ltivation_activities"
+ (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"planting_log_
+id" uuid,\n' +
+    '\t"activity_type
+" text NOT NULL,\n' +
+    '\t"activity_date
+" date NOT NULL,\n' +
+    '\t"input_invento
+ry_id" uuid,\n' +
+    '\t"quantity_used
+" numeric(10, 2),\n' 
++
+    '\t"quantity_unit
+" text,\n' +
+    '\t"cost" numeric
+(10, 2),\n' +
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "cu
+stomers" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"name" text NO
+T NULL,\n' +
+    '\t"customer_type
+" text,\n' +
+    '\t"email" text,\
+n' +
+    '\t"phone" text,\
+n' +
+    '\t"address" text
+,\n' +
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "ex
+penses" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"expense_date"
+ date NOT NULL,\n' +
+    '\t"category" tex
+t NOT NULL,\n' +
+    '\t"subcategory" 
+text,\n' +
+    '\t"description" 
+text NOT NULL,\n' +
+    '\t"amount" numer
+ic(10, 2) NOT NULL,\n
+' +
+    '\t"supplier_id" 
+uuid,\n' +
+    '\t"payment_metho
+d" text,\n' +
+    '\t"receipt_url" 
+text,\n' +
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp,\n' +
+    '\tCONSTRAINT "ch
+k_expense_amount" CHE
+CK ("expenses"."amoun
+t" > 0)\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "fe
+ed_logs" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"flock_id" uui
+d NOT NULL,\n' +
+    '\t"feed_date" da
+te NOT NULL,\n' +
+    '\t"feed_type" te
+xt NOT NULL,\n' +
+    '\t"quantity_kg" 
+numeric(10, 2) NOT NU
+LL,\n' +
+    '\t"cost" numeric
+(10, 2),\n' +
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp,\n' +
+    '\tCONSTRAINT "ch
+k_feed_quantity" CHEC
+K ("feed_logs"."quant
+ity_kg" > 0),\n' +
+    '\tCONSTRAINT "ch
+k_feed_cost" CHECK ("
+feed_logs"."cost" IS 
+NULL OR "feed_logs"."
+cost" >= 0)\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "fl
+ock_records" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"flock_id" uui
+d NOT NULL,\n' +
+    '\t"record_date" 
+date NOT NULL,\n' +
+    '\t"record_type" 
+text NOT NULL,\n' +
+    '\t"eggs_collecte
+d" integer,\n' +
+    '\t"mortality_cou
+nt" integer,\n' +
+    '\t"mortality_rea
+son" text,\n' +
+    '\t"health_status
+" text,\n' +
+    '\t"health_issues
+" text,\n' +
+    '\t"average_weigh
+t_kg" numeric(10, 2),
+\n' +
+    '\t"birds_weighed
+" integer,\n' +
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp,\n' +
+    '\tCONSTRAINT "ch
+k_eggs_positive" CHEC
+K ("flock_records"."e
+ggs_collected" IS NUL
+L OR "flock_records".
+"eggs_collected" >= 0
+),\n' +
+    '\tCONSTRAINT "ch
+k_mortality_positive"
+ CHECK ("flock_record
+s"."mortality_count" 
+IS NULL OR "flock_rec
+ords"."mortality_coun
+t" > 0),\n' +
+    '\tCONSTRAINT "ch
+k_weight_positive" CH
+ECK ("flock_records".
+"average_weight_kg" I
+S NULL OR "flock_reco
+rds"."average_weight_
+kg" > 0)\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "fl
+ocks" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"name" text NO
+T NULL,\n' +
+    '\t"flock_type" t
+ext NOT NULL,\n' +
+    '\t"species" text
+ NOT NULL,\n' +
+    '\t"breed" text,\
+n' +
+    '\t"hatch_date" d
+ate,\n' +
+    '\t"initial_count
+" integer NOT NULL,\n
+' +
+    '\t"current_count
+" integer NOT NULL,\n
+' +
+    `\t"status" text 
+DEFAULT 'active',\n` 
++
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp,\n' +
+    '\tCONSTRAINT "ch
+k_flock_counts" CHECK
+ ("flocks"."initial_c
+ount" > 0 AND "flocks
+"."current_count" >= 
+0)\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "ha
+rvest_logs" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"planting_log_
+id" uuid NOT NULL,\n'
+ +
+    '\t"harvest_date"
+ date NOT NULL,\n' +
+    '\t"quantity_harv
+ested" numeric(10, 2)
+ NOT NULL,\n' +
+    '\t"quantity_unit
+" text NOT NULL,\n' +
+    '\t"current_stock
+" numeric(10, 2) NOT 
+NULL,\n' +
+    '\t"quality_grade
+" text,\n' +
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp,\n' +
+    '\tCONSTRAINT "ch
+k_harvest_quantities"
+ CHECK ("harvest_logs
+"."quantity_harvested
+" > 0 AND "harvest_lo
+gs"."current_stock" >
+= 0 AND "harvest_logs
+"."current_stock" <= 
+"harvest_logs"."quant
+ity_harvested")\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "in
+put_inventory" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"name" text NO
+T NULL,\n' +
+    '\t"type" text NO
+T NULL,\n' +
+    '\t"supplier_id" 
+uuid,\n' +
+    '\t"purchase_date
+" date,\n' +
+    '\t"initial_quant
+ity" numeric(10, 2),\
+n' +
+    '\t"current_quant
+ity" numeric(10, 2) N
+OT NULL,\n' +
+    '\t"quantity_unit
+" text NOT NULL,\n' +
+    '\t"cost_per_unit
+" numeric(10, 2),\n' 
++
+    '\t"total_cost" n
+umeric(10, 2),\n' +
+    '\t"minimum_stock
+_level" numeric(10, 2
+),\n' +
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp,\n' +
+    '\tCONSTRAINT "ch
+k_input_quantity" CHE
+CK ("input_inventory"
+."current_quantity" >
+= 0)\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "pl
+anting_logs" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"crop_id" uuid
+ NOT NULL,\n' +
+    '\t"plot_id" uuid
+,\n' +
+    '\t"seed_batch_id
+" uuid,\n' +
+    '\t"purchased_see
+dling_id" uuid,\n' +
+    '\t"planting_date
+" date NOT NULL,\n' +
+    '\t"quantity_plan
+ted" numeric(10, 2) N
+OT NULL,\n' +
+    '\t"quantity_unit
+" text NOT NULL,\n' +
+    '\t"expected_harv
+est_date" date,\n' +
+    '\t"actual_harves
+t_date" date,\n' +
+    `\t"status" text 
+DEFAULT 'active',\n` 
++
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp,\n' +
+    '\tCONSTRAINT "ch
+k_harvest_dates" CHEC
+K ("planting_logs"."a
+ctual_harvest_date" I
+S NULL OR "planting_l
+ogs"."actual_harvest_
+date" >= "planting_lo
+gs"."planting_date")\
+n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "pl
+ots" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"name" text NO
+T NULL,\n' +
+    '\t"description" 
+text,\n' +
+    '\t"area_sqm" num
+eric(10, 2),\n' +
+    `\t"status" text 
+DEFAULT 'available',\
+n` +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "pu
+rchased_seedlings" (\
+n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"crop_id" uuid
+ NOT NULL,\n' +
+    '\t"supplier_id" 
+uuid,\n' +
+    '\t"purchase_date
+" date NOT NULL,\n' +
+    '\t"quantity_purc
+hased" integer NOT NU
+LL,\n' +
+    '\t"current_quant
+ity" integer NOT NULL
+,\n' +
+    '\t"cost_per_seed
+ling" numeric(10, 2),
+\n' +
+    '\t"total_cost" n
+umeric(10, 2),\n' +
+    '\t"notes" text,\
+n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp,\n' +
+    '\tCONSTRAINT "ch
+k_seedling_quantities
+" CHECK ("purchased_s
+eedlings"."current_qu
+antity" >= 0 AND "pur
+chased_seedlings"."cu
+rrent_quantity" <= "p
+urchased_seedlings"."
+quantity_purchased")\
+n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "re
+minders" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user_id" text
+ NOT NULL,\n' +
+    '\t"planting_log_
+id" uuid,\n' +
+    '\t"flock_id" uui
+d,\n' +
+    '\t"tree_id" uuid
+,\n' +
+    '\t"title" text N
+OT NULL,\n' +
+    '\t"description" 
+text,\n' +
+    '\t"reminder_date
+" date NOT NULL,\n' +
+    '\t"reminder_time
+" time,\n' +
+    '\t"is_completed"
+ boolean DEFAULT fals
+e,\n' +
+    '\t"completed_at"
+ timestamp,\n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"deleted_at" t
+imestamp\n' +
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "sa
+le_items" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"sale_id" uuid
+ NOT NULL,\n' +
+    '\t"harvest_log_i
+d" uuid,\n' +
+    '\t"product_name"
+ text NOT NULL,\n' +
+    '\t"product_descr
+iption" text,\n' +
+    '\t"quantity" num
+eric(10, 2) NOT NULL,
+\n' +
+    '\t"unit" text NO
+T NULL,\n' +
+    '\t"unit_price" n
+umeric(10, 2) NOT NUL
+L,\n' +
+    `\t"discount_perc
+ent" numeric(5, 2) DE
+FAULT '0',\n` +
+    `\t"discount_amou
+nt" numeric(10, 2) DE
+FAULT '0',\n` +
+    '\t"subtotal" num
+eric(10, 2) NOT NULL,
+\n' +
+    '\t"created_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\t"updated_at" t
+imestamp DEFAULT now(
+) NOT NULL,\n' +
+    '\tCONSTRAINT "ch
+k_sale_item_amounts" 
+CHECK ("sale_items"."
+quantity" > 0 AND "sa
+le_items"."unit_price
+" >= 0 AND "sale_item
+s"."discount_percent"
+ >= 0 AND "sale_items
+"."discount_percent" 
+<= 100 AND "sale_item
+s"."discount_amount" 
+>= 0 AND "sale_items"
+."subtotal" >= 0)\n' 
++
+    ');\n' +
+    '--> statement-br
+eakpoint\n' +
+    'CREATE TABLE "sa
+les" (\n' +
+    '\t"id" uuid PRIM
+ARY KEY DEFAULT gen_r
+andom_uuid() NOT NULL
+,\n' +
+    '\t"user'... 1430
+5 more characters,
+  params: [],
+  cause: NeonDbError:
+ cannot insert multip
+le commands into a pr
+epared statement
+      at mr.execute (
+C:\Users\e53638\Deskt
+op\FarmManagement\har
+vesthub-v2\node_modul
+es\.pnpm\@neondatabas
+e+serverless@1.0.2\no
+de_modules\@neondatab
+ase\serverless\index.
+js:1300:10)
+      at process.proc
+essTicksAndRejections
+ (node:internal/proce
+ss/task_queues:105:5)
+      at async NeonHt
+tpPreparedQuery.query
+WithCache (C:\Users\e
+53638\Desktop\FarmMan
+agement\harvesthub-v2
+\node_modules\.pnpm\d
+rizzle-orm@0.44.7_@ne
+ondat_9ad8a62e4993a41
+f6fd5a207aa19f87e\nod
+e_modules\src\pg-core
+\session.ts:71:12)
+      at async main (
+C:\Users\e53638\Deskt
+op\FarmManagement\har
+vesthub-v2\scripts\ma
+nual-migrate.ts:22:9)
+ {
+    severity: 'ERROR'
+,
+    code: '42601',
+    detail: undefined
+,
+    hint: undefined,
+    position: undefin
+ed,
+    internalPosition:
+ undefined,
+    internalQuery: un
+defined,
+    where: undefined,
+    schema: undefined
+,
+    table: undefined,
+    column: undefined
+,
+    dataType: undefin
+ed,
+    constraint: undef
+ined,
+    file: 'postgres.c
+',
+    line: '1480',
+    routine: 'exec_pa
+rse_message',
+    sourceError: unde
+fined
+  }
+}

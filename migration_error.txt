@@ -1,0 +1,67 @@
+﻿Running manual migration...
+Executing migration: ALTER TABLE "sessions" ALTER COLUMN "user_id" SET DATA TYPE text;
+node : Error running 
+migration: Error: Thi
+s function can now be
+ called only as a tag
+ged-template function
+: sql`SELECT ${value}
+`, not sql("SELECT $1
+", [value], options).
+ For a conventional f
+unction call with val
+ue placeholders ($1, 
+$2, etc.), use sql.qu
+ery("SELECT $1", [val
+ue], options).
+At line:1 char:1
++ node scripts/run-mi
+gration.mjs 2>&1 | Ou
+t-File -FilePath migr
+ation_er ...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Error r   
+ unning m...lue],    
+ options).:Strin    g
+) [], RemoteExc    ep
+tion
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+    at templateFn (fi
+le:///C:/Users/e53638
+/Desktop/FarmManageme
+nt/harvesthub-v2/node
+_modules/.pnpm/@neond
+atabase+serverless@1.
+0.2/node_modules/@neo
+ndatabase/serverless/
+index.mjs:1276:25)
+    at main (file:///
+C:/Users/e53638/Deskt
+op/FarmManagement/har
+vesthub-v2/scripts/ru
+n-migration.mjs:53:15
+)
+    at file:///C:/Use
+rs/e53638/Desktop/Far
+mManagement/harvesthu
+b-v2/scripts/run-migr
+ation.mjs:63:1
+    at ModuleJob.run 
+(node:internal/module
+s/esm/module_job:274:
+25)
+    at async onImport
+.tracePromise.__proto
+__ (node:internal/mod
+ules/esm/loader:644:2
+6)
+    at async asyncRun
+EntryPointWithESMLoad
+er (node:internal/mod
+ules/run_main:116:5)

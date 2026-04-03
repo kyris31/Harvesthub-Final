@@ -1,0 +1,302 @@
+﻿[dotenv@17.2.3] injecting env (5) from .env.local -- tip: έγβΎ╕Π  override existing env vars with { override: true }
+Running manual migration...
+Reading migration file: C:\Users\e53638\Desktop\FarmManagement\harvesthub-v2\drizzle\0000_fair_cobalt_man.sql
+Executing SQL...
+Found 74 statements to execute.
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+Executing statement...
+node.exe : Failed to 
+execute migration: Dr
+izzleQueryError: Fail
+ed query: ALTER TABLE
+ "sessions" ADD CONST
+RAINT "sessions_user_
+id_users_id_fk" FOREI
+GN KEY ("user_id") RE
+FERENCES "public"."us
+ers"("id") ON DELETE 
+cascade ON UPDATE no 
+action;
+At C:\Program Files\n
+odejs\npx.ps1:29 char
+:3
++   & $NODE_EXE $NPX_
+CLI_JS $args
++   ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpeci
+fied: (F    ailed to 
+execu...DATE     no a
+ction;:String) [    ]
+, RemoteException
+    + FullyQualifiedE
+rror    Id : NativeCo
+mmandErr    or
+ 
+params: 
+    at NeonHttpPrepar
+edQuery.queryWithCach
+e (C:\Users\e53638\De
+sktop\FarmManagement\
+harvesthub-v2\node_mo
+dules\.pnpm\drizzle-o
+rm@0.44.7_@neondat_9a
+d8a62e4993a41f6fd5a20
+7aa19f87e\node_module
+s\src\pg-core\session
+.ts:73:11)
+    at process.proces
+sTicksAndRejections (
+node:internal/process
+/task_queues:105:5)
+    at async main (C:
+\Users\e53638\Desktop
+\FarmManagement\harve
+sthub-v2\scripts\manu
+al-migrate.ts:26:17) 
+{
+  query: 'ALTER TABLE
+ "sessions" ADD CONST
+RAINT "sessions_user_
+id_users_id_fk" FOREI
+GN KEY ("user_id") RE
+FERENCES "public"."us
+ers"("id") ON DELETE 
+cascade ON UPDATE no 
+action;',
+  params: [],
+  cause: NeonDbError:
+ foreign key constrai
+nt "sessions_user_id_
+users_id_fk" cannot b
+e implemented
+      at mr.execute (
+C:\Users\e53638\Deskt
+op\FarmManagement\har
+vesthub-v2\node_modul
+es\.pnpm\@neondatabas
+e+serverless@1.0.2\no
+de_modules\@neondatab
+ase\serverless\index.
+js:1300:10)
+      at process.proc
+essTicksAndRejections
+ (node:internal/proce
+ss/task_queues:105:5)
+      at async NeonHt
+tpPreparedQuery.query
+WithCache (C:\Users\e
+53638\Desktop\FarmMan
+agement\harvesthub-v2
+\node_modules\.pnpm\d
+rizzle-orm@0.44.7_@ne
+ondat_9ad8a62e4993a41
+f6fd5a207aa19f87e\nod
+e_modules\src\pg-core
+\session.ts:71:12)
+      at async main (
+C:\Users\e53638\Deskt
+op\FarmManagement\har
+vesthub-v2\scripts\ma
+nual-migrate.ts:26:17
+) {
+    severity: 'ERROR'
+,
+    code: '42804',
+    detail: 'Key colu
+mns "user_id" and "id
+" are of incompatible
+ types: uuid and text
+.',
+    hint: undefined,
+    position: undefin
+ed,
+    internalPosition:
+ undefined,
+    internalQuery: un
+defined,
+    where: undefined,
+    schema: undefined
+,
+    table: undefined,
+    column: undefined
+,
+    dataType: undefin
+ed,
+    constraint: undef
+ined,
+    file: 'tablecmds.
+c',
+    line: '9896',
+    routine: 'ATAddFo
+reignKeyConstraint',
+    sourceError: unde
+fined
+  }
+}
+Cause: NeonDbError: f
+oreign key constraint
+ "sessions_user_id_us
+ers_id_fk" cannot be 
+implemented
+    at mr.execute (C:
+\Users\e53638\Desktop
+\FarmManagement\harve
+sthub-v2\node_modules
+\.pnpm\@neondatabase+
+serverless@1.0.2\node
+_modules\@neondatabas
+e\serverless\index.js
+:1300:10)
+    at process.proces
+sTicksAndRejections (
+node:internal/process
+/task_queues:105:5)
+    at async NeonHttp
+PreparedQuery.queryWi
+thCache (C:\Users\e53
+638\Desktop\FarmManag
+ement\harvesthub-v2\n
+ode_modules\.pnpm\dri
+zzle-orm@0.44.7_@neon
+dat_9ad8a62e4993a41f6
+fd5a207aa19f87e\node_
+modules\src\pg-core\s
+ession.ts:71:12)
+    at async main (C:
+\Users\e53638\Desktop
+\FarmManagement\harve
+sthub-v2\scripts\manu
+al-migrate.ts:26:17) 
+{
+  severity: 'ERROR',
+  code: '42804',
+  detail: 'Key column
+s "user_id" and "id" 
+are of incompatible t
+ypes: uuid and text.'
+,
+  hint: undefined,
+  position: undefined
+,
+  internalPosition: u
+ndefined,
+  internalQuery: unde
+fined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined
+,
+  constraint: undefin
+ed,
+  file: 'tablecmds.c'
+,
+  line: '9896',
+  routine: 'ATAddFore
+ignKeyConstraint',
+  sourceError: undefi
+ned
+}
+Stack: Error: Failed 
+query: ALTER TABLE "s
+essions" ADD CONSTRAI
+NT "sessions_user_id_
+users_id_fk" FOREIGN 
+KEY ("user_id") REFER
+ENCES "public"."users
+"("id") ON DELETE cas
+cade ON UPDATE no act
+ion;
+params: 
+    at NeonHttpPrepar
+edQuery.queryWithCach
+e (C:\Users\e53638\De
+sktop\FarmManagement\
+harvesthub-v2\node_mo
+dules\.pnpm\drizzle-o
+rm@0.44.7_@neondat_9a
+d8a62e4993a41f6fd5a20
+7aa19f87e\node_module
+s\src\pg-core\session
+.ts:73:11)
+    at process.proces
+sTicksAndRejections (
+node:internal/process
+/task_queues:105:5)
+    at async main (C:
+\Users\e53638\Desktop
+\FarmManagement\harve
+sthub-v2\scripts\manu
+al-migrate.ts:26:17)

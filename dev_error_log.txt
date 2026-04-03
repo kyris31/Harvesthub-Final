@@ -1,0 +1,63 @@
+﻿
+> harvesthub-v2@0.1.0 dev C:\Users\e53638\Desktop\FarmManagement\harvesthub-v2
+> next dev
+
+node.exe :  έγι Port 3000 is
+ in use by process 22084, us
+ing available port 3001 inst
+ead.
+At C:\Users\e53638\AppData\R
+oaming\npm\pnpm.ps1:24 char:
+5
++     & "node$exe"  "$basedi
+r/node_modules/pnpm/bin/pnpm
+.cjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecifi    ed: ( έγ
+ι Port 300    0 ...t 3001 in
+stea    d.:String) [], Rem  
+  oteException
+    + FullyQualifiedEr    ro
+rId : NativeComm    andError
+ 
+ έγι Warning: Next.js inferr
+ed your workspace root, but 
+it may not be correct.
+ We detected multiple lockfi
+les and selected the directo
+ry of C:\Users\e53638\packag
+e-lock.json as the root dire
+ctory.
+ To silence this warning, se
+t `turbopack.root` in your N
+ext.js config, or consider r
+emoving one of the lockfiles
+ if it's not needed.
+   See https://nextjs.org/do
+cs/app/api-reference/config/
+next-config-js/turbopack#roo
+t-directory for more informa
+tion.
+ Detected additional lockfil
+es: 
+   * C:\Users\e53638\Desktop
+\FarmManagement\harvesthub-v
+2\pnpm-lock.yaml
+
+   έΨ▓ Next.js 16.0.7 (Turbopack)
+   - Local:         http://localhost:3001
+   - Network:       http://10.20.40.117:3001
+   - Environments: .env.local
+
+ έεΥ Starting...
+ έρψ Unable to acquire lock 
+at C:\Users\e53638\Desktop\F
+armManagement\harvesthub-v2\
+.next\dev\lock, is another i
+nstance of next dev running?
+   Suggestion: If you intended to restart next dev, terminate the other process, and then try again.
+[?25h
+έΑΚELIFECYCLEέΑΚ Command failed with exit code 1.

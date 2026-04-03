@@ -1,0 +1,140 @@
+﻿
+> harvesthub-v2@0.1.0 lint C:\Users\e53638\Desktop\FarmManagement\harvesthub-v2
+> eslint
+
+node.exe : 
+At C:\Users\e53638\Ap
+pData\Roaming\npm\pnp
+m.ps1:24 char:5
++     & "node$exe"  "
+$basedir/node_modules
+/pnpm/bin/pnpm.cjs" $
+args
++     ~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (:String   
+ ) [], RemoteExce    
+ption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+Oops! Something went 
+wrong! :(
+
+ESLint: 9.39.1
+
+TypeError: Converting
+ circular structure t
+o JSON
+    --> starting at o
+bject with constructo
+r 'Object'
+    |     property 'c
+onfigs' -> object wit
+h constructor 'Object
+'
+    |     property 'f
+lat' -> object with c
+onstructor 'Object'
+    |     ...
+    |     property 'p
+lugins' -> object wit
+h constructor 'Object
+'
+    --- property 'rea
+ct' closes the circle
+Referenced from: 
+    at JSON.stringify
+ (<anonymous>)
+    at file:///C:/Use
+rs/e53638/Desktop/Far
+mManagement/harvesthu
+b-v2/node_modules/.pn
+pm/@eslint+eslintrc@3
+.3.3/node_modules/@es
+lint/eslintrc/lib/sha
+red/config-validator.
+js:308:45
+    at Array.map (<an
+onymous>)
+    at ConfigValidato
+r.formatErrors (file:
+///C:/Users/e53638/De
+sktop/FarmManagement/
+harvesthub-v2/node_mo
+dules/.pnpm/@eslint+e
+slintrc@3.3.3/node_mo
+dules/@eslint/eslintr
+c/lib/shared/config-v
+alidator.js:299:23)
+    at ConfigValidato
+r.validateConfigSchem
+a (file:///C:/Users/e
+53638/Desktop/FarmMan
+agement/harvesthub-v2
+/node_modules/.pnpm/@
+eslint+eslintrc@3.3.3
+/node_modules/@eslint
+/eslintrc/lib/shared/
+config-validator.js:3
+30:84)
+    at ConfigArrayFac
+tory._normalizeConfig
+Data (file:///C:/User
+s/e53638/Desktop/Farm
+Management/harvesthub
+-v2/node_modules/.pnp
+m/@eslint+eslintrc@3.
+3.3/node_modules/@esl
+int/eslintrc/lib/conf
+ig-array-factory.js:6
+76:19)
+    at ConfigArrayFac
+tory._loadConfigData 
+(file:///C:/Users/e53
+638/Desktop/FarmManag
+ement/harvesthub-v2/n
+ode_modules/.pnpm/@es
+lint+eslintrc@3.3.3/n
+ode_modules/@eslint/e
+slintrc/lib/config-ar
+ray-factory.js:641:21
+)
+    at ConfigArrayFac
+tory._loadExtendedSha
+reableConfig (file://
+/C:/Users/e53638/Desk
+top/FarmManagement/ha
+rvesthub-v2/node_modu
+les/.pnpm/@eslint+esl
+intrc@3.3.3/node_modu
+les/@eslint/eslintrc/
+lib/config-array-fact
+ory.js:946:21)
+    at ConfigArrayFac
+tory._loadExtends (fi
+le:///C:/Users/e53638
+/Desktop/FarmManageme
+nt/harvesthub-v2/node
+_modules/.pnpm/@eslin
+t+eslintrc@3.3.3/node
+_modules/@eslint/esli
+ntrc/lib/config-array
+-factory.js:814:25)
+    at ConfigArrayFac
+tory._normalizeObject
+ConfigDataBody (file:
+///C:/Users/e53638/De
+sktop/FarmManagement/
+harvesthub-v2/node_mo
+dules/.pnpm/@eslint+e
+slintrc@3.3.3/node_mo
+dules/@eslint/eslintr
+c/lib/config-array-fa
+ctory.js:752:25)
+έΑΚELIFECYCLEέΑΚ Command failed with exit code 2.
