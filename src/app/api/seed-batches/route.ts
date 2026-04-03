@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
         costPerUnit: validatedData.costPerUnit || null,
         totalCost: totalCost,
         organicCertified: validatedData.organicStatus || null,
+        sourceType: validatedData.sourceType || null,
         notes: validatedData.notes || null,
       })
       .returning()

@@ -46,6 +46,7 @@ export const seedBatchSchema = z.object({
   quantityUnit: z.string().min(1, 'Unit is required'),
   costPerUnit: z.string().optional().nullable(),
   organicStatus: z.string().optional().nullable(),
+  sourceType: z.enum(['purchased', 'self_produced']).optional().nullable(),
   notes: z.string().optional().nullable(),
 })
 

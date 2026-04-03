@@ -153,6 +153,7 @@ export const seedBatches = pgTable(
     costPerUnit: decimal('cost_per_unit', { precision: 10, scale: 2 }),
     totalCost: decimal('total_cost', { precision: 10, scale: 2 }),
     organicCertified: text('organic_certified'), // certified, organic, untreated, conventional, unknown
+    sourceType: text('source_type'), // purchased, self_produced
     notes: text('notes'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

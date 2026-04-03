@@ -15,6 +15,7 @@ export const seedBatchSchema = z.object({
   costPerUnit: z.string().optional().or(z.literal('')),
   totalCost: z.string().optional().or(z.literal('')),
   organicCertified: z.string().optional().or(z.literal('')),
+  sourceType: z.enum(['purchased', 'self_produced']).optional().nullable().or(z.literal('')),
   notes: z
     .string()
     .max(1000, 'Notes must be less than 1000 characters')

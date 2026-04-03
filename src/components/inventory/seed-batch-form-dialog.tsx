@@ -32,6 +32,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { seedBatchSchema, SeedBatchFormValues, QUANTITY_UNITS } from '@/lib/schemas/planting-schema'
 import { toast } from 'sonner'
 
@@ -57,6 +58,7 @@ export function SeedBatchFormDialog({ onSuccess }: SeedBatchFormDialogProps) {
       quantityUnit: 'seeds',
       costPerUnit: '',
       organicStatus: '',
+      sourceType: 'purchased',
       notes: '',
     },
   })
@@ -311,6 +313,37 @@ export function SeedBatchFormDialog({ onSuccess }: SeedBatchFormDialogProps) {
                         <SelectItem value="unknown">Unknown</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sourceType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Source Type</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value || 'purchased'}
+                        className="flex gap-6 pt-1"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="purchased" id="src-purchased" />
+                          <FormLabel htmlFor="src-purchased" className="cursor-pointer font-normal">
+                            Purchased
+                          </FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="self_produced" id="src-self" />
+                          <FormLabel htmlFor="src-self" className="cursor-pointer font-normal">
+                            Self-Produced
+                          </FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

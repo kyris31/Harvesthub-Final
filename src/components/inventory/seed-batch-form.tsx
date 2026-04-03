@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { createSeedBatch, updateSeedBatch } from '@/app/actions/seed-batches'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -53,6 +54,7 @@ export function SeedBatchForm({ crops, suppliers, defaultValues, mode }: SeedBat
       costPerUnit: '',
       totalCost: '',
       organicCertified: '',
+      sourceType: 'purchased',
       notes: '',
     },
   })
@@ -292,6 +294,37 @@ export function SeedBatchForm({ crops, suppliers, defaultValues, mode }: SeedBat
                   <SelectItem value="unknown">Unknown</SelectItem>
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="sourceType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Source Type</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  value={field.value || 'purchased'}
+                  className="flex gap-6 pt-1"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="purchased" id="edit-src-purchased" />
+                    <FormLabel htmlFor="edit-src-purchased" className="cursor-pointer font-normal">
+                      Purchased
+                    </FormLabel>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="self_produced" id="edit-src-self" />
+                    <FormLabel htmlFor="edit-src-self" className="cursor-pointer font-normal">
+                      Self-Produced
+                    </FormLabel>
+                  </div>
+                </RadioGroup>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
