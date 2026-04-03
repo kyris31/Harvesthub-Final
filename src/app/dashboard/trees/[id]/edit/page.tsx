@@ -46,7 +46,7 @@ export default async function EditTreePage({ params }: Props) {
         <h1 className="text-2xl font-bold tracking-tight">Edit Tree — {tree.identifier}</h1>
         <p className="text-muted-foreground text-sm">Update the details for this tree</p>
       </div>
-      <EditTreeForm tree={tree} />
+      <EditTreeForm tree={tree} plots={plotList} />
     </div>
   )
 }

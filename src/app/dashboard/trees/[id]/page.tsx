@@ -6,6 +6,9 @@ import { getTree } from '@/app/actions/trees'
 import { ArrowLeft, TreePine, Leaf, AlertTriangle, Skull, Pencil } from 'lucide-react'
 import { format } from 'date-fns'
 import { DeleteTreeButton } from './delete-button'
+import { db } from '@/lib/db'
+import { plots } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -40,6 +43,15 @@ export default async function TreeDetailPage({ params }: Props) {
   }
 
   const status = STATUS_CONFIG[tree.status ?? 'healthy'] ?? STATUS_CONFIG['healthy']!
+
+  let plotName: string | null = null
+  if (tree.plotId) {
+    const [plot] = await db
+      .select({ name: plots.name })
+      .from(plots)
+      .where(eq(plots.id, tree.plotId))
+    plotName = plot?.name ?? null
+  }
 
   function row(label: string, value: React.ReactNode) {
     if (!value) return null
@@ -96,6 +108,7 @@ export default async function TreeDetailPage({ params }: Props) {
             'Planting Date',
             tree.plantingDate ? format(new Date(tree.plantingDate), 'dd MMMM yyyy') : null
           )}
+          {row('Plot', plotName)}
           {row('Location', tree.locationDescription)}
           {row(
             'Est. Annual Yield',

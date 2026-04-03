@@ -19,12 +19,18 @@ import { Loader2, Save } from 'lucide-react'
 
 const YIELD_UNITS = ['kg', 'tons', 'pieces', 'boxes', 'crates', 'liters']
 
+interface Plot {
+  id: string
+  name: string
+}
+
 interface Tree {
   id: string
   identifier: string
   species: string
   variety: string | null
   plantingDate: string | null
+  plotId: string | null
   locationDescription: string | null
   status: string | null
   healthNotes: string | null
@@ -33,7 +39,8 @@ interface Tree {
   yieldUnit: string | null
   notes: string | null
 }
-export function EditTreeForm({ tree }: { tree: Tree }) {
+
+export function EditTreeForm({ tree, plots }: { tree: Tree; plots: Plot[] }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
@@ -43,6 +50,7 @@ export function EditTreeForm({ tree }: { tree: Tree }) {
     setError('')
     const fd = new FormData(e.currentTarget)
     const yieldVal = fd.get('estimatedAnnualYield') as string
+    const plotId = fd.get('plotId') as string
 
     startTransition(async () => {
       try {
@@ -51,6 +59,7 @@ export function EditTreeForm({ tree }: { tree: Tree }) {
           species: (fd.get('species') as string).trim(),
           variety: (fd.get('variety') as string)?.trim() || undefined,
           plantingDate: (fd.get('plantingDate') as string) || undefined,
+          plotId: plotId || null,
           locationDescription: (fd.get('locationDescription') as string)?.trim() || undefined,
           status: (fd.get('status') as string) || 'healthy',
           healthNotes: (fd.get('healthNotes') as string)?.trim() || undefined,
@@ -104,8 +113,26 @@ export function EditTreeForm({ tree }: { tree: Tree }) {
         <CardHeader>
           <CardTitle className="text-base">📍 Location</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-1.5">
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          {plots.length > 0 && (
+            <div className="space-y-1.5">
+              <Label htmlFor="plotId">Plot</Label>
+              <Select name="plotId" defaultValue={tree.plotId ?? ''}>
+                <SelectTrigger id="plotId">
+                  <SelectValue placeholder="Select plot (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No plot</SelectItem>
+                  {plots.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="space-y-1.5 md:col-span-2">
             <Label htmlFor="locationDescription">Location Description</Label>
             <Input
               id="locationDescription"

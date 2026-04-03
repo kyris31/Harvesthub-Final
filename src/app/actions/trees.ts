@@ -78,6 +78,7 @@ export async function updateTree(
     species?: string
     variety?: string
     plantingDate?: string
+    plotId?: string | null
     locationDescription?: string
     status?: string
     healthNotes?: string
@@ -92,6 +93,7 @@ export async function updateTree(
     .update(trees)
     .set({
       ...data,
+      plotId: data.plotId !== undefined ? data.plotId : undefined,
       estimatedAnnualYield:
         data.estimatedAnnualYield != null ? data.estimatedAnnualYield.toString() : undefined,
       lastHarvestDate: data.lastHarvestDate || null,
