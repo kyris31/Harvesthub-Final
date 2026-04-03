@@ -7,13 +7,12 @@ import {
   sales,
   expenses,
   harvestLogs,
-  plantingLogs,
   cultivationActivities,
   seedBatches,
   inputInventory,
   purchasedSeedlings,
 } from '@/lib/db/schema'
-import { and, eq, isNull, gte, lte, sql, sum, count } from 'drizzle-orm'
+import { and, eq, isNull, gte, lte, sql, count } from 'drizzle-orm'
 
 // Financial Report
 export async function getFinancialReport(startDate?: string, endDate?: string) {
@@ -103,7 +102,7 @@ export async function getFinancialReport(startDate?: string, endDate?: string) {
 }
 
 // Harvest Report
-export async function getHarvestReport(startDate?: string, endDate?: string, cropId?: string) {
+export async function getHarvestReport(startDate?: string, endDate?: string) {
   const session = await auth.api.getSession({
     headers: await headers(),
   })
@@ -125,6 +124,7 @@ export async function getHarvestReport(startDate?: string, endDate?: string, cro
   const harvests = await db.query.harvestLogs.findMany({
     where: and(...whereConditions),
     orderBy: (harvestLogs, { desc }) => [desc(harvestLogs.harvestDate)],
+    with: { plantingLog: { with: { crop: true } } },
   })
 
   const totalYield = harvests.reduce((sum, h) => sum + Number(h.quantityHarvested || 0), 0)
@@ -149,6 +149,7 @@ export async function getInventoryReport() {
   // Get seed batches
   const seeds = await db.query.seedBatches.findMany({
     where: and(eq(seedBatches.userId, session.user.id), isNull(seedBatches.deletedAt)),
+    with: { crop: true },
   })
 
   // Get input inventory
@@ -164,12 +165,7 @@ export async function getInventoryReport() {
     ),
   })
 
-  // Calculate low stock items - seeds don't have minimumStockLevel, just check quantity
-  const lowStockSeeds = seeds.filter((s) => {
-    const current = Number(s.currentQuantity || 0)
-    return current <= 10 // threshold of 10 units
-  })
-
+  // Calculate low stock items
   const lowStockInputs = inputs.filter((i) => {
     const current = Number(i.currentQuantity || 0)
     const min = Number(i.minimumStockLevel || 10)
@@ -198,7 +194,6 @@ export async function getInventoryReport() {
   return {
     seeds: {
       items: seeds,
-      lowStock: lowStockSeeds,
       totalValue: seedValue,
     },
     inputs: {
@@ -212,7 +207,7 @@ export async function getInventoryReport() {
       totalValue: seedlingValue,
     },
     totalValue: seedValue + inputValue + seedlingValue,
-    lowStockCount: lowStockSeeds.length + lowStockInputs.length + lowStockSeedlings.length,
+    lowStockCount: lowStockInputs.length + lowStockSeedlings.length,
   }
 }
 

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@better-fetch/fetch": "^1.1.19",
+    "@fontsource/noto-sans": "^5.2.10",
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.0.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",

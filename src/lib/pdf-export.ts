@@ -2,6 +2,9 @@
 
 // PDF Export using CDN-loaded jsPDF
 
+// Cache the base64-encoded font so it is only fetched/converted once per session
+let _notoSansBase64: string | null = null
+
 async function loadLogoDataUrl(): Promise<string | null> {
   return new Promise((resolve) => {
     const img = new window.Image()
@@ -22,32 +25,82 @@ async function loadLogoDataUrl(): Promise<string | null> {
   })
 }
 
-function addLogoToPdf(doc: any, logoData: string | null) {
-  if (!logoData) return
-  // Logo at top-right, ~45mm wide, aspect ratio ~1.6:1
-  doc.addImage(logoData, 'PNG', 150, 5, 45, 28)
+async function setupNotoSans(doc: any): Promise<void> {
+  try {
+    if (!_notoSansBase64) {
+      const response = await fetch('/fonts/NotoSans-Regular.ttf')
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const arrayBuffer = await response.arrayBuffer()
+      const uint8 = new Uint8Array(arrayBuffer)
+      // Convert to base64 in chunks to avoid call-stack overflow on large buffers
+      let binary = ''
+      const chunkSize = 8192
+      for (let i = 0; i < uint8.length; i += chunkSize) {
+        binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize))
+      }
+      _notoSansBase64 = btoa(binary)
+    }
+    doc.addFileToVFS('NotoSans-Regular.ttf', _notoSansBase64)
+    // Register for both normal and bold (same file – bold weight is inside the variable font)
+    doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'normal')
+    doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'bold')
+    doc.setFont('NotoSans', 'normal')
+  } catch {
+    // Fall back to Helvetica (Greek will not render, but the rest of the PDF works)
+    doc.setFont('helvetica', 'normal')
+  }
+}
+
+// Returns the Y position where content should start after the header
+function addCompanyHeader(doc: any, logoData: string | null, title: string): number {
+  // Logo top-left
+  if (logoData) {
+    doc.addImage(logoData, 'PNG', 14, 5, 32, 20)
+  }
+
+  // Company info below logo
+  doc.setFontSize(9)
+  doc.setFont('NotoSans', 'bold')
+  doc.text('K.K. Biofresh', 14, 30)
+  doc.setFont('NotoSans', 'normal')
+  doc.setFontSize(8)
+  doc.text('1ης Απριλίου 300', 14, 35)
+  doc.text('7520 Ξυλοφάγου, Λάρνακα', 14, 40)
+  doc.text('Phone: 99611241', 14, 45)
+  doc.text('Email: kyris31@gmail.com', 14, 50)
+
+  // "Generated" date top-right
+  doc.setFontSize(8)
+  doc.setFont('NotoSans', 'normal')
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 196, 10, { align: 'right' })
+
+  // Horizontal rule
+  doc.setDrawColor(180, 180, 180)
+  doc.line(14, 55, 196, 55)
+
+  // Report title
+  doc.setFontSize(16)
+  doc.setFont('NotoSans', 'bold')
+  doc.text(title, 14, 64)
+  doc.setFont('NotoSans', 'normal')
+
+  return 72
 }
 
 export async function exportFinancialReportPDF(data: any, startDate: string, endDate: string) {
   // @ts-ignore - jsPDF loaded from CDN
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
+  await setupNotoSans(doc)
   const logo = await loadLogoDataUrl()
-  addLogoToPdf(doc, logo)
-
-  doc.setFontSize(20)
-  doc.text('Financial Report', 14, 22)
+  const startY = addCompanyHeader(doc, logo, 'Financial Report')
 
   doc.setFontSize(10)
-  doc.text(`Period: ${startDate} to ${endDate}`, 14, 30)
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 35)
-
-  doc.setFontSize(12)
-  doc.text('Summary', 14, 45)
+  doc.text(`Period: ${startDate} to ${endDate}`, 14, startY)
 
   // @ts-ignore
   doc.autoTable({
-    startY: 50,
+    startY: startY + 8,
     head: [['Metric', 'Value']],
     body: [
       ['Total Revenue', `$${data.revenue.total.toFixed(2)}`],
@@ -55,6 +108,8 @@ export async function exportFinancialReportPDF(data: any, startDate: string, end
       ['Net Profit', `$${data.profit.total.toFixed(2)}`],
       ['Profit Margin', `${data.profit.margin.toFixed(1)}%`],
     ],
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
   })
 
   const fileName = `Financial_Report_${startDate}_to_${endDate}.pdf`
@@ -65,49 +120,43 @@ export async function exportHarvestReportPDF(data: any, startDate: string, endDa
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
+  await setupNotoSans(doc)
   const logo = await loadLogoDataUrl()
-  addLogoToPdf(doc, logo)
-
-  doc.setFontSize(20)
-  doc.text('Harvest Report', 14, 22)
+  const startY = addCompanyHeader(doc, logo, 'Summarized Harvest Report')
 
   doc.setFontSize(10)
-  doc.text(`Period: ${startDate} to ${endDate}`, 14, 30)
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 35)
+  doc.text(`Period: ${startDate} to ${endDate}`, 14, startY)
 
-  doc.setFontSize(12)
-  doc.text('Summary', 14, 45)
+  // Summarize harvests by crop name + variety + unit
+  const summaryMap: Record<
+    string,
+    { cropName: string; variety: string; totalQty: number; unit: string }
+  > = {}
+  for (const h of data.harvests) {
+    const cropName = h.plantingLog?.crop?.name ?? 'Unknown'
+    const variety = h.plantingLog?.crop?.variety ?? ''
+    const unit = h.quantityUnit
+    const key = `${cropName}||${variety}||${unit}`
+    if (!summaryMap[key]) {
+      summaryMap[key] = { cropName, variety, totalQty: 0, unit }
+    }
+    summaryMap[key].totalQty += Number(h.quantityHarvested || 0)
+  }
+
+  const summaryRows = Object.values(summaryMap)
+    .sort((a, b) => a.cropName.localeCompare(b.cropName))
+    .map((r) => [r.cropName, r.variety || '—', r.totalQty.toFixed(2), r.unit])
 
   // @ts-ignore
   doc.autoTable({
-    startY: 50,
-    head: [['Metric', 'Value']],
-    body: [
-      ['Total Yield', `${data.totalYield.toFixed(2)} kg`],
-      ['Total Harvests', data.harvestCount.toString()],
-      ['Average per Harvest', `${(data.totalYield / data.harvestCount).toFixed(2)} kg`],
-    ],
+    startY: startY + 8,
+    head: [['Crop Name', 'Variety', 'Total Quantity', 'Unit']],
+    body: summaryRows.length > 0 ? summaryRows : [['No harvest data', '', '', '']],
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
   })
 
-  if (data.harvests.length > 0) {
-    const harvestData = data.harvests
-      .slice(0, 20)
-      .map((h: any) => [
-        new Date(h.harvestDate).toLocaleDateString(),
-        `${Number(h.quantityHarvested).toFixed(2)} ${h.quantityUnit}`,
-        `${Number(h.currentStock).toFixed(2)} ${h.quantityUnit}`,
-        h.qualityGrade || 'N/A',
-      ])
-
-    // @ts-ignore
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY + 10,
-      head: [['Date', 'Harvested', 'Current Stock', 'Grade']],
-      body: harvestData,
-    })
-  }
-
-  const fileName = `Harvest_Report_${startDate}_to_${endDate}.pdf`
+  const fileName = `Summarized_Harvest_Report_${startDate}_to_${endDate}.pdf`
   doc.save(fileName)
 }
 
@@ -115,22 +164,15 @@ export async function exportInventoryReportPDF(data: any) {
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
+  await setupNotoSans(doc)
   const logo = await loadLogoDataUrl()
-  addLogoToPdf(doc, logo)
-
-  doc.setFontSize(20)
-  doc.text('Inventory Report', 14, 22)
-
-  doc.setFontSize(10)
   const today = new Date().toISOString().split('T')[0]
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 30)
+  const startY = addCompanyHeader(doc, logo, 'Inventory Report')
 
-  doc.setFontSize(12)
-  doc.text('Summary', 14, 40)
-
+  // Summary table
   // @ts-ignore
   doc.autoTable({
-    startY: 45,
+    startY,
     head: [['Metric', 'Value']],
     body: [
       ['Total Inventory Value', `$${data.totalValue.toFixed(2)}`],
@@ -139,53 +181,50 @@ export async function exportInventoryReportPDF(data: any) {
       ['Inputs Value', `$${data.inputs.totalValue.toFixed(2)}`],
       ['Seedlings Value', `$${data.seedlings.totalValue.toFixed(2)}`],
     ],
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
   })
 
   if (data.seeds.items.length > 0) {
-    const seedsData = data.seeds.items
-      .slice(0, 15)
-      .map((s: any) => [
-        s.batchCode,
-        `${s.currentQuantity} ${s.quantityUnit}`,
-        `$${(s.currentQuantity * Number(s.costPerUnit || 0)).toFixed(2)}`,
-      ])
+    const seedsData = data.seeds.items.map((s: any) => [
+      s.crop?.name ?? s.batchCode,
+      s.crop?.variety ?? '—',
+      Number(s.initialQuantity).toFixed(2),
+      Number(s.currentQuantity).toFixed(2),
+      s.quantityUnit,
+    ])
 
     doc.addPage()
-    doc.setFontSize(12)
-    doc.text('Seeds Inventory', 14, 20)
+    const seedPageY = addCompanyHeader(doc, logo, 'Seed Batches Report')
 
     // @ts-ignore
     doc.autoTable({
-      startY: 25,
-      head: [['Batch Code', 'Quantity', 'Value']],
+      startY: seedPageY,
+      head: [['Crop Name', 'Variety', 'Initial Qty', 'Current Qty', 'Unit']],
       body: seedsData,
+      styles: { font: 'NotoSans', fontSize: 9 },
+      headStyles: { fillColor: [34, 139, 34] },
     })
   }
 
   if (data.inputs.items.length > 0) {
-    const inputsData = data.inputs.items
-      .slice(0, 15)
-      .map((i: any) => [
-        i.name,
-        i.type,
-        `${i.currentQuantity || 0} ${i.quantityUnit || ''}`,
-        `$${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
-      ])
+    const inputsData = data.inputs.items.map((i: any) => [
+      i.name,
+      i.type,
+      `${Number(i.currentQuantity || 0).toFixed(2)} ${i.quantityUnit || ''}`,
+      `$${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
+    ])
 
-    if (data.seeds.items.length === 0) {
-      doc.addPage()
-    }
-
-    // @ts-ignore
-    const startY = data.seeds.items.length > 0 ? doc.lastAutoTable.finalY + 15 : 25
-    doc.setFontSize(12)
-    doc.text('Inputs Inventory', 14, startY - 5)
+    doc.addPage()
+    const inputPageY = addCompanyHeader(doc, logo, 'Inputs Inventory Report')
 
     // @ts-ignore
     doc.autoTable({
-      startY: startY,
+      startY: inputPageY,
       head: [['Name', 'Type', 'Quantity', 'Value']],
       body: inputsData,
+      styles: { font: 'NotoSans', fontSize: 9 },
+      headStyles: { fillColor: [34, 139, 34] },
     })
   }
 
@@ -197,28 +236,24 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
+  await setupNotoSans(doc)
   const logo = await loadLogoDataUrl()
-  addLogoToPdf(doc, logo)
-
-  doc.setFontSize(20)
-  doc.text('Cultivation Report', 14, 22)
+  const startY = addCompanyHeader(doc, logo, 'Cultivation Report')
 
   doc.setFontSize(10)
-  doc.text(`Period: ${startDate} to ${endDate}`, 14, 30)
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 35)
-
-  doc.setFontSize(12)
-  doc.text('Summary', 14, 45)
+  doc.text(`Period: ${startDate} to ${endDate}`, 14, startY)
 
   // @ts-ignore
   doc.autoTable({
-    startY: 50,
+    startY: startY + 8,
     head: [['Metric', 'Value']],
     body: [
       ['Total Activities', data.totalActivities.toString()],
       ['Total Cost', `$${data.totalCost.toFixed(2)}`],
       ['Average Cost', `$${(data.totalCost / data.totalActivities).toFixed(2)}`],
     ],
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
   })
 
   const activityData = Object.entries(data.activityByType).map(([type, stats]: [string, any]) => [
@@ -233,6 +268,8 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     startY: doc.lastAutoTable.finalY + 10,
     head: [['Activity Type', 'Count', 'Total Cost', 'Avg Cost']],
     body: activityData,
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
   })
 
   if (data.activities.length > 0) {
@@ -246,14 +283,15 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
       ])
 
     doc.addPage()
-    doc.setFontSize(12)
-    doc.text('Recent Activities', 14, 20)
+    const actPageY = addCompanyHeader(doc, logo, 'Recent Activities')
 
     // @ts-ignore
     doc.autoTable({
-      startY: 25,
+      startY: actPageY,
       head: [['Date', 'Type', 'Quantity', 'Cost']],
       body: activitiesData,
+      styles: { font: 'NotoSans', fontSize: 9 },
+      headStyles: { fillColor: [34, 139, 34] },
     })
   }
 

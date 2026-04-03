@@ -144,22 +144,20 @@ export default function InventoryReportClient({ initialData }: InventoryReportPr
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {[...data.seeds.lowStock, ...data.inputs.lowStock, ...data.seedlings.lowStock].map(
-                (item: any) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between rounded-lg bg-white p-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">
-                        {item.batchCode || item.name || 'Seedling'}
-                      </p>
-                      <p className="text-muted-foreground text-xs">{item.type || 'Seed Batch'}</p>
-                    </div>
-                    <Badge variant="destructive">Low Stock</Badge>
+              {[...data.inputs.lowStock, ...data.seedlings.lowStock].map((item: any) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded-lg bg-white p-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium">
+                      {item.batchCode || item.name || 'Seedling'}
+                    </p>
+                    <p className="text-muted-foreground text-xs">{item.type || 'Seed Batch'}</p>
                   </div>
-                )
-              )}
+                  <Badge variant="destructive">Low Stock</Badge>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
