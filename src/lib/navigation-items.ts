@@ -174,10 +174,10 @@ export const navigationSections: NavSection[] = [
         description: 'Cost tracking',
       },
       {
-        title: 'Purchase Invoices',
+        title: 'Invoices',
         href: '/dashboard/invoices',
         icon: FileText,
-        description: 'Supplier invoices & inventory',
+        description: 'Supplier invoices & payments',
       },
     ],
   },
