@@ -32,7 +32,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
 import { seedBatchSchema, SeedBatchFormValues, QUANTITY_UNITS } from '@/lib/schemas/planting-schema'
 import { toast } from 'sonner'
 
@@ -57,7 +56,7 @@ export function SeedBatchFormDialog({ onSuccess }: SeedBatchFormDialogProps) {
       initialQuantity: '',
       quantityUnit: 'seeds',
       costPerUnit: '',
-      organicCertified: false,
+      organicStatus: '',
       notes: '',
     },
   })
@@ -293,15 +292,26 @@ export function SeedBatchFormDialog({ onSuccess }: SeedBatchFormDialogProps) {
 
               <FormField
                 control={form.control}
-                name="organicCertified"
+                name="organicStatus"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-y-0 space-x-3">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Organic Certified</FormLabel>
-                    </div>
+                  <FormItem>
+                    <FormLabel>Organic Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Status (Optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Select Status (Optional)</SelectItem>
+                        <SelectItem value="certified">Certified Organic</SelectItem>
+                        <SelectItem value="organic">Organic (Not Certified)</SelectItem>
+                        <SelectItem value="untreated">Untreated</SelectItem>
+                        <SelectItem value="conventional">Conventional</SelectItem>
+                        <SelectItem value="unknown">Unknown</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
                   </FormItem>
                 )}
               />

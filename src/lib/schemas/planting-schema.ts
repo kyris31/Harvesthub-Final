@@ -45,7 +45,7 @@ export const seedBatchSchema = z.object({
   initialQuantity: z.string().min(1, 'Quantity is required'),
   quantityUnit: z.string().min(1, 'Unit is required'),
   costPerUnit: z.string().optional().nullable(),
-  organicCertified: z.boolean().optional(),
+  organicStatus: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
 })
 
