@@ -60,7 +60,7 @@ export default async function SupplierInvoicesPage() {
             <CardTitle className="text-sm font-medium">Total Value</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">€{totalValue.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
@@ -102,7 +102,7 @@ export default async function SupplierInvoicesPage() {
                     <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
                     <TableCell>{invoice.items.length} items</TableCell>
                     <TableCell className="font-medium">
-                      ${parseFloat(invoice.totalAmount).toFixed(2)}
+                      €{parseFloat(invoice.totalAmount).toFixed(2)}
                     </TableCell>
                     <TableCell>
                       <Badge

@@ -65,7 +65,7 @@ export default function FinancialReportClient({ initialData }: FinancialReportCl
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              ${data.revenue.total.toFixed(2)}
+              €{data.revenue.total.toFixed(2)}
             </div>
             <p className="text-muted-foreground text-xs">{data.revenue.count} transactions</p>
           </CardContent>
@@ -77,7 +77,7 @@ export default function FinancialReportClient({ initialData }: FinancialReportCl
             <DollarSign className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">${data.expenses.total.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-red-600">€{data.expenses.total.toFixed(2)}</div>
             <p className="text-muted-foreground text-xs">{data.expenses.count} expenses</p>
           </CardContent>
         </Card>
@@ -95,7 +95,7 @@ export default function FinancialReportClient({ initialData }: FinancialReportCl
             <div
               className={`text-2xl font-bold ${data.profit.total >= 0 ? 'text-green-600' : 'text-red-600'}`}
             >
-              ${data.profit.total.toFixed(2)}
+              €{data.profit.total.toFixed(2)}
             </div>
             <p className="text-muted-foreground text-xs">
               {data.profit.margin.toFixed(1)}% profit margin
@@ -115,13 +115,13 @@ export default function FinancialReportClient({ initialData }: FinancialReportCl
             <div className="flex items-center justify-between border-b pb-2">
               <span className="text-sm font-medium">Total Revenue</span>
               <span className="text-sm font-semibold text-green-600">
-                ${data.revenue.total.toFixed(2)}
+                €{data.revenue.total.toFixed(2)}
               </span>
             </div>
             <div className="flex items-center justify-between border-b pb-2">
               <span className="text-sm font-medium">Total Expenses</span>
               <span className="text-sm font-semibold text-red-600">
-                ${data.expenses.total.toFixed(2)}
+                €{data.expenses.total.toFixed(2)}
               </span>
             </div>
             <div className="flex items-center justify-between border-b pb-2">
@@ -129,7 +129,7 @@ export default function FinancialReportClient({ initialData }: FinancialReportCl
               <span
                 className={`text-sm font-semibold ${data.profit.total >= 0 ? 'text-green-600' : 'text-red-600'}`}
               >
-                ${data.profit.total.toFixed(2)}
+                €{data.profit.total.toFixed(2)}
               </span>
             </div>
             <div className="flex items-center justify-between">

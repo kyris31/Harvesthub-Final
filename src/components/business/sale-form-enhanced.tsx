@@ -308,7 +308,7 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
           <CardContent className="space-y-4 pt-6">
             <div className="flex items-center justify-between text-lg font-semibold">
               <span>Total Amount</span>
-              <span>${totalAmount.toFixed(2)}</span>
+              <span>€{totalAmount.toFixed(2)}</span>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -382,7 +382,7 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
                 <div
                   className={`text-2xl font-bold ${balance > 0 ? 'text-destructive' : 'text-green-600'}`}
                 >
-                  ${balance.toFixed(2)}
+                  €{balance.toFixed(2)}
                 </div>
               </div>
             </div>

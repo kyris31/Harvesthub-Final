@@ -89,15 +89,15 @@ export function PaymentTracker({
             <div className="grid grid-cols-3 gap-4 pt-2">
               <div>
                 <p className="text-muted-foreground text-sm">Total Amount</p>
-                <p className="text-lg font-semibold">${total.toFixed(2)}</p>
+                <p className="text-lg font-semibold">€{total.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Paid</p>
-                <p className="text-lg font-semibold text-green-600">${paid.toFixed(2)}</p>
+                <p className="text-lg font-semibold text-green-600">€{paid.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Remaining</p>
-                <p className="text-lg font-semibold text-orange-600">${remaining.toFixed(2)}</p>
+                <p className="text-lg font-semibold text-orange-600">€{remaining.toFixed(2)}</p>
               </div>
             </div>
           </div>
@@ -124,7 +124,7 @@ export function PaymentTracker({
                           {new Date(payment.paymentDate).toLocaleDateString()}
                         </td>
                         <td className="p-3 text-sm font-medium">
-                          ${parseFloat(payment.amount).toFixed(2)}
+                          €{parseFloat(payment.amount).toFixed(2)}
                         </td>
                         <td className="p-3 text-sm capitalize">
                           {payment.paymentMethod?.replace('_', ' ') || '-'}

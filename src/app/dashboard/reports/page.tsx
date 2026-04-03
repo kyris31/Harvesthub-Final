@@ -39,7 +39,7 @@ export default async function ReportsPage() {
         { label: 'Expenses', value: `€${financial.expenses.total.toFixed(2)}` },
         {
           label: 'Net Profit',
-          value: `€${financial.profit.total.toFixed(2)}`,
+          value: `€€{financial.profit.total.toFixed(2)}`,
           trend: financial.profit.total >= 0 ? 'up' : 'down',
         },
       ],
@@ -60,7 +60,7 @@ export default async function ReportsPage() {
       icon: Package,
       href: '/dashboard/reports/inventory',
       stats: [
-        { label: 'Total Value', value: `€${inventory.totalValue.toFixed(2)}` },
+        { label: 'Total Value', value: `€€{inventory.totalValue.toFixed(2)}` },
         {
           label: 'Low Stock Items',
           value: inventory.lowStockCount.toString(),
@@ -75,7 +75,7 @@ export default async function ReportsPage() {
       href: '/dashboard/reports/cultivation',
       stats: [
         { label: 'Activities', value: cultivation.totalActivities.toString() },
-        { label: 'Total Cost', value: `€${cultivation.totalCost.toFixed(2)}` },
+        { label: 'Total Cost', value: `€€{cultivation.totalCost.toFixed(2)}` },
       ],
     },
     {
@@ -111,7 +111,7 @@ export default async function ReportsPage() {
             )}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${financial.profit.total.toFixed(2)}</div>
+            <div className="text-2xl font-bold">€{financial.profit.total.toFixed(2)}</div>
             <p className="text-muted-foreground text-xs">
               {financial.profit.margin.toFixed(1)}% profit margin
             </p>
@@ -135,7 +135,7 @@ export default async function ReportsPage() {
             <Package className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${inventory.totalValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">€{inventory.totalValue.toFixed(2)}</div>
             <p className="text-muted-foreground text-xs">
               {inventory.lowStockCount} low stock items
             </p>
@@ -150,7 +150,7 @@ export default async function ReportsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{cultivation.totalActivities}</div>
             <p className="text-muted-foreground text-xs">
-              ${cultivation.totalCost.toFixed(2)} total cost
+              €{cultivation.totalCost.toFixed(2)} total cost
             </p>
           </CardContent>
         </Card>

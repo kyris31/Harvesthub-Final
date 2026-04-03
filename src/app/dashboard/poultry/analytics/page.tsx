@@ -54,7 +54,7 @@ export default async function PoultryAnalyticsPage() {
               <DollarSign className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalInvestment.toFixed(2)}</div>
+              <div className="text-2xl font-bold">€{totalInvestment.toFixed(2)}</div>
               <p className="text-muted-foreground text-xs">
                 {totalBirds} birds across {activeFlocks.length} flocks
               </p>
@@ -67,7 +67,7 @@ export default async function PoultryAnalyticsPage() {
               <TrendingUp className="text-success h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-success text-2xl font-bold">${monthlyEggRevenue.toFixed(2)}</div>
+              <div className="text-success text-2xl font-bold">€{monthlyEggRevenue.toFixed(2)}</div>
               <p className="text-muted-foreground text-xs">From {monthTotal} eggs</p>
             </CardContent>
           </Card>
@@ -79,7 +79,7 @@ export default async function PoultryAnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-destructive text-2xl font-bold">
-                ${monthlyFeedCost.toFixed(2)}
+                €{monthlyFeedCost.toFixed(2)}
               </div>
               <p className="text-muted-foreground text-xs">Estimated consumption</p>
             </CardContent>
@@ -98,7 +98,7 @@ export default async function PoultryAnalyticsPage() {
               <div
                 className={`text-2xl font-bold ${monthlyProfit >= 0 ? 'text-success' : 'text-destructive'}`}
               >
-                ${Math.abs(monthlyProfit).toFixed(2)}
+                €{Math.abs(monthlyProfit).toFixed(2)}
               </div>
               <p className="text-muted-foreground text-xs">{profitMargin.toFixed(1)}% margin</p>
             </CardContent>
@@ -134,7 +134,7 @@ export default async function PoultryAnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${monthTotal > 0 ? (monthlyFeedCost / monthTotal).toFixed(3) : '0.000'}
+                €{monthTotal > 0 ? (monthlyFeedCost / monthTotal).toFixed(3) : '0.000'}
               </div>
               <p className="text-muted-foreground text-xs">Feed cost per egg</p>
             </CardContent>
@@ -179,11 +179,11 @@ export default async function PoultryAnalyticsPage() {
                   <div className="grid grid-cols-3 gap-8 text-right">
                     <div>
                       <p className="text-muted-foreground text-sm">Investment</p>
-                      <p className="font-semibold">${flockInvestment.toFixed(2)}</p>
+                      <p className="font-semibold">€{flockInvestment.toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground text-sm">Cost/Bird</p>
-                      <p className="font-semibold">${costPerBird.toFixed(2)}</p>
+                      <p className="font-semibold">€{costPerBird.toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground text-sm">Survival</p>
@@ -214,14 +214,14 @@ export default async function PoultryAnalyticsPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Total Investment:</span>
-                    <span className="font-medium">${totalInvestment.toFixed(2)}</span>
+                    <span className="font-medium">€{totalInvestment.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Monthly Profit:</span>
                     <span
                       className={`font-medium ${monthlyProfit >= 0 ? 'text-success' : 'text-destructive'}`}
                     >
-                      ${monthlyProfit.toFixed(2)}
+                      €{monthlyProfit.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between border-t pt-2">
@@ -239,13 +239,13 @@ export default async function PoultryAnalyticsPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Revenue per Bird:</span>
                     <span className="font-medium">
-                      ${totalBirds > 0 ? (monthlyEggRevenue / totalBirds).toFixed(2) : '0.00'}
+                      €{totalBirds > 0 ? (monthlyEggRevenue / totalBirds).toFixed(2) : '0.00'}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Feed Cost per Bird:</span>
                     <span className="font-medium">
-                      ${totalBirds > 0 ? (monthlyFeedCost / totalBirds).toFixed(2) : '0.00'}
+                      €{totalBirds > 0 ? (monthlyFeedCost / totalBirds).toFixed(2) : '0.00'}
                     </span>
                   </div>
                   <div className="flex justify-between border-t pt-2">
@@ -253,7 +253,7 @@ export default async function PoultryAnalyticsPage() {
                     <span
                       className={`font-medium ${monthlyProfit >= 0 ? 'text-success' : 'text-destructive'}`}
                     >
-                      ${totalBirds > 0 ? (monthlyProfit / totalBirds).toFixed(2) : '0.00'}
+                      €{totalBirds > 0 ? (monthlyProfit / totalBirds).toFixed(2) : '0.00'}
                     </span>
                   </div>
                 </div>

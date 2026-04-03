@@ -41,7 +41,7 @@ export default async function SalesPage() {
             <DollarSign className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">€{totalRevenue.toFixed(2)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -49,7 +49,7 @@ export default async function SalesPage() {
             <CardTitle className="text-sm font-medium">Amount Paid</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalPaid.toFixed(2)}</div>
+            <div className="text-2xl font-bold">€{totalPaid.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
@@ -87,7 +87,7 @@ export default async function SalesPage() {
                     <TableCell>{new Date(sale.saleDate).toLocaleDateString()}</TableCell>
                     <TableCell>{sale.customer?.name || 'Walk-in'}</TableCell>
                     <TableCell className="font-medium">
-                      ${parseFloat(sale.totalAmount).toFixed(2)}
+                      €{parseFloat(sale.totalAmount).toFixed(2)}
                     </TableCell>
                     <TableCell>
                       <Badge

@@ -116,14 +116,14 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
                     )}
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold">${parseFloat(item.lineTotal).toFixed(2)}</div>
+                    <div className="font-semibold">€{parseFloat(item.lineTotal).toFixed(2)}</div>
                   </div>
                 </div>
                 <div className="text-muted-foreground grid grid-cols-3 gap-4 text-sm">
                   <div>
                     Quantity: {item.quantity} {item.unit}
                   </div>
-                  <div>Price/Unit: ${parseFloat(item.pricePerUnit).toFixed(2)}</div>
+                  <div>Price/Unit: €{parseFloat(item.pricePerUnit).toFixed(2)}</div>
                   <div>
                     {item.createdInventoryId && (
                       <div className="flex items-center gap-1 text-green-600">
@@ -143,11 +143,11 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
           <div className="mt-6 space-y-2 border-t pt-4">
             <div className="text-muted-foreground flex justify-between">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>€{subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-lg font-bold">
               <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>€{total.toFixed(2)}</span>
             </div>
           </div>
         </CardContent>
