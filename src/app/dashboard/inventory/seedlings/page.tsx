@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowUpDown } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -12,6 +12,15 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { SeedlingPurchaseFormDialog } from '@/components/inventory/seedling-purchase-form-dialog'
 
 interface PurchasedSeedling {
@@ -31,6 +40,9 @@ export default function PurchasedSeedlingsPage() {
   const [seedlings, setSeedlings] = useState<PurchasedSeedling[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState('cropName')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   const fetchSeedlings = async () => {
     try {
@@ -95,6 +107,40 @@ export default function PurchasedSeedlingsPage() {
     )
   }
 
+  const filtered = seedlings
+    .filter((s) => {
+      if (!search) return true
+      const q = search.toLowerCase()
+      return (
+        s.cropName.toLowerCase().includes(q) ||
+        (s.cropVariety?.toLowerCase().includes(q) ?? false) ||
+        (s.supplierName?.toLowerCase().includes(q) ?? false)
+      )
+    })
+    .sort((a, b) => {
+      let valA: string
+      let valB: string
+      if (sortBy === 'purchaseDate') {
+        valA = a.purchaseDate ?? ''
+        valB = b.purchaseDate ?? ''
+      } else {
+        valA = a.cropName + (a.cropVariety ?? '')
+        valB = b.cropName + (b.cropVariety ?? '')
+      }
+      const cmp = valA.localeCompare(valB)
+      return sortOrder === 'desc' ? -cmp : cmp
+    })
+
+  const isDefault = sortBy === 'cropName' && sortOrder === 'asc'
+  const sortOrderLabel =
+    sortBy === 'purchaseDate'
+      ? sortOrder === 'asc'
+        ? 'Oldest'
+        : 'Newest'
+      : sortOrder === 'asc'
+        ? 'A → Z'
+        : 'Z → A'
+
   const totalPurchases = seedlings.length
   const usedUp = seedlings.filter((s) => parseFloat(s.currentQuantity) === 0).length
   const lowStock = seedlings.filter((s) => {
@@ -121,6 +167,49 @@ export default function PurchasedSeedlingsPage() {
           </p>
         </div>
         <SeedlingPurchaseFormDialog onSuccess={fetchSeedlings} />
+      </div>
+
+      {/* Search + Filters */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Input
+          placeholder="Search by crop or supplier..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cropName">Crop Name</SelectItem>
+              <SelectItem value="purchaseDate">Purchase Date</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
+            className="flex items-center gap-2"
+          >
+            <ArrowUpDown className="h-4 w-4" />
+            {sortOrderLabel}
+          </Button>
+          {!isDefault && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSortBy('cropName')
+                setSortOrder('asc')
+              }}
+              className="text-muted-foreground"
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -152,7 +241,17 @@ export default function PurchasedSeedlingsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {seedlings.map((seedling) => {
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-muted-foreground py-10 text-center text-sm"
+                  >
+                    No seedlings match your search.
+                  </TableCell>
+                </TableRow>
+              ) : null}
+              {filtered.map((seedling) => {
                 const stockStatus = getStockStatus(
                   seedling.currentQuantity,
                   seedling.quantityPurchased
