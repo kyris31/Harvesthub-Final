@@ -39,7 +39,7 @@ export default async function ReportsPage() {
         { label: 'Expenses', value: `€${financial.expenses.total.toFixed(2)}` },
         {
           label: 'Net Profit',
-          value: `€€{financial.profit.total.toFixed(2)}`,
+          value: `€${financial.profit.total.toFixed(2)}`,
           trend: financial.profit.total >= 0 ? 'up' : 'down',
         },
       ],
@@ -60,7 +60,7 @@ export default async function ReportsPage() {
       icon: Package,
       href: '/dashboard/reports/inventory',
       stats: [
-        { label: 'Total Value', value: `€€{inventory.totalValue.toFixed(2)}` },
+        { label: 'Total Value', value: `€${inventory.totalValue.toFixed(2)}` },
         {
           label: 'Low Stock Items',
           value: inventory.lowStockCount.toString(),
@@ -75,7 +75,7 @@ export default async function ReportsPage() {
       href: '/dashboard/reports/cultivation',
       stats: [
         { label: 'Activities', value: cultivation.totalActivities.toString() },
-        { label: 'Total Cost', value: `€€{cultivation.totalCost.toFixed(2)}` },
+        { label: 'Total Cost', value: `€${cultivation.totalCost.toFixed(2)}` },
       ],
     },
     {
