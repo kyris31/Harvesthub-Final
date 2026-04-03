@@ -64,8 +64,8 @@ export function Sidebar() {
           <Image
             src="/logo.png"
             alt="Bio & Fresh"
-            width={120}
-            height={48}
+            width={72}
+            height={29}
             className="object-contain transition-opacity group-hover:opacity-80"
             priority
           />
@@ -97,8 +97,8 @@ export function MobileNav() {
               <Image
                 src="/logo.png"
                 alt="Bio & Fresh"
-                width={120}
-                height={48}
+                width={72}
+                height={29}
                 className="object-contain"
                 priority
               />
