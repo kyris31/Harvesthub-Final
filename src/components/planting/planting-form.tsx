@@ -33,13 +33,25 @@ import { useToast } from '@/hooks/use-toast'
 interface PlantingFormProps {
   crops: Array<{ id: string; name: string; variety: string | null }>
   plots: Array<{ id: string; name: string; areaSqm: string | null }>
-  seedBatches?: Array<{ id: string; batchCode: string; crop: { name: string } }>
+  seedBatches?: Array<{
+    id: string
+    batchCode: string
+    currentQuantity: string
+    quantityUnit: string
+    crop: { name: string; variety: string | null }
+  }>
   selfProducedSeedlings?: Array<{
     id: string
-    crop: { name: string }
+    crop: { name: string; variety: string | null }
     productionDate: string | null
+    currentSeedlingsAvailable: number | null
   }>
-  purchasedSeedlings?: Array<{ id: string; crop: { name: string }; purchaseDate: string | null }>
+  purchasedSeedlings?: Array<{
+    id: string
+    crop: { name: string; variety: string | null }
+    purchaseDate: string | null
+    currentQuantity: number | null
+  }>
   defaultValues?: PlantingLogFormData & { id?: string }
   mode: 'create' | 'edit'
 }
@@ -188,7 +200,9 @@ export function PlantingForm({
                   <SelectContent>
                     {seedBatches.map((batch) => (
                       <SelectItem key={batch.id} value={batch.id}>
-                        {batch.batchCode} - {batch.crop.name}
+                        {batch.crop.name}
+                        {batch.crop.variety ? ` - ${batch.crop.variety}` : ''} (Batch:{' '}
+                        {batch.batchCode}) — Avail: {batch.currentQuantity} {batch.quantityUnit}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -216,7 +230,10 @@ export function PlantingForm({
                   <SelectContent>
                     {selfProducedSeedlings.map((seedling) => (
                       <SelectItem key={seedling.id} value={seedling.id}>
-                        {seedling.crop.name} - {seedling.productionDate || 'No date'}
+                        {seedling.crop.name}
+                        {seedling.crop.variety ? ` - ${seedling.crop.variety}` : ''} — Sown:{' '}
+                        {seedling.productionDate || 'No date'} (Avail:{' '}
+                        {seedling.currentSeedlingsAvailable ?? 0})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -244,7 +261,10 @@ export function PlantingForm({
                   <SelectContent>
                     {purchasedSeedlings.map((seedling) => (
                       <SelectItem key={seedling.id} value={seedling.id}>
-                        {seedling.crop.name} - {seedling.purchaseDate || 'No date'}
+                        {seedling.crop.name}
+                        {seedling.crop.variety ? ` - ${seedling.crop.variety}` : ''} — Purchased:{' '}
+                        {seedling.purchaseDate || 'No date'} (Avail: {seedling.currentQuantity ?? 0}
+                        )
                       </SelectItem>
                     ))}
                   </SelectContent>

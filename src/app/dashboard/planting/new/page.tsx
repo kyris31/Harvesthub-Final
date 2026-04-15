@@ -1,8 +1,20 @@
 import { PlantingForm } from '@/components/planting/planting-form'
-import { getCropsForSelect, getPlotsForSelect } from '@/app/actions/form-helpers'
+import {
+  getCropsForSelect,
+  getPlotsForSelect,
+  getSeedBatchesForSelect,
+  getSelfProducedSeedlingsForSelect,
+  getPurchasedSeedlingsForSelect,
+} from '@/app/actions/form-helpers'
 
 export default async function NewPlantingPage() {
-  const [crops, plots] = await Promise.all([getCropsForSelect(), getPlotsForSelect()])
+  const [crops, plots, seedBatches, selfProducedSeedlings, purchasedSeedlings] = await Promise.all([
+    getCropsForSelect(),
+    getPlotsForSelect(),
+    getSeedBatchesForSelect(),
+    getSelfProducedSeedlingsForSelect(),
+    getPurchasedSeedlingsForSelect(),
+  ])
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -11,7 +23,14 @@ export default async function NewPlantingPage() {
         <p className="text-muted-foreground">Record a new crop planting</p>
       </div>
 
-      <PlantingForm mode="create" crops={crops} plots={plots} />
+      <PlantingForm
+        mode="create"
+        crops={crops}
+        plots={plots}
+        seedBatches={seedBatches}
+        selfProducedSeedlings={selfProducedSeedlings}
+        purchasedSeedlings={purchasedSeedlings}
+      />
     </div>
   )
 }

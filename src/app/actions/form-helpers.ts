@@ -3,7 +3,17 @@
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { crops, plots, plantingLogs, suppliers, harvestLogs, eggProduction } from '@/lib/db/schema'
+import {
+  crops,
+  plots,
+  plantingLogs,
+  suppliers,
+  harvestLogs,
+  eggProduction,
+  seedBatches,
+  seedlingProductionLogs,
+  purchasedSeedlings,
+} from '@/lib/db/schema'
 import { and, eq, isNull, gt, sql, asc } from 'drizzle-orm'
 
 export async function getCropsForSelect() {
@@ -24,6 +34,111 @@ export async function getCropsForSelect() {
     },
     orderBy: (crops, { asc }) => [asc(crops.name)],
   })
+}
+
+export async function getSeedBatchesForSelect() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
+
+  const rows = await db.query.seedBatches.findMany({
+    where: and(
+      eq(seedBatches.userId, session.user.id),
+      isNull(seedBatches.deletedAt),
+      gt(seedBatches.currentQuantity, '0')
+    ),
+    columns: {
+      id: true,
+      batchCode: true,
+      currentQuantity: true,
+      quantityUnit: true,
+    },
+    with: {
+      crop: { columns: { name: true, variety: true } },
+    },
+    orderBy: (sb, { asc }) => [asc(sb.cropId)],
+  })
+
+  return rows
+    .map((b) => ({
+      id: b.id,
+      batchCode: b.batchCode,
+      currentQuantity: b.currentQuantity,
+      quantityUnit: b.quantityUnit,
+      crop: b.crop,
+    }))
+    .sort((a, b) =>
+      `${a.crop.name} ${a.crop.variety ?? ''}`.localeCompare(
+        `${b.crop.name} ${b.crop.variety ?? ''}`
+      )
+    )
+}
+
+export async function getSelfProducedSeedlingsForSelect() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
+
+  const rows = await db.query.seedlingProductionLogs.findMany({
+    where: and(
+      eq(seedlingProductionLogs.userId, session.user.id),
+      isNull(seedlingProductionLogs.deletedAt),
+      gt(seedlingProductionLogs.currentSeedlingsAvailable, 0)
+    ),
+    columns: {
+      id: true,
+      sowingDate: true,
+      currentSeedlingsAvailable: true,
+    },
+    with: {
+      crop: { columns: { name: true, variety: true } },
+    },
+  })
+
+  return rows
+    .map((s) => ({
+      id: s.id,
+      productionDate: s.sowingDate,
+      currentSeedlingsAvailable: s.currentSeedlingsAvailable,
+      crop: s.crop,
+    }))
+    .sort((a, b) =>
+      `${a.crop.name} ${a.crop.variety ?? ''}`.localeCompare(
+        `${b.crop.name} ${b.crop.variety ?? ''}`
+      )
+    )
+}
+
+export async function getPurchasedSeedlingsForSelect() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
+
+  const rows = await db.query.purchasedSeedlings.findMany({
+    where: and(
+      eq(purchasedSeedlings.userId, session.user.id),
+      isNull(purchasedSeedlings.deletedAt),
+      gt(purchasedSeedlings.currentQuantity, 0)
+    ),
+    columns: {
+      id: true,
+      purchaseDate: true,
+      currentQuantity: true,
+    },
+    with: {
+      crop: { columns: { name: true, variety: true } },
+    },
+  })
+
+  return rows
+    .map((s) => ({
+      id: s.id,
+      purchaseDate: s.purchaseDate,
+      currentQuantity: s.currentQuantity,
+      crop: s.crop,
+    }))
+    .sort((a, b) =>
+      `${a.crop.name} ${a.crop.variety ?? ''}`.localeCompare(
+        `${b.crop.name} ${b.crop.variety ?? ''}`
+      )
+    )
 }
 
 export async function getPlotsForSelect() {
