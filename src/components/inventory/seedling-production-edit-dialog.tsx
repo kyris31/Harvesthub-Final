@@ -45,6 +45,7 @@ export function SeedlingProductionEditDialog({ record, onSuccess }: Props) {
 
   const form = useForm({
     defaultValues: {
+      sowingDate: record.sowingDate,
       actualSeedlingsProduced: record.actualSeedlingsProduced.toString(),
       currentSeedlingsAvailable: record.currentSeedlingsAvailable.toString(),
       nurseryLocation: record.nurseryLocation ?? '',
@@ -66,6 +67,7 @@ export function SeedlingProductionEditDialog({ record, onSuccess }: Props) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          sowingDate: data.sowingDate,
           actualSeedlingsProduced: actual,
           currentSeedlingsAvailable: available,
           nurseryLocation: data.nurseryLocation,
@@ -100,6 +102,19 @@ export function SeedlingProductionEditDialog({ record, onSuccess }: Props) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="sowingDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sowing Date *</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

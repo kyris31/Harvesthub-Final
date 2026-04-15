@@ -7,6 +7,7 @@ import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 
 const updateSchema = z.object({
+  sowingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   actualSeedlingsProduced: z.number().int().min(0),
   currentSeedlingsAvailable: z.number().int().min(0),
   nurseryLocation: z.string().optional().or(z.literal('')),
@@ -30,6 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const [updated] = await db
       .update(seedlingProductionLogs)
       .set({
+        sowingDate: data.sowingDate,
         actualSeedlingsProduced: data.actualSeedlingsProduced,
         currentSeedlingsAvailable: Math.min(
           data.currentSeedlingsAvailable,
