@@ -76,7 +76,9 @@ export default async function HarvestsPage() {
                           ` (${harvest.plantingLog.crop.variety})`}
                       </Link>
                     </TableCell>
-                    <TableCell>{new Date(harvest.harvestDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(harvest.harvestDate).toLocaleDateString('en-GB')}
+                    </TableCell>
                     <TableCell>
                       {harvest.quantityHarvested} {harvest.quantityUnit}
                     </TableCell>

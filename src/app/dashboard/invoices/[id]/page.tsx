@@ -40,7 +40,7 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
             <h1 className="text-3xl font-bold tracking-tight">Invoice {invoice.invoiceNumber}</h1>
             <p className="text-muted-foreground">
               {invoice.supplier?.name || 'No supplier'} •{' '}
-              {new Date(invoice.invoiceDate).toLocaleDateString()}
+              {new Date(invoice.invoiceDate).toLocaleDateString('en-GB')}
             </p>
           </div>
         </div>
@@ -78,13 +78,13 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
             <div>
               <div className="text-muted-foreground text-sm">Invoice Date</div>
               <div className="font-medium">
-                {new Date(invoice.invoiceDate).toLocaleDateString()}
+                {new Date(invoice.invoiceDate).toLocaleDateString('en-GB')}
               </div>
             </div>
             <div>
               <div className="text-muted-foreground text-sm">Due Date</div>
               <div className="font-medium">
-                {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}
+                {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-GB') : '-'}
               </div>
             </div>
             {invoice.notes && (

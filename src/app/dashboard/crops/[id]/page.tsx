@@ -64,7 +64,7 @@ export default async function CropDetailPage({ params }: CropDetailPageProps) {
             </div>
             <div>
               <p className="text-muted-foreground text-sm font-medium">Created</p>
-              <p className="text-base">{new Date(crop.createdAt).toLocaleDateString()}</p>
+              <p className="text-base">{new Date(crop.createdAt).toLocaleDateString('en-GB')}</p>
             </div>
           </div>
           {crop.description && (

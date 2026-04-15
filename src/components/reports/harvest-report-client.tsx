@@ -30,7 +30,7 @@ export default function HarvestReportClient({ initialData }: HarvestReportProps)
 
   const handleExportCSV = () => {
     const csvData = data.harvests.map((h) => ({
-      date: new Date(h.harvestDate).toLocaleDateString(),
+      date: new Date(h.harvestDate).toLocaleDateString('en-GB'),
       harvested: `${Number(h.quantityHarvested).toFixed(2)} ${h.quantityUnit}`,
       currentStock: `${Number(h.currentStock).toFixed(2)} ${h.quantityUnit}`,
       grade: h.qualityGrade || 'N/A',

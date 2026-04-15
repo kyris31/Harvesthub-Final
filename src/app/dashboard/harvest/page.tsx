@@ -133,7 +133,7 @@ export default function HarvestPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-sm">
-                    {new Date(harvest.harvestDate).toLocaleDateString()}
+                    {new Date(harvest.harvestDate).toLocaleDateString('en-GB')}
                     <span className="text-muted-foreground block text-xs">
                       {formatDistanceToNow(new Date(harvest.harvestDate), {
                         addSuffix: true,

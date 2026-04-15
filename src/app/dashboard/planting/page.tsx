@@ -77,13 +77,15 @@ export default async function PlantingPage() {
                       </Link>
                     </TableCell>
                     <TableCell>{planting.plot?.name || '-'}</TableCell>
-                    <TableCell>{new Date(planting.plantingDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(planting.plantingDate).toLocaleDateString('en-GB')}
+                    </TableCell>
                     <TableCell>
                       {planting.quantityPlanted} {planting.quantityUnit}
                     </TableCell>
                     <TableCell>
                       {planting.expectedHarvestDate
-                        ? new Date(planting.expectedHarvestDate).toLocaleDateString()
+                        ? new Date(planting.expectedHarvestDate).toLocaleDateString('en-GB')
                         : '-'}
                     </TableCell>
                     <TableCell>

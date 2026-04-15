@@ -17,8 +17,22 @@ type PlantingLog = {
   quantityUnit: string | null
   expectedHarvestDate: string | null
   status: string | null
+  plantingSource: string | null
   crop: { name: string; variety: string | null } | null
   plot: { name: string } | null
+}
+
+const sourceLabel = (source: string | null) => {
+  switch (source) {
+    case 'direct_sow':
+      return 'Direct Sow'
+    case 'self_produced':
+      return 'Self-Produced'
+    case 'purchased':
+      return 'Purchased'
+    default:
+      return '—'
+  }
 }
 
 type PlantingReportData = {
@@ -70,12 +84,13 @@ export default function PlantingReportClient({
     const csvData = data.logs.map((l) => ({
       crop: `${l.crop?.name ?? '—'}${l.crop?.variety ? ` - ${l.crop.variety}` : ''}`,
       plot: l.plot?.name ?? '—',
-      plantingDate: l.plantingDate ? new Date(l.plantingDate).toLocaleDateString() : '—',
+      plantingDate: l.plantingDate ? new Date(l.plantingDate).toLocaleDateString('en-GB') : '—',
       quantity: `${l.quantityPlanted ?? '—'} ${l.quantityUnit ?? ''}`.trim(),
       expectedHarvest: l.expectedHarvestDate
-        ? new Date(l.expectedHarvestDate).toLocaleDateString()
+        ? new Date(l.expectedHarvestDate).toLocaleDateString('en-GB')
         : '—',
       status: l.status ?? '—',
+      source: sourceLabel(l.plantingSource),
     }))
     exportToCSV(csvData, 'planting-report')
   }
@@ -181,7 +196,8 @@ export default function PlantingReportClient({
                     <th className="pr-4 pb-3 font-medium">Planting Date</th>
                     <th className="pr-4 pb-3 font-medium">Quantity</th>
                     <th className="pr-4 pb-3 font-medium">Expected Harvest</th>
-                    <th className="pb-3 font-medium">Status</th>
+                    <th className="pr-4 pb-3 font-medium">Status</th>
+                    <th className="pb-3 font-medium">Source</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -197,7 +213,9 @@ export default function PlantingReportClient({
                       </td>
                       <td className="text-muted-foreground py-3 pr-4">{log.plot?.name ?? '—'}</td>
                       <td className="py-3 pr-4">
-                        {log.plantingDate ? new Date(log.plantingDate).toLocaleDateString() : '—'}
+                        {log.plantingDate
+                          ? new Date(log.plantingDate).toLocaleDateString('en-GB')
+                          : '—'}
                       </td>
                       <td className="py-3 pr-4">
                         {log.quantityPlanted
@@ -206,11 +224,14 @@ export default function PlantingReportClient({
                       </td>
                       <td className="text-muted-foreground py-3 pr-4">
                         {log.expectedHarvestDate
-                          ? new Date(log.expectedHarvestDate).toLocaleDateString()
+                          ? new Date(log.expectedHarvestDate).toLocaleDateString('en-GB')
                           : '—'}
                       </td>
-                      <td className="py-3">
+                      <td className="py-3 pr-4">
                         <Badge variant={statusVariant(log.status)}>{log.status ?? '—'}</Badge>
+                      </td>
+                      <td className="text-muted-foreground py-3 text-xs">
+                        {sourceLabel(log.plantingSource)}
                       </td>
                     </tr>
                   ))}

@@ -121,7 +121,7 @@ export function PaymentTracker({
                     {payments.map((payment) => (
                       <tr key={payment.id} className="hover:bg-muted/30 border-b last:border-0">
                         <td className="p-3 text-sm">
-                          {new Date(payment.paymentDate).toLocaleDateString()}
+                          {new Date(payment.paymentDate).toLocaleDateString('en-GB')}
                         </td>
                         <td className="p-3 text-sm font-medium">
                           €{parseFloat(payment.amount).toFixed(2)}

@@ -99,7 +99,9 @@ export default async function SupplierInvoicesPage() {
                   <TableRow key={invoice.id}>
                     <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                     <TableCell>{invoice.supplier?.name || '-'}</TableCell>
-                    <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(invoice.invoiceDate).toLocaleDateString('en-GB')}
+                    </TableCell>
                     <TableCell>{invoice.items.length} items</TableCell>
                     <TableCell className="font-medium">
                       €{parseFloat(invoice.totalAmount).toFixed(2)}

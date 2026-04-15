@@ -84,7 +84,7 @@ export default async function SalesPage() {
               <TableBody>
                 {salesData.map((sale) => (
                   <TableRow key={sale.id}>
-                    <TableCell>{new Date(sale.saleDate).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(sale.saleDate).toLocaleDateString('en-GB')}</TableCell>
                     <TableCell>{sale.customer?.name || 'Walk-in'}</TableCell>
                     <TableCell className="font-medium">
                       €{parseFloat(sale.totalAmount).toFixed(2)}

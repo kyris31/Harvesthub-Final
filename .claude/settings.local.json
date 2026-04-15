@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep:*)",
+      "Bash(pnpm build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(p['lint-staged'], null, 2\\)\\)\")",
+      "Bash(npm list:*)",
+      "Bash(npx next:*)",
+      "Bash(node -e ':*)",
+      "Bash(find /c/Users/e53638/Desktop/FarmManagement/harvesthub-v2/src -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -exec grep -l \"seedling.*production\\\\|production.*seedling\" -i {} \\\\;)",
+      "Bash(npx shadcn@latest add tabs --yes)",
+      "Bash(pnpm add:*)",
+      "Bash(ls \"C:\\\\Users\\\\e53638\\\\Desktop\\\\FarmManagement\\\\harvesthub-v2\\\\node_modules\\\\@fontsource\\\\noto-sans\\\\files\\\\\" | grep -E \"noto-sans-greek.*400.*normal)",
+      "Bash(noto-sans-latin.*400.*normal\" | head -10)",
+      "Bash(node:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(grep:*)"
+    ]
+  }
+}

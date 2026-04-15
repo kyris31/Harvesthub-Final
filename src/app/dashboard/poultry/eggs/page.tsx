@@ -116,7 +116,7 @@ export default async function EggProductionPage() {
                     {records.map((record) => (
                       <tr key={record.id} className="hover:bg-muted/50 border-b">
                         <td className="p-3">
-                          {new Date(record.collectionDate).toLocaleDateString()}
+                          {new Date(record.collectionDate).toLocaleDateString('en-GB')}
                         </td>
                         <td className="p-3">
                           {flocks.find((f) => f.id === record.flockId)?.name || 'Unknown'}

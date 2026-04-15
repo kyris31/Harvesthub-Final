@@ -123,7 +123,7 @@ export default async function CultivationPage() {
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{activityTypeLabels[activity.activityType]}</p>
                         <Badge variant="outline">
-                          {new Date(activity.activityDate).toLocaleDateString()}
+                          {new Date(activity.activityDate).toLocaleDateString('en-GB')}
                         </Badge>
                       </div>
                       {activity.plantingLog && (

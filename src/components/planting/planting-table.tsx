@@ -95,7 +95,7 @@ export function PlantingTable({ plantings, onRefresh }: PlantingTableProps) {
               </TableCell>
               <TableCell className="text-muted-foreground">{planting.plotName || '-'}</TableCell>
               <TableCell className="text-sm">
-                {new Date(planting.plantingDate).toLocaleDateString()}
+                {new Date(planting.plantingDate).toLocaleDateString('en-GB')}
                 <span className="text-muted-foreground block text-xs">
                   {formatDistanceToNow(new Date(planting.plantingDate), {
                     addSuffix: true,
@@ -107,7 +107,7 @@ export function PlantingTable({ plantings, onRefresh }: PlantingTableProps) {
               </TableCell>
               <TableCell className="text-sm">
                 {planting.expectedHarvestDate
-                  ? new Date(planting.expectedHarvestDate).toLocaleDateString()
+                  ? new Date(planting.expectedHarvestDate).toLocaleDateString('en-GB')
                   : '-'}
               </TableCell>
               <TableCell>

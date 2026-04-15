@@ -107,7 +107,7 @@ export function HarvestFormDialog({ planting, onSuccess }: HarvestFormDialogProp
           <DialogTitle>Record Harvest</DialogTitle>
           <DialogDescription>
             Record harvest for <strong>{planting.cropName}</strong> planted on{' '}
-            {new Date(planting.plantingDate).toLocaleDateString()}
+            {new Date(planting.plantingDate).toLocaleDateString('en-GB')}
           </DialogDescription>
         </DialogHeader>
 

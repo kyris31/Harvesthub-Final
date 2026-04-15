@@ -36,7 +36,7 @@ export default async function PlantingDetailPage({ params }: PlantingDetailPageP
             {planting.crop.variety && ` (${planting.crop.variety})`}
           </h1>
           <p className="text-muted-foreground">
-            Planted on {new Date(planting.plantingDate).toLocaleDateString()}
+            Planted on {new Date(planting.plantingDate).toLocaleDateString('en-GB')}
           </p>
         </div>
         <Button asChild>
@@ -68,7 +68,9 @@ export default async function PlantingDetailPage({ params }: PlantingDetailPageP
             </div>
             <div>
               <p className="text-muted-foreground text-sm font-medium">Planting Date</p>
-              <p className="text-base">{new Date(planting.plantingDate).toLocaleDateString()}</p>
+              <p className="text-base">
+                {new Date(planting.plantingDate).toLocaleDateString('en-GB')}
+              </p>
             </div>
             <div>
               <p className="text-muted-foreground text-sm font-medium">Quantity Planted</p>
@@ -80,7 +82,7 @@ export default async function PlantingDetailPage({ params }: PlantingDetailPageP
               <p className="text-muted-foreground text-sm font-medium">Expected Harvest</p>
               <p className="text-base">
                 {planting.expectedHarvestDate
-                  ? new Date(planting.expectedHarvestDate).toLocaleDateString()
+                  ? new Date(planting.expectedHarvestDate).toLocaleDateString('en-GB')
                   : 'Not set'}
               </p>
             </div>

@@ -117,7 +117,7 @@ export default async function SeedBatchDetailPage({ params }: SeedBatchDetailPag
               <p className="text-muted-foreground text-sm font-medium">Purchase Date</p>
               <p className="text-base">
                 {batch.purchaseDate
-                  ? new Date(batch.purchaseDate).toLocaleDateString()
+                  ? new Date(batch.purchaseDate).toLocaleDateString('en-GB')
                   : 'Not specified'}
               </p>
             </div>

@@ -91,7 +91,7 @@ function addCompanyHeader(doc: any, logoData: string | null, title: string): num
   // "Generated" date top-right
   doc.setFontSize(8)
   doc.setFont('NotoSans', 'normal')
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 196, 10, { align: 'right' })
+  doc.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, 196, 10, { align: 'right' })
 
   // Horizontal rule
   doc.setDrawColor(180, 180, 180)
@@ -302,7 +302,7 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     const activitiesData = data.activities
       .slice(0, 15)
       .map((a: any) => [
-        new Date(a.activityDate).toLocaleDateString(),
+        new Date(a.activityDate).toLocaleDateString('en-GB'),
         a.activityType.replace('_', ' '),
         a.quantityUsed ? `${a.quantityUsed} ${a.quantityUnit}` : 'N/A',
         a.cost ? `€${Number(a.cost).toFixed(2)}` : 'N/A',
@@ -350,20 +350,28 @@ export async function exportPlantingReportPDF(data: any, startDate: string, endD
     headStyles: { fillColor: [34, 139, 34] },
   })
 
+  const sourceLabelPDF = (source: string | null) => {
+    if (source === 'direct_sow') return 'Direct Sow'
+    if (source === 'self_produced') return 'Self-Produced'
+    if (source === 'purchased') return 'Purchased'
+    return '—'
+  }
+
   const rows = data.logs.map((l: any) => [
     `${l.crop?.name ?? '—'}${l.crop?.variety ? ` - ${l.crop.variety}` : ''}`,
     l.plot?.name ?? '—',
-    l.plantingDate ? new Date(l.plantingDate).toLocaleDateString() : '—',
+    l.plantingDate ? new Date(l.plantingDate).toLocaleDateString('en-GB') : '—',
     `${l.quantityPlanted ?? '—'} ${l.quantityUnit ?? ''}`.trim(),
-    l.expectedHarvestDate ? new Date(l.expectedHarvestDate).toLocaleDateString() : '—',
+    l.expectedHarvestDate ? new Date(l.expectedHarvestDate).toLocaleDateString('en-GB') : '—',
     l.status ?? '—',
+    sourceLabelPDF(l.plantingSource),
   ])
 
   // @ts-ignore
   doc.autoTable({
     startY: doc.lastAutoTable.finalY + 10,
-    head: [['Crop', 'Plot', 'Planting Date', 'Quantity', 'Expected Harvest', 'Status']],
-    body: rows.length > 0 ? rows : [['No planting data', '', '', '', '', '']],
+    head: [['Crop', 'Plot', 'Planting Date', 'Quantity', 'Expected Harvest', 'Status', 'Source']],
+    body: rows.length > 0 ? rows : [['No planting data', '', '', '', '', '', '']],
     styles: { font: 'NotoSans', fontSize: 8 },
     headStyles: { fillColor: [34, 139, 34] },
     columnStyles: { 5: { cellWidth: 22 } },

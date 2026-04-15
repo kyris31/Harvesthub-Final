@@ -36,7 +36,7 @@ export default async function HarvestDetailPage({ params }: HarvestDetailPagePro
             {harvest.plantingLog.crop.variety && ` (${harvest.plantingLog.crop.variety})`}
           </h1>
           <p className="text-muted-foreground">
-            Harvested on {new Date(harvest.harvestDate).toLocaleDateString()}
+            Harvested on {new Date(harvest.harvestDate).toLocaleDateString('en-GB')}
           </p>
         </div>
         <Button asChild>
@@ -68,7 +68,9 @@ export default async function HarvestDetailPage({ params }: HarvestDetailPagePro
             </div>
             <div>
               <p className="text-muted-foreground text-sm font-medium">Harvest Date</p>
-              <p className="text-base">{new Date(harvest.harvestDate).toLocaleDateString()}</p>
+              <p className="text-base">
+                {new Date(harvest.harvestDate).toLocaleDateString('en-GB')}
+              </p>
             </div>
             <div>
               <p className="text-muted-foreground text-sm font-medium">Quantity Harvested</p>
@@ -110,7 +112,7 @@ export default async function HarvestDetailPage({ params }: HarvestDetailPagePro
           <div className="space-y-2">
             <p className="text-sm">
               <span className="font-medium">Planted:</span>{' '}
-              {new Date(harvest.plantingLog.plantingDate).toLocaleDateString()}
+              {new Date(harvest.plantingLog.plantingDate).toLocaleDateString('en-GB')}
             </p>
             <Button variant="outline" size="sm" asChild>
               <Link href={`/dashboard/planting/${harvest.plantingLog.id}`}>

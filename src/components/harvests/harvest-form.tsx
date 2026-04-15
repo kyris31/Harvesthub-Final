@@ -105,7 +105,7 @@ export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps
                   {plantings.map((planting) => (
                     <SelectItem key={planting.id} value={planting.id}>
                       {planting.crop.name} {planting.crop.variety && `(${planting.crop.variety})`} -
-                      Planted {new Date(planting.plantingDate).toLocaleDateString()}
+                      Planted {new Date(planting.plantingDate).toLocaleDateString('en-GB')}
                       {planting.plot && ` in ${planting.plot.name}`}
                     </SelectItem>
                   ))}

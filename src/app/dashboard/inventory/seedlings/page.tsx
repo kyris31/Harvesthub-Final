@@ -299,7 +299,9 @@ export default function SeedlingsPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {s.purchaseDate ? new Date(s.purchaseDate).toLocaleDateString() : '-'}
+                          {s.purchaseDate
+                            ? new Date(s.purchaseDate).toLocaleDateString('en-GB')
+                            : '-'}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {s.supplierName || '-'}
@@ -425,7 +427,7 @@ export default function SeedlingsPage() {
                   {filteredProduction.map((p) => (
                     <TableRow key={p.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell className="text-muted-foreground whitespace-nowrap">
-                        {new Date(p.sowingDate).toLocaleDateString()}
+                        {new Date(p.sowingDate).toLocaleDateString('en-GB')}
                       </TableCell>
                       <TableCell className="font-medium">{p.crop.name}</TableCell>
                       <TableCell className="text-muted-foreground">

@@ -80,7 +80,9 @@ export default async function ExpensesPage() {
               <TableBody>
                 {expensesData.map((expense) => (
                   <TableRow key={expense.id}>
-                    <TableCell>{new Date(expense.expenseDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(expense.expenseDate).toLocaleDateString('en-GB')}
+                    </TableCell>
                     <TableCell className="font-medium">{expense.description}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">

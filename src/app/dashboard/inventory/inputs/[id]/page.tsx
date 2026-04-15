@@ -107,7 +107,7 @@ export default async function InputItemDetailPage({ params }: InputItemDetailPag
               <p className="text-muted-foreground text-sm font-medium">Purchase Date</p>
               <p className="text-base">
                 {item.purchaseDate
-                  ? new Date(item.purchaseDate).toLocaleDateString()
+                  ? new Date(item.purchaseDate).toLocaleDateString('en-GB')
                   : 'Not specified'}
               </p>
             </div>

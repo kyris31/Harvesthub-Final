@@ -42,7 +42,7 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
   const handleExportCSV = () => {
     const csvData = data.activities.map((a: any) => ({
       type: a.activityType.replace('_', ' '),
-      date: new Date(a.activityDate).toLocaleDateString(),
+      date: new Date(a.activityDate).toLocaleDateString('en-GB'),
       quantity: a.quantityUsed ? `${a.quantityUsed} ${a.quantityUnit}` : 'N/A',
       cost: a.cost ? `€${Number(a.cost).toFixed(2)}` : 'N/A',
       notes: a.notes || '',
