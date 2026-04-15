@@ -98,6 +98,11 @@ export function PlantingFormDialog({ mode, planting, onSuccess }: PlantingFormDi
 
       if (batchesRes.ok) {
         const batchesData = await batchesRes.json()
+        batchesData.sort((a: any, b: any) =>
+          `${a.cropName} ${a.cropVariety ?? ''}`.localeCompare(
+            `${b.cropName} ${b.cropVariety ?? ''}`
+          )
+        )
         setSeedBatches(batchesData)
       }
 

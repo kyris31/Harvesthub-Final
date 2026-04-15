@@ -78,7 +78,12 @@ export function SeedlingProductionFormDialog({ onSuccess }: Props) {
       setIsLoading(true)
       const res = await fetch('/api/seed-batches')
       if (res.ok) {
-        const data = await res.json()
+        const data: SeedBatch[] = await res.json()
+        data.sort((a, b) =>
+          `${a.cropName} ${a.cropVariety ?? ''}`.localeCompare(
+            `${b.cropName} ${b.cropVariety ?? ''}`
+          )
+        )
         setSeedBatches(data)
       }
     } finally {
