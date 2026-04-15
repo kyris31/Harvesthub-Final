@@ -35,7 +35,10 @@ export type HarvestLogFormValues = z.infer<typeof harvestLogSchema>
 // Seed batch validation schema
 export const seedBatchSchema = z.object({
   cropId: z.string().uuid('Invalid crop ID'),
-  supplierId: z.string().uuid().optional().nullable(),
+  supplierId: z.preprocess(
+    (val) => (val === 'none' || val === '' ? null : val),
+    z.string().uuid().optional().nullable()
+  ),
   batchCode: z.string().min(1, 'Batch code is required'),
   purchaseDate: z
     .string()
@@ -55,7 +58,10 @@ export type SeedBatchFormValues = z.infer<typeof seedBatchSchema>
 // Purchased seedlings validation schema
 export const purchasedSeedlingSchema = z.object({
   cropId: z.string().uuid('Invalid crop ID'),
-  supplierId: z.string().uuid().optional().nullable(),
+  supplierId: z.preprocess(
+    (val) => (val === 'none' || val === '' ? null : val),
+    z.string().uuid().optional().nullable()
+  ),
   purchaseDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
