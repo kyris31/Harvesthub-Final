@@ -11,6 +11,7 @@ import {
   seedBatches,
   inputInventory,
   purchasedSeedlings,
+  plantingLogs,
 } from '@/lib/db/schema'
 import { and, eq, isNull, gte, lte, sql, count } from 'drizzle-orm'
 
@@ -208,6 +209,33 @@ export async function getInventoryReport() {
     },
     totalValue: seedValue + inputValue + seedlingValue,
     lowStockCount: lowStockInputs.length + lowStockSeedlings.length,
+  }
+}
+
+// Planting Log Report
+export async function getPlantingReport(startDate?: string, endDate?: string) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
+
+  const conditions = [eq(plantingLogs.userId, session.user.id), isNull(plantingLogs.deletedAt)]
+  if (startDate) conditions.push(gte(plantingLogs.plantingDate, startDate))
+  if (endDate) conditions.push(lte(plantingLogs.plantingDate, endDate))
+
+  const logs = await db.query.plantingLogs.findMany({
+    where: and(...conditions),
+    orderBy: (pl, { desc }) => [desc(pl.plantingDate)],
+    with: {
+      crop: { columns: { name: true, variety: true } },
+      plot: { columns: { name: true } },
+    },
+  })
+
+  return {
+    logs,
+    total: logs.length,
+    active: logs.filter((l) => l.status === 'active').length,
+    harvested: logs.filter((l) => l.status === 'harvested').length,
+    failed: logs.filter((l) => l.status === 'failed').length,
   }
 }
 

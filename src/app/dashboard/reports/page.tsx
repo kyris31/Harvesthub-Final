@@ -3,6 +3,7 @@ import {
   getHarvestReport,
   getInventoryReport,
   getCultivationReport,
+  getPlantingReport,
 } from '@/app/actions/reports'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,7 @@ import {
   Activity,
   ArrowUpRight,
   ArrowDownRight,
+  Sprout,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -21,11 +23,12 @@ export default async function ReportsPage() {
   const endDate = new Date().toISOString().split('T')[0]
   const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const [financial, harvest, inventory, cultivation] = await Promise.all([
+  const [financial, harvest, inventory, cultivation, planting] = await Promise.all([
     getFinancialReport(startDate, endDate),
     getHarvestReport(startDate, endDate),
     getInventoryReport(),
     getCultivationReport(startDate, endDate),
+    getPlantingReport(startDate, endDate),
   ])
 
   const reports = [
@@ -76,6 +79,17 @@ export default async function ReportsPage() {
       stats: [
         { label: 'Activities', value: cultivation.totalActivities.toString() },
         { label: 'Total Cost', value: `€${cultivation.totalCost.toFixed(2)}` },
+      ],
+    },
+    {
+      title: 'Planting Log Report',
+      description: 'Overview of crop plantings, status, and expected harvest dates',
+      icon: Sprout,
+      href: '/dashboard/reports/planting',
+      stats: [
+        { label: 'Total Plantings', value: planting.total.toString() },
+        { label: 'Active', value: planting.active.toString() },
+        { label: 'Harvested', value: planting.harvested.toString() },
       ],
     },
     {

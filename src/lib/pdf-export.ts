@@ -325,6 +325,54 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
   downloadPDF(doc, fileName)
 }
 
+export async function exportPlantingReportPDF(data: any, startDate: string, endDate: string) {
+  // @ts-ignore
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+  await setupNotoSans(doc)
+  const logo = await loadLogoDataUrl()
+  const startY = addCompanyHeader(doc, logo, 'Planting Log Report')
+
+  doc.setFontSize(10)
+  doc.text(`Period: ${startDate} to ${endDate}`, 14, startY)
+
+  // @ts-ignore
+  doc.autoTable({
+    startY: startY + 8,
+    head: [['Metric', 'Value']],
+    body: [
+      ['Total Plantings', data.total.toString()],
+      ['Active', data.active.toString()],
+      ['Harvested', data.harvested.toString()],
+      ['Failed', data.failed.toString()],
+    ],
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
+  })
+
+  const rows = data.logs.map((l: any) => [
+    `${l.crop?.name ?? '—'}${l.crop?.variety ? ` - ${l.crop.variety}` : ''}`,
+    l.plot?.name ?? '—',
+    l.plantingDate ? new Date(l.plantingDate).toLocaleDateString() : '—',
+    `${l.quantityPlanted ?? '—'} ${l.quantityUnit ?? ''}`.trim(),
+    l.expectedHarvestDate ? new Date(l.expectedHarvestDate).toLocaleDateString() : '—',
+    l.status ?? '—',
+  ])
+
+  // @ts-ignore
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 10,
+    head: [['Crop', 'Plot', 'Planting Date', 'Quantity', 'Expected Harvest', 'Status']],
+    body: rows.length > 0 ? rows : [['No planting data', '', '', '', '', '']],
+    styles: { font: 'NotoSans', fontSize: 8 },
+    headStyles: { fillColor: [34, 139, 34] },
+    columnStyles: { 5: { cellWidth: 22 } },
+  })
+
+  const fileName = `Planting_Report_${startDate}_to_${endDate}.pdf`
+  downloadPDF(doc, fileName)
+}
+
 export function exportToCSV(data: any[], filename: string) {
   if (data.length === 0) return
 
