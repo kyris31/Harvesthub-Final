@@ -80,7 +80,7 @@ export function PlantingFormDialog({ mode, planting, onSuccess }: PlantingFormDi
     try {
       setIsLoadingData(true)
       const [cropsRes, plotsRes, batchesRes, seedlingsRes] = await Promise.all([
-        fetch('/api/crops'),
+        fetch('/api/crops?sortBy=name&sortOrder=asc'),
         fetch('/api/plots'),
         fetch('/api/seed-batches'),
         fetch('/api/purchased-seedlings'),
