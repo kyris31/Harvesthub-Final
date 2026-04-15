@@ -50,10 +50,14 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
     exportToCSV(csvData, 'cultivation-report')
   }
 
-  const handleExportPDF = () => {
-    const endDate = new Date().toISOString().split('T')[0]
-    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    exportCultivationReportPDF(data, startDate, endDate)
+  const handleExportPDF = async () => {
+    try {
+      const endDate = new Date().toISOString().split('T')[0]
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      await exportCultivationReportPDF(data, startDate, endDate)
+    } catch (err: any) {
+      console.error('PDF export failed:', err)
+    }
   }
 
   return (

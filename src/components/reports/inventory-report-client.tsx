@@ -8,6 +8,7 @@ import { ArrowLeft, Package, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { ReportFilters } from '@/components/reports/report-filters'
 import { exportToCSV, exportInventoryReportPDF } from '@/lib/pdf-export'
+import { toast } from 'sonner'
 
 interface InventoryReportProps {
   initialData: {
@@ -52,8 +53,13 @@ export default function InventoryReportClient({ initialData }: InventoryReportPr
     exportToCSV(csvData, 'inventory-report')
   }
 
-  const handleExportPDF = () => {
-    exportInventoryReportPDF(data)
+  const handleExportPDF = async () => {
+    try {
+      await exportInventoryReportPDF(data)
+    } catch (err: any) {
+      console.error('PDF export failed:', err)
+      toast.error(err?.message ?? 'PDF export failed. Please try again.')
+    }
   }
 
   return (

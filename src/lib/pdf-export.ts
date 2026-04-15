@@ -5,6 +5,25 @@
 // Cache the base64-encoded font so it is only fetched/converted once per session
 let _notoSansBase64: string | null = null
 
+/**
+ * Reliable cross-browser PDF download.
+ * jsPDF's built-in doc.save() revokes the blob URL synchronously after clicking,
+ * which can cause ERR_FILE_NOT_FOUND on Windows/Chrome before the download starts.
+ * This helper delays revocation by 2 s and appends the anchor to the DOM.
+ */
+function downloadPDF(doc: any, fileName: string) {
+  const blob: Blob = doc.output('blob')
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.style.display = 'none'
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 2000)
+}
+
 async function loadLogoDataUrl(): Promise<string | null> {
   return new Promise((resolve) => {
     const img = new window.Image()
@@ -113,7 +132,7 @@ export async function exportFinancialReportPDF(data: any, startDate: string, end
   })
 
   const fileName = `Financial_Report_${startDate}_to_${endDate}.pdf`
-  doc.save(fileName)
+  downloadPDF(doc, fileName)
 }
 
 export async function exportHarvestReportPDF(data: any, startDate: string, endDate: string) {
@@ -157,7 +176,7 @@ export async function exportHarvestReportPDF(data: any, startDate: string, endDa
   })
 
   const fileName = `Summarized_Harvest_Report_${startDate}_to_${endDate}.pdf`
-  doc.save(fileName)
+  downloadPDF(doc, fileName)
 }
 
 export async function exportInventoryReportPDF(data: any) {
@@ -236,7 +255,7 @@ export async function exportInventoryReportPDF(data: any) {
   }
 
   const fileName = `Inventory_Report_${today}.pdf`
-  doc.save(fileName)
+  downloadPDF(doc, fileName)
 }
 
 export async function exportCultivationReportPDF(data: any, startDate: string, endDate: string) {
@@ -303,7 +322,7 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
   }
 
   const fileName = `Cultivation_Report_${startDate}_to_${endDate}.pdf`
-  doc.save(fileName)
+  downloadPDF(doc, fileName)
 }
 
 export function exportToCSV(data: any[], filename: string) {
