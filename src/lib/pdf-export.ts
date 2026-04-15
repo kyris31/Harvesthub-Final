@@ -186,12 +186,19 @@ export async function exportInventoryReportPDF(data: any) {
   })
 
   if (data.seeds.items.length > 0) {
+    const sourceLabel = (sourceType: string | null) => {
+      if (sourceType === 'self_produced') return 'Self-Produced'
+      if (sourceType === 'purchased') return 'Purchased'
+      return '—'
+    }
+
     const seedsData = data.seeds.items.map((s: any) => [
       s.crop?.name ?? s.batchCode,
       s.crop?.variety ?? '—',
       Number(s.initialQuantity).toFixed(2),
       Number(s.currentQuantity).toFixed(2),
       s.quantityUnit,
+      sourceLabel(s.sourceType),
     ])
 
     doc.addPage()
@@ -200,7 +207,7 @@ export async function exportInventoryReportPDF(data: any) {
     // @ts-ignore
     doc.autoTable({
       startY: seedPageY,
-      head: [['Crop Name', 'Variety', 'Initial Qty', 'Current Qty', 'Unit']],
+      head: [['Crop Name', 'Variety', 'Initial Qty', 'Current Qty', 'Unit', 'Source']],
       body: seedsData,
       styles: { font: 'NotoSans', fontSize: 9 },
       headStyles: { fillColor: [34, 139, 34] },

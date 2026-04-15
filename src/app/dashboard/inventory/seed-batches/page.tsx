@@ -22,18 +22,21 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { SeedBatchFormDialog } from '@/components/inventory/seed-batch-form-dialog'
+import { SeedBatchRowActions } from '@/components/inventory/seed-batch-row-actions'
 
 interface SeedBatch {
   id: string
   batchCode: string
   cropName: string
   cropVariety: string | null
+  supplierId: string | null
   supplierName: string | null
   initialQuantity: string
   currentQuantity: string
   quantityUnit: string
   purchaseDate: string | null
-  organicCertified: boolean
+  organicCertified: string | null
+  costPerUnit: string | null
   notes: string | null
 }
 
@@ -235,13 +238,14 @@ export default function SeedBatchesPage() {
                 <TableHead>Unit</TableHead>
                 <TableHead>Stock Status</TableHead>
                 <TableHead>Organic</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={9}
                     className="text-muted-foreground py-10 text-center text-sm"
                   >
                     No batches match your search.
@@ -278,11 +282,14 @@ export default function SeedBatchesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {batch.organicCertified && (
+                      {batch.organicCertified && batch.organicCertified !== 'conventional' && (
                         <Badge variant="secondary" className="bg-green-100 text-green-800">
                           🌱 Organic
                         </Badge>
                       )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <SeedBatchRowActions batch={batch} onSuccess={fetchBatches} />
                     </TableCell>
                   </TableRow>
                 )

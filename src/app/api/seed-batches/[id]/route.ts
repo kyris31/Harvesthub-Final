@@ -29,6 +29,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Seed batch not found' }, { status: 404 })
     }
 
+    // Validate quantity consistency before update
+    const newInitial =
+      body.initialQuantity !== undefined
+        ? parseFloat(body.initialQuantity)
+        : parseFloat(existingBatch.initialQuantity)
+    const newCurrent =
+      body.currentQuantity !== undefined
+        ? parseFloat(body.currentQuantity)
+        : parseFloat(existingBatch.currentQuantity)
+
+    if (newCurrent < 0) {
+      return NextResponse.json({ error: 'Current quantity cannot be negative.' }, { status: 400 })
+    }
+    if (newCurrent > newInitial) {
+      return NextResponse.json(
+        { error: 'Current quantity cannot exceed initial quantity.' },
+        { status: 400 }
+      )
+    }
+
     // Recalculate total cost if quantities or cost changed
     let updates = { ...body, updatedAt: new Date() }
     if (body.initialQuantity || body.costPerUnit) {
