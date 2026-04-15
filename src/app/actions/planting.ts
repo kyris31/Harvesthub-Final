@@ -3,7 +3,12 @@
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { plantingLogs, harvestLogs } from '@/lib/db/schema'
+import {
+  plantingLogs,
+  harvestLogs,
+  seedlingProductionLogs,
+  purchasedSeedlings,
+} from '@/lib/db/schema'
 import { and, eq, isNull, desc, gte, lte } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { plantingLogSchema, type PlantingLogFormData } from '@/lib/validations/planting'
@@ -86,6 +91,29 @@ export async function getPlantingLog(id: string) {
   return planting
 }
 
+async function validateSourceDate(validated: PlantingLogFormData) {
+  if (validated.plantingSource === 'self_produced' && validated.selfProducedSeedlingId) {
+    const seedling = await db.query.seedlingProductionLogs.findFirst({
+      where: eq(seedlingProductionLogs.id, validated.selfProducedSeedlingId),
+    })
+    if (seedling?.sowingDate && validated.plantingDate < seedling.sowingDate) {
+      throw new Error(
+        `Planting date (${validated.plantingDate}) cannot be before the seedling sowing date (${seedling.sowingDate}).`
+      )
+    }
+  }
+  if (validated.plantingSource === 'purchased' && validated.purchasedSeedlingId) {
+    const seedling = await db.query.purchasedSeedlings.findFirst({
+      where: eq(purchasedSeedlings.id, validated.purchasedSeedlingId),
+    })
+    if (seedling?.purchaseDate && validated.plantingDate < seedling.purchaseDate) {
+      throw new Error(
+        `Planting date (${validated.plantingDate}) cannot be before the seedling purchase date (${seedling.purchaseDate}).`
+      )
+    }
+  }
+}
+
 export async function createPlantingLog(data: PlantingLogFormData) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -96,6 +124,7 @@ export async function createPlantingLog(data: PlantingLogFormData) {
   }
 
   const validated = plantingLogSchema.parse(data)
+  await validateSourceDate(validated)
 
   const [planting] = await db
     .insert(plantingLogs)
@@ -124,6 +153,7 @@ export async function updatePlantingLog(id: string, data: PlantingLogFormData) {
   }
 
   const validated = plantingLogSchema.parse(data)
+  await validateSourceDate(validated)
 
   // Verify ownership
   const existing = await db.query.plantingLogs.findFirst({

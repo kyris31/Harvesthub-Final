@@ -88,6 +88,30 @@ export function PlantingForm({
   })
 
   async function onSubmit(data: PlantingLogFormData) {
+    // Client-side date validation against seedling production/purchase date
+    if (data.plantingSource === 'self_produced' && data.selfProducedSeedlingId) {
+      const seedling = selfProducedSeedlings?.find((s) => s.id === data.selfProducedSeedlingId)
+      if (seedling?.productionDate && data.plantingDate < seedling.productionDate) {
+        toast({
+          title: 'Invalid planting date',
+          description: `Planting date cannot be before the seedling sowing date (${new Date(seedling.productionDate).toLocaleDateString('en-GB')}).`,
+          variant: 'destructive',
+        })
+        return
+      }
+    }
+    if (data.plantingSource === 'purchased' && data.purchasedSeedlingId) {
+      const seedling = purchasedSeedlings?.find((s) => s.id === data.purchasedSeedlingId)
+      if (seedling?.purchaseDate && data.plantingDate < seedling.purchaseDate) {
+        toast({
+          title: 'Invalid planting date',
+          description: `Planting date cannot be before the seedling purchase date (${new Date(seedling.purchaseDate).toLocaleDateString('en-GB')}).`,
+          variant: 'destructive',
+        })
+        return
+      }
+    }
+
     setIsLoading(true)
     try {
       if (mode === 'edit' && defaultValues?.id) {
