@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { crops, plots, plantingLogs, suppliers, harvestLogs, eggProduction } from '@/lib/db/schema'
-import { and, eq, isNull, gt, sql } from 'drizzle-orm'
+import { and, eq, isNull, gt, sql, asc } from 'drizzle-orm'
 
 export async function getCropsForSelect() {
   const session = await auth.api.getSession({
@@ -22,6 +22,7 @@ export async function getCropsForSelect() {
       name: true,
       variety: true,
     },
+    orderBy: (crops, { asc }) => [asc(crops.name)],
   })
 }
 
