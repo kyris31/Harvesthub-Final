@@ -8,6 +8,7 @@ import {
   harvestLogs,
   seedlingProductionLogs,
   purchasedSeedlings,
+  seedBatches,
 } from '@/lib/db/schema'
 import { and, eq, isNull, desc, gte, lte } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
@@ -114,6 +115,123 @@ async function validateSourceDate(validated: PlantingLogFormData) {
   }
 }
 
+// Deduct planted quantity from the relevant inventory source.
+async function deductInventoryStock(validated: PlantingLogFormData) {
+  const plantedQty = parseFloat(validated.quantityPlanted)
+
+  if (validated.plantingSource === 'direct_sow' && validated.seedBatchId) {
+    const batch = await db.query.seedBatches.findFirst({
+      where: eq(seedBatches.id, validated.seedBatchId),
+    })
+    if (!batch) throw new Error('Seed batch not found')
+    const currentQty = parseFloat(batch.currentQuantity)
+    if (currentQty < plantedQty) {
+      throw new Error(
+        `Insufficient stock in seed batch. Available: ${currentQty} ${batch.quantityUnit}`
+      )
+    }
+    await db
+      .update(seedBatches)
+      .set({ currentQuantity: (currentQty - plantedQty).toFixed(2), updatedAt: new Date() })
+      .where(eq(seedBatches.id, validated.seedBatchId))
+  }
+
+  if (validated.plantingSource === 'self_produced' && validated.selfProducedSeedlingId) {
+    const log = await db.query.seedlingProductionLogs.findFirst({
+      where: eq(seedlingProductionLogs.id, validated.selfProducedSeedlingId),
+    })
+    if (!log) throw new Error('Seedling production batch not found')
+    const available = log.currentSeedlingsAvailable ?? 0
+    const planted = Math.round(plantedQty)
+    if (available < planted) {
+      throw new Error(`Insufficient seedlings available. Available: ${available}`)
+    }
+    await db
+      .update(seedlingProductionLogs)
+      .set({ currentSeedlingsAvailable: available - planted, updatedAt: new Date() })
+      .where(eq(seedlingProductionLogs.id, validated.selfProducedSeedlingId))
+  }
+
+  if (validated.plantingSource === 'purchased' && validated.purchasedSeedlingId) {
+    const seedling = await db.query.purchasedSeedlings.findFirst({
+      where: eq(purchasedSeedlings.id, validated.purchasedSeedlingId),
+    })
+    if (!seedling) throw new Error('Purchased seedling batch not found')
+    const available = seedling.currentQuantity
+    const planted = Math.round(plantedQty)
+    if (available < planted) {
+      throw new Error(`Insufficient seedlings. Available: ${available}`)
+    }
+    await db
+      .update(purchasedSeedlings)
+      .set({ currentQuantity: available - planted, updatedAt: new Date() })
+      .where(eq(purchasedSeedlings.id, validated.purchasedSeedlingId))
+  }
+}
+
+// Restore previously-deducted quantity back to the inventory source.
+async function restoreInventoryStock(existing: {
+  plantingSource: string
+  seedBatchId: string | null
+  selfProducedSeedlingId: string | null
+  purchasedSeedlingId: string | null
+  quantityPlanted: string
+}) {
+  const qty = parseFloat(existing.quantityPlanted)
+
+  if (existing.plantingSource === 'direct_sow' && existing.seedBatchId) {
+    const batch = await db.query.seedBatches.findFirst({
+      where: eq(seedBatches.id, existing.seedBatchId),
+    })
+    if (batch) {
+      await db
+        .update(seedBatches)
+        .set({
+          currentQuantity: (parseFloat(batch.currentQuantity) + qty).toFixed(2),
+          updatedAt: new Date(),
+        })
+        .where(eq(seedBatches.id, existing.seedBatchId))
+    }
+  }
+
+  if (existing.plantingSource === 'self_produced' && existing.selfProducedSeedlingId) {
+    const log = await db.query.seedlingProductionLogs.findFirst({
+      where: eq(seedlingProductionLogs.id, existing.selfProducedSeedlingId),
+    })
+    if (log) {
+      await db
+        .update(seedlingProductionLogs)
+        .set({
+          currentSeedlingsAvailable: (log.currentSeedlingsAvailable ?? 0) + Math.round(qty),
+          updatedAt: new Date(),
+        })
+        .where(eq(seedlingProductionLogs.id, existing.selfProducedSeedlingId))
+    }
+  }
+
+  if (existing.plantingSource === 'purchased' && existing.purchasedSeedlingId) {
+    const seedling = await db.query.purchasedSeedlings.findFirst({
+      where: eq(purchasedSeedlings.id, existing.purchasedSeedlingId),
+    })
+    if (seedling) {
+      await db
+        .update(purchasedSeedlings)
+        .set({
+          currentQuantity: seedling.currentQuantity + Math.round(qty),
+          updatedAt: new Date(),
+        })
+        .where(eq(purchasedSeedlings.id, existing.purchasedSeedlingId))
+    }
+  }
+}
+
+function revalidateInventoryPaths() {
+  revalidatePath('/dashboard/inventory/seed-batches')
+  revalidatePath('/dashboard/inventory/seedlings')
+  revalidatePath('/dashboard/inventory/seeds')
+  revalidatePath('/dashboard/inventory')
+}
+
 export async function createPlantingLog(data: PlantingLogFormData) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -125,6 +243,9 @@ export async function createPlantingLog(data: PlantingLogFormData) {
 
   const validated = plantingLogSchema.parse(data)
   await validateSourceDate(validated)
+
+  // Deduct from inventory before inserting; throws if insufficient stock.
+  await deductInventoryStock(validated)
 
   const [planting] = await db
     .insert(plantingLogs)
@@ -140,6 +261,7 @@ export async function createPlantingLog(data: PlantingLogFormData) {
     .returning()
 
   revalidatePath('/dashboard/planting')
+  revalidateInventoryPaths()
   return planting
 }
 
@@ -155,7 +277,7 @@ export async function updatePlantingLog(id: string, data: PlantingLogFormData) {
   const validated = plantingLogSchema.parse(data)
   await validateSourceDate(validated)
 
-  // Verify ownership
+  // Verify ownership and get old values for inventory reconciliation.
   const existing = await db.query.plantingLogs.findFirst({
     where: and(
       eq(plantingLogs.id, id),
@@ -167,6 +289,10 @@ export async function updatePlantingLog(id: string, data: PlantingLogFormData) {
   if (!existing) {
     throw new Error('Planting not found')
   }
+
+  // Restore old quantity to inventory, then deduct the new quantity.
+  await restoreInventoryStock(existing)
+  await deductInventoryStock(validated)
 
   const [updated] = await db
     .update(plantingLogs)
@@ -184,6 +310,7 @@ export async function updatePlantingLog(id: string, data: PlantingLogFormData) {
 
   revalidatePath('/dashboard/planting')
   revalidatePath(`/dashboard/planting/${id}`)
+  revalidateInventoryPaths()
   return updated
 }
 
@@ -196,7 +323,7 @@ export async function deletePlantingLog(id: string) {
     throw new Error('Unauthorized')
   }
 
-  // Verify ownership
+  // Verify ownership.
   const existing = await db.query.plantingLogs.findFirst({
     where: and(
       eq(plantingLogs.id, id),
@@ -209,7 +336,7 @@ export async function deletePlantingLog(id: string) {
     throw new Error('Planting not found')
   }
 
-  // Check for dependencies (harvests)
+  // Check for dependencies (harvests).
   const hasHarvests = await db.query.harvestLogs.findFirst({
     where: and(eq(harvestLogs.plantingLogId, id), isNull(harvestLogs.deletedAt)),
   })
@@ -218,8 +345,11 @@ export async function deletePlantingLog(id: string) {
     throw new Error('Cannot delete planting with harvest records. Please delete harvests first.')
   }
 
-  // Soft delete
+  // Restore inventory stock before soft-deleting.
+  await restoreInventoryStock(existing)
+
   await db.update(plantingLogs).set({ deletedAt: new Date() }).where(eq(plantingLogs.id, id))
 
   revalidatePath('/dashboard/planting')
+  revalidateInventoryPaths()
 }
