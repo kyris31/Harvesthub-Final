@@ -35,6 +35,7 @@ interface PlantingFormProps {
   plots: Array<{ id: string; name: string; areaSqm: string | null }>
   seedBatches?: Array<{
     id: string
+    cropId: string
     batchCode: string
     currentQuantity: string
     quantityUnit: string
@@ -42,12 +43,14 @@ interface PlantingFormProps {
   }>
   selfProducedSeedlings?: Array<{
     id: string
+    cropId: string
     crop: { name: string; variety: string | null }
     productionDate: string | null
     currentSeedlingsAvailable: number | null
   }>
   purchasedSeedlings?: Array<{
     id: string
+    cropId: string
     crop: { name: string; variety: string | null }
     purchaseDate: string | null
     currentQuantity: number | null
@@ -140,6 +143,14 @@ export function PlantingForm({
     }
   }
 
+  const selectedCropId = form.watch('cropId')
+
+  // Only show inventory items that belong to the selected crop
+  const filteredSeedBatches = seedBatches?.filter((b) => b.cropId === selectedCropId) ?? []
+  const filteredSelfProduced =
+    selfProducedSeedlings?.filter((s) => s.cropId === selectedCropId) ?? []
+  const filteredPurchased = purchasedSeedlings?.filter((s) => s.cropId === selectedCropId) ?? []
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -149,7 +160,16 @@ export function PlantingForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Crop *</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select
+                onValueChange={(value) => {
+                  field.onChange(value)
+                  // Clear source-specific selections whenever crop changes
+                  form.setValue('seedBatchId', '')
+                  form.setValue('selfProducedSeedlingId', '')
+                  form.setValue('purchasedSeedlingId', '')
+                }}
+                defaultValue={field.value}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a crop" />
@@ -208,21 +228,29 @@ export function PlantingForm({
         />
 
         {/* Dynamic Dropdown based on Planting Source */}
-        {form.watch('plantingSource') === 'direct_sow' && seedBatches && (
+        {form.watch('plantingSource') === 'direct_sow' && (
           <FormField
             control={form.control}
             name="seedBatchId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Seed Batch *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                <Select onValueChange={field.onChange} value={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a seed batch" />
+                      <SelectValue
+                        placeholder={
+                          !selectedCropId
+                            ? 'Select a crop first'
+                            : filteredSeedBatches.length === 0
+                              ? 'No seed batches available for this crop'
+                              : 'Select a seed batch'
+                        }
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {seedBatches.map((batch) => (
+                    {filteredSeedBatches.map((batch) => (
                       <SelectItem key={batch.id} value={batch.id}>
                         {batch.crop.name}
                         {batch.crop.variety ? ` - ${batch.crop.variety}` : ''} (Batch:{' '}
@@ -238,21 +266,29 @@ export function PlantingForm({
           />
         )}
 
-        {form.watch('plantingSource') === 'self_produced' && selfProducedSeedlings && (
+        {form.watch('plantingSource') === 'self_produced' && (
           <FormField
             control={form.control}
             name="selfProducedSeedlingId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Self-Produced Seedling Batch *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                <Select onValueChange={field.onChange} value={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a seedling batch" />
+                      <SelectValue
+                        placeholder={
+                          !selectedCropId
+                            ? 'Select a crop first'
+                            : filteredSelfProduced.length === 0
+                              ? 'No seedling batches available for this crop'
+                              : 'Select a seedling batch'
+                        }
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {selfProducedSeedlings.map((seedling) => (
+                    {filteredSelfProduced.map((seedling) => (
                       <SelectItem key={seedling.id} value={seedling.id}>
                         {seedling.crop.name}
                         {seedling.crop.variety ? ` - ${seedling.crop.variety}` : ''} — Sown:{' '}
@@ -269,21 +305,29 @@ export function PlantingForm({
           />
         )}
 
-        {form.watch('plantingSource') === 'purchased' && purchasedSeedlings && (
+        {form.watch('plantingSource') === 'purchased' && (
           <FormField
             control={form.control}
             name="purchasedSeedlingId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Purchased Seedling Batch *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                <Select onValueChange={field.onChange} value={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a purchased seedling batch" />
+                      <SelectValue
+                        placeholder={
+                          !selectedCropId
+                            ? 'Select a crop first'
+                            : filteredPurchased.length === 0
+                              ? 'No purchased batches available for this crop'
+                              : 'Select a purchased seedling batch'
+                        }
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {purchasedSeedlings.map((seedling) => (
+                    {filteredPurchased.map((seedling) => (
                       <SelectItem key={seedling.id} value={seedling.id}>
                         {seedling.crop.name}
                         {seedling.crop.variety ? ` - ${seedling.crop.variety}` : ''} — Purchased:{' '}

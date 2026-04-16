@@ -48,6 +48,7 @@ export async function getSeedBatchesForSelect() {
     ),
     columns: {
       id: true,
+      cropId: true,
       batchCode: true,
       currentQuantity: true,
       quantityUnit: true,
@@ -61,6 +62,7 @@ export async function getSeedBatchesForSelect() {
   return rows
     .map((b) => ({
       id: b.id,
+      cropId: b.cropId,
       batchCode: b.batchCode,
       currentQuantity: b.currentQuantity,
       quantityUnit: b.quantityUnit,
@@ -85,6 +87,7 @@ export async function getSelfProducedSeedlingsForSelect() {
     ),
     columns: {
       id: true,
+      cropId: true,
       sowingDate: true,
       currentSeedlingsAvailable: true,
     },
@@ -96,6 +99,7 @@ export async function getSelfProducedSeedlingsForSelect() {
   return rows
     .map((s) => ({
       id: s.id,
+      cropId: s.cropId,
       productionDate: s.sowingDate,
       currentSeedlingsAvailable: s.currentSeedlingsAvailable,
       crop: s.crop,
@@ -119,6 +123,7 @@ export async function getPurchasedSeedlingsForSelect() {
     ),
     columns: {
       id: true,
+      cropId: true,
       purchaseDate: true,
       currentQuantity: true,
     },
@@ -130,6 +135,7 @@ export async function getPurchasedSeedlingsForSelect() {
   return rows
     .map((s) => ({
       id: s.id,
+      cropId: s.cropId,
       purchaseDate: s.purchaseDate,
       currentQuantity: s.currentQuantity,
       crop: s.crop,
