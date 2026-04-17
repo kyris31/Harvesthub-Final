@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth/auth'
 import { db } from '@/lib/db'
 import { purchasedSeedlings, crops, suppliers } from '@/lib/db/schema'
 import { purchasedSeedlingSchema } from '@/lib/schemas/planting-schema'
-import { eq, and, isNull, desc } from 'drizzle-orm'
+import { eq, and, isNull, desc, gt, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 // GET /api/purchased-seedlings - Fetch all purchased seedlings
@@ -37,7 +37,11 @@ export async function GET(request: NextRequest) {
       .leftJoin(crops, eq(purchasedSeedlings.cropId, crops.id))
       .leftJoin(suppliers, eq(purchasedSeedlings.supplierId, suppliers.id))
       .where(
-        and(eq(purchasedSeedlings.userId, session.user.id), isNull(purchasedSeedlings.deletedAt))
+        and(
+          eq(purchasedSeedlings.userId, session.user.id),
+          isNull(purchasedSeedlings.deletedAt),
+          gt(sql`${purchasedSeedlings.currentQuantity}::numeric`, sql`0`)
+        )
       )
       .orderBy(desc(purchasedSeedlings.createdAt))
 

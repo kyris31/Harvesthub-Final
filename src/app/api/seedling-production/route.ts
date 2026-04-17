@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { seedlingProductionLogs, seedBatches } from '@/lib/db/schema'
-import { eq, and, isNull, desc } from 'drizzle-orm'
+import { eq, and, isNull, desc, gt } from 'drizzle-orm'
 import { z } from 'zod'
 
 const createSchema = z.object({
@@ -25,7 +25,8 @@ export async function GET() {
   const records = await db.query.seedlingProductionLogs.findMany({
     where: and(
       eq(seedlingProductionLogs.userId, session.user.id),
-      isNull(seedlingProductionLogs.deletedAt)
+      isNull(seedlingProductionLogs.deletedAt),
+      gt(seedlingProductionLogs.currentSeedlingsAvailable, 0)
     ),
     with: {
       crop: { columns: { name: true, variety: true } },
