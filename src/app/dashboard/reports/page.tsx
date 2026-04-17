@@ -5,7 +5,7 @@ import {
   getCultivationReport,
   getPlantingReport,
   getCropPerformanceReport,
-  getSeedlingLifecycleReport,
+  getCropLifecycleReport,
 } from '@/app/actions/reports'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,7 +33,7 @@ export default async function ReportsPage() {
       getCultivationReport(startDate, endDate),
       getPlantingReport(startDate, endDate),
       getCropPerformanceReport(startDate, endDate),
-      getSeedlingLifecycleReport(startDate, endDate),
+      getCropLifecycleReport(startDate, endDate),
     ])
 
   const reports = [
@@ -111,10 +111,11 @@ export default async function ReportsPage() {
       ],
     },
     {
-      title: 'Seedling Lifecycle Report',
-      description: 'Sowing through transplanting, harvest and sales per seedling batch',
+      title: 'Crop Lifecycle Report',
+      description:
+        'Full lifecycle: direct sow, seedlings and purchased plants through to harvest and sales',
       icon: Sprout,
-      href: '/dashboard/reports/seedling-lifecycle',
+      href: '/dashboard/reports/crop-lifecycle',
       stats: [
         { label: 'Batches', value: seedlingLC.length.toString() },
         {

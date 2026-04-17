@@ -484,6 +484,59 @@ export async function exportSeedlingLifecyclePDF(data: any[], startDate: string,
   downloadPDF(doc, fileName)
 }
 
+export async function exportCropLifecyclePDF(data: any[], startDate: string, endDate: string) {
+  // @ts-ignore
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF({ orientation: 'landscape' })
+  await setupNotoSans(doc)
+  const logo = await loadLogoDataUrl()
+  const startY = addCompanyHeader(doc, logo, 'Crop Lifecycle Report')
+
+  doc.setFontSize(10)
+  doc.text(`Period: ${startDate} to ${endDate}`, 14, startY)
+
+  const rows =
+    data.length > 0
+      ? data.map((r: any) => [
+          r.cropName,
+          r.sourceLabel ?? '—',
+          r.sowingDate ? new Date(r.sowingDate).toLocaleDateString('en-GB') : '—',
+          r.sownQty,
+          r.produced !== null && r.produced !== undefined ? r.produced.toString() : '—',
+          r.transplanted !== null && r.transplanted !== undefined
+            ? Number(r.transplanted).toFixed(0)
+            : '—',
+          Number(r.harvested).toFixed(2),
+          Number(r.sold).toFixed(2),
+          r.remaining !== null && r.remaining !== undefined ? r.remaining.toString() : '—',
+        ])
+      : [['No data', '', '', '', '', '', '', '', '']]
+
+  // @ts-ignore
+  doc.autoTable({
+    startY: startY + 8,
+    head: [
+      [
+        'Crop',
+        'Source',
+        'Date',
+        'Qty In',
+        'Produced',
+        'Transplanted',
+        'Harvested',
+        'Sold',
+        'Remaining',
+      ],
+    ],
+    body: rows,
+    styles: { font: 'NotoSans', fontSize: 7 },
+    headStyles: { fillColor: [34, 139, 34] },
+  })
+
+  const fileName = `Crop_Lifecycle_Report_${startDate}_to_${endDate}.pdf`
+  downloadPDF(doc, fileName)
+}
+
 export function exportToCSV(data: any[], filename: string) {
   if (data.length === 0) return
 

@@ -375,8 +375,8 @@ export async function getCropPerformanceReport(startDate?: string, endDate?: str
     )
 }
 
-// Seedling Lifecycle Report — includes both self-produced and purchased seedlings
-export async function getSeedlingLifecycleReport(startDate?: string, endDate?: string) {
+// Crop Lifecycle Report — self-produced seedlings, purchased seedlings, and direct sow
+export async function getCropLifecycleReport(startDate?: string, endDate?: string) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) throw new Error('Unauthorized')
   const userId = session.user.id
@@ -533,9 +533,80 @@ export async function getSeedlingLifecycleReport(startDate?: string, endDate?: s
     }
   })
 
+  // ── Direct sow plantings ─────────────────────────────────────────────────
+  const directConds = [
+    eq(plantingLogs.userId, userId),
+    isNull(plantingLogs.deletedAt),
+    sql`${plantingLogs.plantingSource} = 'direct_sow'`,
+  ]
+  if (startDate) directConds.push(gte(plantingLogs.plantingDate, startDate))
+  if (endDate) directConds.push(lte(plantingLogs.plantingDate, endDate))
+
+  const directLogs = await db.query.plantingLogs.findMany({
+    where: and(...directConds),
+    with: { crop: { columns: { name: true, variety: true } } },
+  })
+
+  const directIds = directLogs.map((l) => l.id)
+
+  const directHarvestedRows =
+    directIds.length > 0
+      ? await db
+          .select({
+            plantingId: harvestLogs.plantingLogId,
+            total: sql<string>`COALESCE(SUM(${harvestLogs.quantityHarvested}), '0')`,
+          })
+          .from(harvestLogs)
+          .where(and(inArray(harvestLogs.plantingLogId, directIds), isNull(harvestLogs.deletedAt)))
+          .groupBy(harvestLogs.plantingLogId)
+      : []
+
+  const directSoldRows =
+    directIds.length > 0
+      ? await db
+          .select({
+            plantingId: harvestLogs.plantingLogId,
+            total: sql<string>`COALESCE(SUM(${saleItems.quantity}), '0')`,
+          })
+          .from(saleItems)
+          .innerJoin(harvestLogs, eq(saleItems.harvestLogId, harvestLogs.id))
+          .innerJoin(sales, eq(saleItems.saleId, sales.id))
+          .where(
+            and(
+              inArray(harvestLogs.plantingLogId, directIds),
+              isNull(harvestLogs.deletedAt),
+              isNull(sales.deletedAt)
+            )
+          )
+          .groupBy(harvestLogs.plantingLogId)
+      : []
+
+  const directHarvestedMap = new Map(
+    directHarvestedRows.map((r) => [r.plantingId, Number(r.total)])
+  )
+  const directSoldMap = new Map(directSoldRows.map((r) => [r.plantingId, Number(r.total)]))
+
+  const directRows = directLogs.map((log) => ({
+    id: `direct_${log.id}`,
+    cropName: log.crop.name + (log.crop.variety ? ` - ${log.crop.variety}` : ''),
+    sourceLabel: 'Direct Sow',
+    sowingDate: log.plantingDate,
+    sownQty: `${log.quantityPlanted} ${log.quantityUnit}`,
+    produced: null as number | null,
+    transplanted: null as number | null,
+    harvested: directHarvestedMap.get(log.id) ?? 0,
+    sold: directSoldMap.get(log.id) ?? 0,
+    remaining: null as number | null,
+  }))
+
   // Combine and sort alphabetically by crop name
-  return [...selfRows, ...purchRows].sort((a, b) => a.cropName.localeCompare(b.cropName, 'el'))
+  return [...selfRows, ...purchRows, ...directRows].sort((a, b) =>
+    a.cropName.localeCompare(b.cropName, 'el')
+  )
 }
+
+// Keep old name as alias for any existing callers
+export const getSeedlingLifecycleReport = getCropLifecycleReport
 
 // Cultivation Activity Report
 export async function getCultivationReport(startDate?: string, endDate?: string) {
