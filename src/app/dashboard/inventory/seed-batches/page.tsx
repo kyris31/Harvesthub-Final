@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2, ArrowUpDown } from 'lucide-react'
+import { Loader2, ArrowUpDown, RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   Table,
   TableBody,
@@ -47,6 +48,7 @@ export default function SeedBatchesPage() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('cropName')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [isRecalculating, setIsRecalculating] = useState(false)
 
   const fetchBatches = async () => {
     try {
@@ -64,6 +66,23 @@ export default function SeedBatchesPage() {
       console.error(err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const recalculateStock = async () => {
+    setIsRecalculating(true)
+    try {
+      const res = await fetch('/api/seed-batches/recalculate', { method: 'POST' })
+      if (!res.ok) throw new Error('Failed')
+      const { batchesUpdated } = await res.json()
+      toast.success(
+        `Stock recalculated — ${batchesUpdated} batch${batchesUpdated !== 1 ? 'es' : ''} corrected`
+      )
+      fetchBatches()
+    } catch {
+      toast.error('Recalculation failed')
+    } finally {
+      setIsRecalculating(false)
     }
   }
 
@@ -165,7 +184,23 @@ export default function SeedBatchesPage() {
             )}
           </p>
         </div>
-        <SeedBatchFormDialog onSuccess={fetchBatches} />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={recalculateStock}
+            disabled={isRecalculating}
+            title="Recalculate current quantities from actual usage records"
+          >
+            {isRecalculating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            Recalculate Stock
+          </Button>
+          <SeedBatchFormDialog onSuccess={fetchBatches} />
+        </div>
       </div>
 
       {/* Search + Filters */}
