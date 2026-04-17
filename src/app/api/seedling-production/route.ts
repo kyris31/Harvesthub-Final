@@ -45,6 +45,41 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = createSchema.parse(body)
 
+    // Validate and deduct from seed batch
+    const [seedBatch] = await db
+      .select()
+      .from(seedBatches)
+      .where(
+        and(
+          eq(seedBatches.id, data.seedBatchId),
+          eq(seedBatches.userId, session.user.id),
+          isNull(seedBatches.deletedAt)
+        )
+      )
+
+    if (!seedBatch) {
+      return NextResponse.json({ error: 'Seed batch not found' }, { status: 404 })
+    }
+
+    const quantityToSow = parseFloat(data.quantitySown)
+    const available = parseFloat(seedBatch.currentQuantity)
+
+    if (quantityToSow > available) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient seeds',
+          message: `You have ${available} ${seedBatch.quantityUnit} available but tried to sow ${quantityToSow}.`,
+        },
+        { status: 400 }
+      )
+    }
+
+    const newQuantity = (available - quantityToSow).toFixed(2)
+    await db
+      .update(seedBatches)
+      .set({ currentQuantity: newQuantity, updatedAt: new Date() })
+      .where(eq(seedBatches.id, data.seedBatchId))
+
     const actualProduced = data.actualSeedlingsProduced ?? 0
 
     const [record] = await db

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { seedlingProductionLogs } from '@/lib/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { seedlingProductionLogs, seedBatches } from '@/lib/db/schema'
+import { eq, and, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 
 const updateSchema = z.object({
@@ -66,12 +66,39 @@ export async function DELETE(
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Fetch the log first to restore seed batch quantity
+  const [log] = await db
+    .select()
+    .from(seedlingProductionLogs)
+    .where(
+      and(
+        eq(seedlingProductionLogs.id, id),
+        eq(seedlingProductionLogs.userId, session.user.id),
+        isNull(seedlingProductionLogs.deletedAt)
+      )
+    )
+
+  if (!log) return NextResponse.json({ error: 'Record not found' }, { status: 404 })
+
+  // Soft-delete the log
   await db
     .update(seedlingProductionLogs)
     .set({ deletedAt: new Date() })
-    .where(
-      and(eq(seedlingProductionLogs.id, id), eq(seedlingProductionLogs.userId, session.user.id))
-    )
+    .where(eq(seedlingProductionLogs.id, id))
+
+  // Restore the seed batch quantity
+  const [batch] = await db
+    .select()
+    .from(seedBatches)
+    .where(and(eq(seedBatches.id, log.seedBatchId), isNull(seedBatches.deletedAt)))
+
+  if (batch) {
+    const restored = (parseFloat(batch.currentQuantity) + parseFloat(log.quantitySown)).toFixed(2)
+    await db
+      .update(seedBatches)
+      .set({ currentQuantity: restored, updatedAt: new Date() })
+      .where(eq(seedBatches.id, log.seedBatchId))
+  }
 
   return NextResponse.json({ success: true })
 }

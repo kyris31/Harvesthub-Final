@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2, ArrowUpDown } from 'lucide-react'
+import { Loader2, ArrowUpDown, Trash2 } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -22,9 +22,21 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { SeedlingPurchaseFormDialog } from '@/components/inventory/seedling-purchase-form-dialog'
 import { SeedlingProductionFormDialog } from '@/components/inventory/seedling-production-form-dialog'
 import { SeedlingProductionEditDialog } from '@/components/inventory/seedling-production-edit-dialog'
+import { toast } from 'sonner'
 
 interface PurchasedSeedling {
   id: string
@@ -93,6 +105,17 @@ export default function SeedlingsPage() {
       setError('Failed to load production logs.')
     } finally {
       setIsLoadingProduction(false)
+    }
+  }
+
+  const deleteProductionRecord = async (id: string) => {
+    try {
+      const res = await fetch(`/api/seedling-production/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete')
+      toast.success('Record deleted and seeds restored to batch')
+      fetchProduction()
+    } catch {
+      toast.error('Failed to delete record')
     }
   }
 
@@ -464,20 +487,59 @@ export default function SeedlingsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <SeedlingProductionEditDialog
-                          record={{
-                            id: p.id,
-                            cropName: p.crop.name,
-                            cropVariety: p.crop.variety,
-                            sowingDate: p.sowingDate,
-                            actualSeedlingsProduced: p.actualSeedlingsProduced,
-                            currentSeedlingsAvailable: p.currentSeedlingsAvailable,
-                            nurseryLocation: p.nurseryLocation,
-                            readyForTransplantDate: p.readyForTransplantDate,
-                            notes: p.notes,
-                          }}
-                          onSuccess={fetchProduction}
-                        />
+                        <div className="flex items-center gap-1">
+                          <SeedlingProductionEditDialog
+                            record={{
+                              id: p.id,
+                              cropName: p.crop.name,
+                              cropVariety: p.crop.variety,
+                              sowingDate: p.sowingDate,
+                              actualSeedlingsProduced: p.actualSeedlingsProduced,
+                              currentSeedlingsAvailable: p.currentSeedlingsAvailable,
+                              nurseryLocation: p.nurseryLocation,
+                              readyForTransplantDate: p.readyForTransplantDate,
+                              notes: p.notes,
+                            }}
+                            onSuccess={fetchProduction}
+                          />
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Sowing Record?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will delete the sowing record for{' '}
+                                  <strong>
+                                    {p.crop.name}
+                                    {p.crop.variety ? ` (${p.crop.variety})` : ''}
+                                  </strong>{' '}
+                                  and restore{' '}
+                                  <strong>
+                                    {p.quantitySown} {p.sowingUnit}
+                                  </strong>{' '}
+                                  back to the seed batch.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => deleteProductionRecord(p.id)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
