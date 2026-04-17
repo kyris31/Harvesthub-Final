@@ -344,6 +344,16 @@ export async function processInvoice(id: string) {
 
   // Create input inventory items for each line item
   for (const item of invoice.items) {
+    const packages = parseFloat(item.quantity)
+    const qtyPerPackage = item.itemQtyPerPackage ? parseFloat(item.itemQtyPerPackage) : null
+    const useContentQty = qtyPerPackage !== null && qtyPerPackage > 0 && item.itemUnit
+
+    const inventoryQty = useContentQty ? (packages * qtyPerPackage!).toFixed(4) : item.quantity
+    const inventoryUnit = useContentQty ? item.itemUnit! : item.unit
+    const inventoryCostPerUnit = useContentQty
+      ? (parseFloat(item.lineTotal) / (packages * qtyPerPackage!)).toFixed(6)
+      : item.pricePerUnit
+
     const [inventoryItem] = await db
       .insert(inputInventory)
       .values({
@@ -352,10 +362,10 @@ export async function processInvoice(id: string) {
         name: item.description,
         type: item.category || 'other',
         purchaseDate: invoice.invoiceDate,
-        initialQuantity: item.quantity,
-        currentQuantity: item.quantity,
-        quantityUnit: item.unit,
-        costPerUnit: item.pricePerUnit,
+        initialQuantity: inventoryQty,
+        currentQuantity: inventoryQty,
+        quantityUnit: inventoryUnit,
+        costPerUnit: inventoryCostPerUnit,
         totalCost: item.lineTotal,
         notes: item.notes,
       })
