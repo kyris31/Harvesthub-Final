@@ -375,93 +375,166 @@ export async function getCropPerformanceReport(startDate?: string, endDate?: str
     )
 }
 
-// Seedling Lifecycle Report
+// Seedling Lifecycle Report — includes both self-produced and purchased seedlings
 export async function getSeedlingLifecycleReport(startDate?: string, endDate?: string) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) throw new Error('Unauthorized')
   const userId = session.user.id
 
-  const conditions = [
+  // ── Self-produced seedlings ──────────────────────────────────────────────
+  const selfConds = [
     eq(seedlingProductionLogs.userId, userId),
     isNull(seedlingProductionLogs.deletedAt),
   ]
-  if (startDate) conditions.push(gte(seedlingProductionLogs.sowingDate, startDate))
-  if (endDate) conditions.push(lte(seedlingProductionLogs.sowingDate, endDate))
+  if (startDate) selfConds.push(gte(seedlingProductionLogs.sowingDate, startDate))
+  if (endDate) selfConds.push(lte(seedlingProductionLogs.sowingDate, endDate))
 
-  const logs = await db.query.seedlingProductionLogs.findMany({
-    where: and(...conditions),
-    orderBy: (l, { desc }) => [desc(l.sowingDate)],
+  const selfLogs = await db.query.seedlingProductionLogs.findMany({
+    where: and(...selfConds),
     with: { crop: { columns: { name: true, variety: true } } },
   })
 
-  if (logs.length === 0) return []
+  // Harvested via selfProducedSeedlingId FK (accurate for records saved after the FK fix)
+  const selfIds = selfLogs.map((l) => l.id)
+  const selfHarvestedRows =
+    selfIds.length > 0
+      ? await db
+          .select({
+            seedlingId: plantingLogs.selfProducedSeedlingId,
+            total: sql<string>`COALESCE(SUM(${harvestLogs.quantityHarvested}), '0')`,
+          })
+          .from(harvestLogs)
+          .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
+          .where(
+            and(
+              inArray(plantingLogs.selfProducedSeedlingId, selfIds),
+              isNull(harvestLogs.deletedAt),
+              isNull(plantingLogs.deletedAt)
+            )
+          )
+          .groupBy(plantingLogs.selfProducedSeedlingId)
+      : []
 
-  const logIds = logs.map((l) => l.id)
+  const selfSoldRows =
+    selfIds.length > 0
+      ? await db
+          .select({
+            seedlingId: plantingLogs.selfProducedSeedlingId,
+            total: sql<string>`COALESCE(SUM(${saleItems.quantity}), '0')`,
+          })
+          .from(saleItems)
+          .innerJoin(harvestLogs, eq(saleItems.harvestLogId, harvestLogs.id))
+          .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
+          .innerJoin(sales, eq(saleItems.saleId, sales.id))
+          .where(
+            and(
+              inArray(plantingLogs.selfProducedSeedlingId, selfIds),
+              isNull(harvestLogs.deletedAt),
+              isNull(plantingLogs.deletedAt),
+              isNull(sales.deletedAt)
+            )
+          )
+          .groupBy(plantingLogs.selfProducedSeedlingId)
+      : []
 
-  // Transplanted = sum of quantityPlanted linked via selfProducedSeedlingId
-  const transplantedRows = await db
-    .select({
-      seedlingId: plantingLogs.selfProducedSeedlingId,
-      total: sql<string>`COALESCE(SUM(${plantingLogs.quantityPlanted}), '0')`,
-    })
-    .from(plantingLogs)
-    .where(
-      and(inArray(plantingLogs.selfProducedSeedlingId, logIds), isNull(plantingLogs.deletedAt))
-    )
-    .groupBy(plantingLogs.selfProducedSeedlingId)
+  const selfHarvestedMap = new Map(selfHarvestedRows.map((r) => [r.seedlingId, Number(r.total)]))
+  const selfSoldMap = new Map(selfSoldRows.map((r) => [r.seedlingId, Number(r.total)]))
 
-  // Harvested = sum of quantityHarvested via those plantingLogs
-  const harvestedRows = await db
-    .select({
-      seedlingId: plantingLogs.selfProducedSeedlingId,
-      total: sql<string>`COALESCE(SUM(${harvestLogs.quantityHarvested}), '0')`,
-    })
-    .from(harvestLogs)
-    .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
-    .where(
-      and(
-        inArray(plantingLogs.selfProducedSeedlingId, logIds),
-        isNull(harvestLogs.deletedAt),
-        isNull(plantingLogs.deletedAt)
-      )
-    )
-    .groupBy(plantingLogs.selfProducedSeedlingId)
+  const selfRows = selfLogs.map((log) => {
+    const produced = log.actualSeedlingsProduced ?? 0
+    const remaining = log.currentSeedlingsAvailable ?? 0
+    // Transplanted = produced − remaining (avoids FK NULL issue for older records)
+    const transplanted = Math.max(0, produced - remaining)
+    return {
+      id: `self_${log.id}`,
+      cropName: log.crop.name + (log.crop.variety ? ` - ${log.crop.variety}` : ''),
+      sourceLabel: 'Self-Produced',
+      sowingDate: log.sowingDate,
+      sownQty: `${log.quantitySown} ${log.sowingUnit}`,
+      produced,
+      transplanted,
+      harvested: selfHarvestedMap.get(log.id) ?? 0,
+      sold: selfSoldMap.get(log.id) ?? 0,
+      remaining,
+    }
+  })
 
-  // Sold = sum of saleItems.quantity via those plantingLogs
-  const soldRows = await db
-    .select({
-      seedlingId: plantingLogs.selfProducedSeedlingId,
-      total: sql<string>`COALESCE(SUM(${saleItems.quantity}), '0')`,
-    })
-    .from(saleItems)
-    .innerJoin(harvestLogs, eq(saleItems.harvestLogId, harvestLogs.id))
-    .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
-    .innerJoin(sales, eq(saleItems.saleId, sales.id))
-    .where(
-      and(
-        inArray(plantingLogs.selfProducedSeedlingId, logIds),
-        isNull(harvestLogs.deletedAt),
-        isNull(plantingLogs.deletedAt),
-        isNull(sales.deletedAt)
-      )
-    )
-    .groupBy(plantingLogs.selfProducedSeedlingId)
+  // ── Purchased seedlings ──────────────────────────────────────────────────
+  const purchConds = [eq(purchasedSeedlings.userId, userId), isNull(purchasedSeedlings.deletedAt)]
+  if (startDate) purchConds.push(gte(purchasedSeedlings.purchaseDate, startDate))
+  if (endDate) purchConds.push(lte(purchasedSeedlings.purchaseDate, endDate))
 
-  const transplantedMap = new Map(transplantedRows.map((r) => [r.seedlingId, Number(r.total)]))
-  const harvestedMap = new Map(harvestedRows.map((r) => [r.seedlingId, Number(r.total)]))
-  const soldMap = new Map(soldRows.map((r) => [r.seedlingId, Number(r.total)]))
+  const purchLogs = await db.query.purchasedSeedlings.findMany({
+    where: and(...purchConds),
+    with: { crop: { columns: { name: true, variety: true } } },
+  })
 
-  return logs.map((log) => ({
-    id: log.id,
-    cropName: log.crop.name + (log.crop.variety ? ` - ${log.crop.variety}` : ''),
-    sowingDate: log.sowingDate,
-    sownQty: `${log.quantitySown} ${log.sowingUnit}`,
-    produced: log.actualSeedlingsProduced ?? 0,
-    transplanted: transplantedMap.get(log.id) ?? 0,
-    harvested: harvestedMap.get(log.id) ?? 0,
-    sold: soldMap.get(log.id) ?? 0,
-    remaining: log.currentSeedlingsAvailable ?? 0,
-  }))
+  // Harvested via purchasedSeedlingId FK
+  const purchIds = purchLogs.map((l) => l.id)
+  const purchHarvestedRows =
+    purchIds.length > 0
+      ? await db
+          .select({
+            seedlingId: plantingLogs.purchasedSeedlingId,
+            total: sql<string>`COALESCE(SUM(${harvestLogs.quantityHarvested}), '0')`,
+          })
+          .from(harvestLogs)
+          .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
+          .where(
+            and(
+              inArray(plantingLogs.purchasedSeedlingId, purchIds),
+              isNull(harvestLogs.deletedAt),
+              isNull(plantingLogs.deletedAt)
+            )
+          )
+          .groupBy(plantingLogs.purchasedSeedlingId)
+      : []
+
+  const purchSoldRows =
+    purchIds.length > 0
+      ? await db
+          .select({
+            seedlingId: plantingLogs.purchasedSeedlingId,
+            total: sql<string>`COALESCE(SUM(${saleItems.quantity}), '0')`,
+          })
+          .from(saleItems)
+          .innerJoin(harvestLogs, eq(saleItems.harvestLogId, harvestLogs.id))
+          .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
+          .innerJoin(sales, eq(saleItems.saleId, sales.id))
+          .where(
+            and(
+              inArray(plantingLogs.purchasedSeedlingId, purchIds),
+              isNull(harvestLogs.deletedAt),
+              isNull(plantingLogs.deletedAt),
+              isNull(sales.deletedAt)
+            )
+          )
+          .groupBy(plantingLogs.purchasedSeedlingId)
+      : []
+
+  const purchHarvestedMap = new Map(purchHarvestedRows.map((r) => [r.seedlingId, Number(r.total)]))
+  const purchSoldMap = new Map(purchSoldRows.map((r) => [r.seedlingId, Number(r.total)]))
+
+  const purchRows = purchLogs.map((log) => {
+    const produced = log.quantityPurchased
+    const remaining = log.currentQuantity
+    const transplanted = Math.max(0, produced - remaining)
+    return {
+      id: `purch_${log.id}`,
+      cropName: log.crop.name + (log.crop.variety ? ` - ${log.crop.variety}` : ''),
+      sourceLabel: 'Purchased',
+      sowingDate: log.purchaseDate,
+      sownQty: `${produced} seedlings`,
+      produced,
+      transplanted,
+      harvested: purchHarvestedMap.get(log.id) ?? 0,
+      sold: purchSoldMap.get(log.id) ?? 0,
+      remaining,
+    }
+  })
+
+  // Combine and sort alphabetically by crop name
+  return [...selfRows, ...purchRows].sort((a, b) => a.cropName.localeCompare(b.cropName, 'el'))
 }
 
 // Cultivation Activity Report

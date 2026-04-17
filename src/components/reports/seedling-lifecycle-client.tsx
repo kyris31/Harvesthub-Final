@@ -13,6 +13,7 @@ import { exportToCSV, exportSeedlingLifecyclePDF } from '@/lib/pdf-export'
 type LifecycleRow = {
   id: string
   cropName: string
+  sourceLabel: string
   sowingDate: string | null
   sownQty: string
   produced: number
@@ -55,7 +56,8 @@ export default function SeedlingLifecycleClient({
     exportToCSV(
       data.map((r) => ({
         Crop: r.cropName,
-        Sown: fmt(r.sowingDate),
+        Source: r.sourceLabel,
+        'Sown / Purchased': fmt(r.sowingDate),
         'Sown Qty': r.sownQty,
         Produced: r.produced,
         Transplanted: r.transplanted,
@@ -141,7 +143,10 @@ export default function SeedlingLifecycleClient({
                   Crop
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold tracking-wide uppercase">
-                  Sown
+                  Source
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold tracking-wide uppercase">
+                  Sown / Purchased
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold tracking-wide uppercase">
                   Sown Qty
@@ -166,7 +171,7 @@ export default function SeedlingLifecycleClient({
             <tbody>
               {data.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-muted-foreground px-4 py-10 text-center">
+                  <td colSpan={9} className="text-muted-foreground px-4 py-10 text-center">
                     No seedling records found. Adjust the date range and click Generate Report.
                   </td>
                 </tr>
@@ -174,6 +179,7 @@ export default function SeedlingLifecycleClient({
                 data.map((row) => (
                   <tr key={row.id} className="hover:bg-muted/30 border-b last:border-0">
                     <td className="px-4 py-3 font-medium">{row.cropName}</td>
+                    <td className="text-muted-foreground px-4 py-3 text-xs">{row.sourceLabel}</td>
                     <td className="text-muted-foreground px-4 py-3">{fmt(row.sowingDate)}</td>
                     <td className="text-muted-foreground px-4 py-3">{row.sownQty}</td>
                     <td className="px-4 py-3 text-right">{row.produced}</td>

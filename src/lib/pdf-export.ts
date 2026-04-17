@@ -448,6 +448,7 @@ export async function exportSeedlingLifecyclePDF(data: any[], startDate: string,
     data.length > 0
       ? data.map((r: any) => [
           r.cropName,
+          r.sourceLabel ?? '—',
           r.sowingDate ? new Date(r.sowingDate).toLocaleDateString('en-GB') : '—',
           r.sownQty,
           r.produced.toString(),
@@ -456,7 +457,7 @@ export async function exportSeedlingLifecyclePDF(data: any[], startDate: string,
           Number(r.sold).toFixed(2),
           r.remaining.toString(),
         ])
-      : [['No data', '', '', '', '', '', '', '']]
+      : [['No data', '', '', '', '', '', '', '', '']]
 
   // @ts-ignore
   doc.autoTable({
@@ -464,17 +465,18 @@ export async function exportSeedlingLifecyclePDF(data: any[], startDate: string,
     head: [
       [
         'Crop',
-        'Sown',
+        'Source',
+        'Sown / Purchased',
         'Sown Qty',
         'Produced',
         'Transplanted',
         'Harvested',
         'Sold',
-        'Remaining Seedlings',
+        'Remaining',
       ],
     ],
     body: rows,
-    styles: { font: 'NotoSans', fontSize: 8 },
+    styles: { font: 'NotoSans', fontSize: 7 },
     headStyles: { fillColor: [34, 139, 34] },
   })
 
