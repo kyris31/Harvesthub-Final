@@ -43,7 +43,7 @@ export function PlantingLogsClient({ plantings }: { plantings: Planting[] }) {
       .sort((a, b) => {
         const nameA = `${a.crop.name} ${a.crop.variety ?? ''}`.trim()
         const nameB = `${b.crop.name} ${b.crop.variety ?? ''}`.trim()
-        return nameA.localeCompare(nameB)
+        return nameA.localeCompare(nameB, 'el')
       })
   }, [plantings, search, statusFilter])
 
