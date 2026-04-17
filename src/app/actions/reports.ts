@@ -181,15 +181,40 @@ export async function getInventoryReport() {
     return current <= 10 // threshold of 10 units
   })
 
-  // Calculate total inventory value - using costPerUnit for inputs
-  const seedValue = seeds.reduce(
-    (sum, s) => sum + Number(s.currentQuantity || 0) * Number(s.costPerUnit || 0),
-    0
-  )
-  const inputValue = inputs.reduce(
-    (sum, i) => sum + Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0),
-    0
-  )
+  // Calculate total inventory value.
+  // Prefer costPerUnit * currentQuantity; fall back to totalCost * (current/initial) when
+  // costPerUnit is absent (user entered only a total cost).
+  const itemValue = (current: number, initial: number, costPerUnit: number, totalCost: number) => {
+    if (costPerUnit > 0) return current * costPerUnit
+    if (totalCost > 0 && initial > 0) return totalCost * (current / initial)
+    if (totalCost > 0) return totalCost
+    return 0
+  }
+
+  const seedValue = seeds.reduce((sum, s) => {
+    return (
+      sum +
+      itemValue(
+        Number(s.currentQuantity || 0),
+        Number(s.initialQuantity || 0),
+        Number(s.costPerUnit || 0),
+        Number(s.totalCost || 0)
+      )
+    )
+  }, 0)
+
+  const inputValue = inputs.reduce((sum, i) => {
+    return (
+      sum +
+      itemValue(
+        Number(i.currentQuantity || 0),
+        Number(i.initialQuantity || 0),
+        Number(i.costPerUnit || 0),
+        Number(i.totalCost || 0)
+      )
+    )
+  }, 0)
+
   const seedlingValue = seedlings.reduce(
     (sum, s) => sum + Number(s.currentQuantity || 0) * Number(s.costPerSeedling || 0),
     0
