@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table'
 import { Plus, Edit, Wrench } from 'lucide-react'
 import Link from 'next/link'
+import { InputInventoryDeleteButton } from '@/components/inventory/input-inventory-delete-button'
 import { Badge } from '@/components/ui/badge'
 import {
   Select,
@@ -240,11 +241,14 @@ export default async function InputsInventoryPage({
                       </TableCell>
                       <TableCell>{item.supplier?.name || '-'}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/dashboard/inventory/inputs/${item.id}/edit`}>
-                            <Edit className="h-4 w-4" />
-                          </Link>
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/dashboard/inventory/inputs/${item.id}/edit`}>
+                              <Edit className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <InputInventoryDeleteButton id={item.id} name={item.name} />
+                        </div>
                       </TableCell>
                     </TableRow>
                   )
