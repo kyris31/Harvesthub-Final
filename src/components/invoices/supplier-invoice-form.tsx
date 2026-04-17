@@ -55,6 +55,8 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
           description: '',
           quantity: '',
           unit: '',
+          itemQtyPerPackage: '',
+          itemUnit: '',
           pricePerUnit: '',
           category: '',
           discountType: '',
@@ -281,6 +283,8 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
                   description: '',
                   quantity: '',
                   unit: '',
+                  itemQtyPerPackage: '',
+                  itemUnit: '',
                   pricePerUnit: '',
                   category: '',
                   discountType: '',
@@ -332,7 +336,7 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
                         name={`items.${index}.quantity`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Qty *</FormLabel>
+                            <FormLabel>Qty (Packages) *</FormLabel>
                             <FormControl>
                               <Input type="number" step="0.01" placeholder="2" {...field} />
                             </FormControl>
@@ -346,7 +350,7 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
                         name={`items.${index}.unit`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Unit *</FormLabel>
+                            <FormLabel>Package Unit *</FormLabel>
                             <FormControl>
                               <Input placeholder="bottle" {...field} />
                             </FormControl>
@@ -357,10 +361,40 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
 
                       <FormField
                         control={form.control}
+                        name={`items.${index}.itemQtyPerPackage`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Item Qty / Package</FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.0001" placeholder="20" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.itemUnit`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Item Unit</FormLabel>
+                            <FormControl>
+                              <Input placeholder="L" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
                         name={`items.${index}.pricePerUnit`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Price/Unit *</FormLabel>
+                            <FormLabel>Price / Package *</FormLabel>
                             <FormControl>
                               <Input type="number" step="0.01" placeholder="20.00" {...field} />
                             </FormControl>

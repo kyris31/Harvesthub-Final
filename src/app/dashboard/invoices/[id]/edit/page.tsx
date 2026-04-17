@@ -31,6 +31,8 @@ export default async function EditInvoicePage({ params }: { params: { id: string
             description: item.description,
             quantity: item.quantity,
             unit: item.unit,
+            itemQtyPerPackage: item.itemQtyPerPackage || '',
+            itemUnit: item.itemUnit || '',
             pricePerUnit: item.pricePerUnit,
             category: item.category as
               | 'seeds'
@@ -40,6 +42,8 @@ export default async function EditInvoicePage({ params }: { params: { id: string
               | 'other'
               | ''
               | undefined,
+            discountType: (item.discountType as 'percentage' | 'amount' | '' | undefined) || '',
+            discountValue: item.discountValue || '',
             notes: item.notes || '',
           })),
           notes: invoice.notes || '',

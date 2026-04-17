@@ -10,6 +10,8 @@ export const invoiceItemSchema = z.object({
     .enum(['seeds', 'fertilizer', 'pesticide', 'equipment', 'other'])
     .optional()
     .or(z.literal('')),
+  itemQtyPerPackage: z.string().optional().or(z.literal('')),
+  itemUnit: z.string().optional().or(z.literal('')),
   discountType: z.enum(['percentage', 'amount']).optional().or(z.literal('')),
   discountValue: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),

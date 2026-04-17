@@ -850,6 +850,8 @@ export const supplierInvoiceItems = pgTable('supplier_invoice_items', {
   discountValue: decimal('discount_value', { precision: 10, scale: 2 }),
   discountAmount: decimal('discount_amount', { precision: 10, scale: 2 }).default('0'),
 
+  itemQtyPerPackage: decimal('item_qty_per_package', { precision: 10, scale: 4 }),
+  itemUnit: text('item_unit'),
   lineTotal: decimal('line_total', { precision: 10, scale: 2 }).notNull(),
   category: text('category'), // seeds, fertilizer, pesticide, equipment, other
   createdInventoryId: uuid('created_inventory_id'), // Link to input_inventory item created
