@@ -47,6 +47,7 @@ export function SeedlingProductionEditDialog({ record, onSuccess }: Props) {
     defaultValues: {
       sowingDate: record.sowingDate,
       actualSeedlingsProduced: record.actualSeedlingsProduced.toString(),
+      currentSeedlingsAvailable: record.currentSeedlingsAvailable.toString(),
       nurseryLocation: record.nurseryLocation ?? '',
       readyForTransplantDate: record.readyForTransplantDate ?? '',
       notes: record.notes ?? '',
@@ -55,6 +56,11 @@ export function SeedlingProductionEditDialog({ record, onSuccess }: Props) {
 
   const onSubmit = async (data: any) => {
     const actual = parseInt(data.actualSeedlingsProduced) || 0
+    const available = parseInt(data.currentSeedlingsAvailable) || 0
+    if (available > actual) {
+      toast.error('Available cannot exceed seedlings produced')
+      return
+    }
     setIsSubmitting(true)
     try {
       const res = await fetch(`/api/seedling-production/${record.id}`, {
@@ -63,6 +69,7 @@ export function SeedlingProductionEditDialog({ record, onSuccess }: Props) {
         body: JSON.stringify({
           sowingDate: data.sowingDate,
           actualSeedlingsProduced: actual,
+          currentSeedlingsAvailable: available,
           nurseryLocation: data.nurseryLocation,
           readyForTransplantDate: data.readyForTransplantDate,
           notes: data.notes,
@@ -108,19 +115,34 @@ export function SeedlingProductionEditDialog({ record, onSuccess }: Props) {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="actualSeedlingsProduced"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Seedlings Produced *</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="1" min="0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="actualSeedlingsProduced"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Seedlings Produced *</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="1" min="0" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="currentSeedlingsAvailable"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Currently Available *</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="1" min="0" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="nurseryLocation"

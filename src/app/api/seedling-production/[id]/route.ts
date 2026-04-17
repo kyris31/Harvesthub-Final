@@ -9,6 +9,7 @@ import { z } from 'zod'
 const updateSchema = z.object({
   sowingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   actualSeedlingsProduced: z.number().int().min(0),
+  currentSeedlingsAvailable: z.number().int().min(0),
   nurseryLocation: z.string().optional().or(z.literal('')),
   readyForTransplantDate: z
     .string()
@@ -27,13 +28,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json()
     const data = updateSchema.parse(body)
 
-    // Calculate how many have already been planted from this seedling batch
+    // If planting logs are linked via selfProducedSeedlingId, auto-calculate available.
+    // For older records where that FK was not saved, fall back to the user-supplied value.
     const [plantedResult] = await db
       .select({ total: sum(plantingLogs.quantityPlanted) })
       .from(plantingLogs)
       .where(and(eq(plantingLogs.selfProducedSeedlingId, id), isNull(plantingLogs.deletedAt)))
     const totalPlanted = Math.round(parseFloat(plantedResult?.total ?? '0') || 0)
-    const newAvailable = Math.max(0, data.actualSeedlingsProduced - totalPlanted)
+    const newAvailable =
+      totalPlanted > 0
+        ? Math.max(0, data.actualSeedlingsProduced - totalPlanted)
+        : Math.min(data.currentSeedlingsAvailable, data.actualSeedlingsProduced)
 
     const [updated] = await db
       .update(seedlingProductionLogs)
