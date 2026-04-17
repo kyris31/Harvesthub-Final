@@ -40,13 +40,13 @@ export async function GET(request: NextRequest) {
         and(
           eq(purchasedSeedlings.userId, session.user.id),
           isNull(purchasedSeedlings.deletedAt),
-          // Hide only when stock=0 AND no active planting linked
+          // Hide only when stock=0 AND an explicit non-active planting is linked
           or(
             gt(purchasedSeedlings.currentQuantity, 0),
-            sql`EXISTS (
+            sql`NOT EXISTS (
               SELECT 1 FROM planting_logs pl
               WHERE pl.purchased_seedling_id = ${purchasedSeedlings.id}
-                AND pl.status = 'active'
+                AND pl.status NOT IN ('active')
                 AND pl.deleted_at IS NULL
             )`
           )

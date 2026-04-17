@@ -26,14 +26,15 @@ export async function GET() {
     where: and(
       eq(seedlingProductionLogs.userId, session.user.id),
       isNull(seedlingProductionLogs.deletedAt),
-      // Hide only when stock=0 AND produced AND no active planting linked
+      // Hide only when stock=0 AND an explicit non-active (completed/harvested) planting is linked
+      // Records with no planting link stay visible always
       or(
         gt(seedlingProductionLogs.currentSeedlingsAvailable, 0),
         eq(seedlingProductionLogs.actualSeedlingsProduced, 0),
-        sql`EXISTS (
+        sql`NOT EXISTS (
           SELECT 1 FROM planting_logs pl
           WHERE pl.self_produced_seedling_id = ${seedlingProductionLogs.id}
-            AND pl.status = 'active'
+            AND pl.status NOT IN ('active')
             AND pl.deleted_at IS NULL
         )`
       )
