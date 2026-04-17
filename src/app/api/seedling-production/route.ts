@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { seedlingProductionLogs, seedBatches } from '@/lib/db/schema'
-import { eq, and, isNull, desc, gt } from 'drizzle-orm'
+import { seedlingProductionLogs, seedBatches, plantingLogs } from '@/lib/db/schema'
+import { eq, and, isNull, desc, gt, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 const createSchema = z.object({
@@ -26,7 +26,17 @@ export async function GET() {
     where: and(
       eq(seedlingProductionLogs.userId, session.user.id),
       isNull(seedlingProductionLogs.deletedAt),
-      gt(seedlingProductionLogs.currentSeedlingsAvailable, 0)
+      // Hide only when stock=0 AND produced AND no active planting linked
+      or(
+        gt(seedlingProductionLogs.currentSeedlingsAvailable, 0),
+        eq(seedlingProductionLogs.actualSeedlingsProduced, 0),
+        sql`EXISTS (
+          SELECT 1 FROM planting_logs pl
+          WHERE pl.self_produced_seedling_id = ${seedlingProductionLogs.id}
+            AND pl.status = 'active'
+            AND pl.deleted_at IS NULL
+        )`
+      )
     ),
     with: {
       crop: { columns: { name: true, variety: true } },
