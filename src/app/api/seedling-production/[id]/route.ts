@@ -9,7 +9,7 @@ import { z } from 'zod'
 const updateSchema = z.object({
   sowingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   actualSeedlingsProduced: z.number().int().min(0),
-  currentSeedlingsAvailable: z.number().int().min(0),
+  currentSeedlingsAvailable: z.number().int().min(0).optional(),
   nurseryLocation: z.string().optional().or(z.literal('')),
   readyForTransplantDate: z
     .string()
@@ -28,6 +28,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json()
     const data = updateSchema.parse(body)
 
+    // Fetch current record to get existing available as fallback
+    const [existing] = await db
+      .select()
+      .from(seedlingProductionLogs)
+      .where(
+        and(eq(seedlingProductionLogs.id, id), eq(seedlingProductionLogs.userId, session.user.id))
+      )
+    if (!existing) return NextResponse.json({ error: 'Record not found' }, { status: 404 })
+
     // If planting logs are linked via selfProducedSeedlingId, auto-calculate available.
     // For older records where that FK was not saved, fall back to the user-supplied value.
     const [plantedResult] = await db
@@ -35,10 +44,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .from(plantingLogs)
       .where(and(eq(plantingLogs.selfProducedSeedlingId, id), isNull(plantingLogs.deletedAt)))
     const totalPlanted = Math.round(parseFloat(plantedResult?.total ?? '0') || 0)
+    const userSupplied = data.currentSeedlingsAvailable ?? existing.currentSeedlingsAvailable ?? 0
     const newAvailable =
       totalPlanted > 0
         ? Math.max(0, data.actualSeedlingsProduced - totalPlanted)
-        : Math.min(data.currentSeedlingsAvailable, data.actualSeedlingsProduced)
+        : Math.min(userSupplied, data.actualSeedlingsProduced)
 
     const [updated] = await db
       .update(seedlingProductionLogs)
@@ -56,7 +66,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       )
       .returning()
 
-    if (!updated) return NextResponse.json({ error: 'Record not found' }, { status: 404 })
     return NextResponse.json(updated)
   } catch (error: any) {
     if (error instanceof z.ZodError) {
