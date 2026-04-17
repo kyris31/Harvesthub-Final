@@ -381,6 +381,107 @@ export async function exportPlantingReportPDF(data: any, startDate: string, endD
   downloadPDF(doc, fileName)
 }
 
+export async function exportCropPerformancePDF(data: any[], startDate: string, endDate: string) {
+  // @ts-ignore
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+  await setupNotoSans(doc)
+  const logo = await loadLogoDataUrl()
+  const startY = addCompanyHeader(doc, logo, 'Crop Performance Report')
+
+  doc.setFontSize(10)
+  doc.text(`Period: ${startDate} to ${endDate}`, 14, startY)
+
+  const rows =
+    data.length > 0
+      ? data.map((r: any) => [
+          r.cropName,
+          r.totalPlanted.toFixed(2),
+          r.plantsProduced.toString(),
+          r.totalProduced.toFixed(2),
+          r.totalSales.toFixed(2),
+          r.difference.toFixed(2),
+        ])
+      : [['No data', '', '', '', '', '']]
+
+  // @ts-ignore
+  doc.autoTable({
+    startY: startY + 8,
+    head: [
+      [
+        'Crop Name',
+        'Total Planted',
+        'Plants Prod.',
+        'Total Prod.',
+        'Total Sales',
+        'Difference (Prod - Sales)',
+      ],
+    ],
+    body: rows,
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
+    columnStyles: {
+      5: { halign: 'right' },
+      4: { halign: 'right' },
+      3: { halign: 'right' },
+      2: { halign: 'right' },
+      1: { halign: 'right' },
+    },
+  })
+
+  const fileName = `Crop_Performance_Report_${startDate}_to_${endDate}.pdf`
+  downloadPDF(doc, fileName)
+}
+
+export async function exportSeedlingLifecyclePDF(data: any[], startDate: string, endDate: string) {
+  // @ts-ignore
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+  await setupNotoSans(doc)
+  const logo = await loadLogoDataUrl()
+  const startY = addCompanyHeader(doc, logo, 'Seedling Lifecycle Report')
+
+  doc.setFontSize(10)
+  doc.text(`Period: ${startDate} to ${endDate}`, 14, startY)
+
+  const rows =
+    data.length > 0
+      ? data.map((r: any) => [
+          r.cropName,
+          r.sowingDate ? new Date(r.sowingDate).toLocaleDateString('en-GB') : '—',
+          r.sownQty,
+          r.produced.toString(),
+          Number(r.transplanted).toFixed(0),
+          Number(r.harvested).toFixed(2),
+          Number(r.sold).toFixed(2),
+          r.remaining.toString(),
+        ])
+      : [['No data', '', '', '', '', '', '', '']]
+
+  // @ts-ignore
+  doc.autoTable({
+    startY: startY + 8,
+    head: [
+      [
+        'Crop',
+        'Sown',
+        'Sown Qty',
+        'Produced',
+        'Transplanted',
+        'Harvested',
+        'Sold',
+        'Remaining Seedlings',
+      ],
+    ],
+    body: rows,
+    styles: { font: 'NotoSans', fontSize: 8 },
+    headStyles: { fillColor: [34, 139, 34] },
+  })
+
+  const fileName = `Seedling_Lifecycle_Report_${startDate}_to_${endDate}.pdf`
+  downloadPDF(doc, fileName)
+}
+
 export function exportToCSV(data: any[], filename: string) {
   if (data.length === 0) return
 

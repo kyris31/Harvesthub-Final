@@ -4,6 +4,8 @@ import {
   getInventoryReport,
   getCultivationReport,
   getPlantingReport,
+  getCropPerformanceReport,
+  getSeedlingLifecycleReport,
 } from '@/app/actions/reports'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,13 +25,16 @@ export default async function ReportsPage() {
   const endDate = new Date().toISOString().split('T')[0]
   const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const [financial, harvest, inventory, cultivation, planting] = await Promise.all([
-    getFinancialReport(startDate, endDate),
-    getHarvestReport(startDate, endDate),
-    getInventoryReport(),
-    getCultivationReport(startDate, endDate),
-    getPlantingReport(startDate, endDate),
-  ])
+  const [financial, harvest, inventory, cultivation, planting, cropPerf, seedlingLC] =
+    await Promise.all([
+      getFinancialReport(startDate, endDate),
+      getHarvestReport(startDate, endDate),
+      getInventoryReport(),
+      getCultivationReport(startDate, endDate),
+      getPlantingReport(startDate, endDate),
+      getCropPerformanceReport(startDate, endDate),
+      getSeedlingLifecycleReport(startDate, endDate),
+    ])
 
   const reports = [
     {
@@ -90,6 +95,32 @@ export default async function ReportsPage() {
         { label: 'Total Plantings', value: planting.total.toString() },
         { label: 'Active', value: planting.active.toString() },
         { label: 'Harvested', value: planting.harvested.toString() },
+      ],
+    },
+    {
+      title: 'Crop Performance Report',
+      description: 'Planted, seedlings produced, harvested and sold per crop',
+      icon: TrendingUp,
+      href: '/dashboard/reports/crop-performance',
+      stats: [
+        { label: 'Crops Tracked', value: cropPerf.length.toString() },
+        {
+          label: 'Total Harvested',
+          value: cropPerf.reduce((s, r) => s + r.totalProduced, 0).toFixed(2),
+        },
+      ],
+    },
+    {
+      title: 'Seedling Lifecycle Report',
+      description: 'Sowing through transplanting, harvest and sales per seedling batch',
+      icon: Sprout,
+      href: '/dashboard/reports/seedling-lifecycle',
+      stats: [
+        { label: 'Batches', value: seedlingLC.length.toString() },
+        {
+          label: 'Remaining',
+          value: seedlingLC.reduce((s, r) => s + r.remaining, 0).toString(),
+        },
       ],
     },
     {

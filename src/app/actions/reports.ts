@@ -5,6 +5,7 @@ import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import {
   sales,
+  saleItems,
   expenses,
   harvestLogs,
   cultivationActivities,
@@ -12,8 +13,10 @@ import {
   inputInventory,
   purchasedSeedlings,
   plantingLogs,
+  seedlingProductionLogs,
+  crops,
 } from '@/lib/db/schema'
-import { and, eq, isNull, gte, lte, sql, count } from 'drizzle-orm'
+import { and, eq, isNull, gte, lte, sql, count, inArray } from 'drizzle-orm'
 
 // Financial Report
 export async function getFinancialReport(startDate?: string, endDate?: string) {
@@ -237,6 +240,203 @@ export async function getPlantingReport(startDate?: string, endDate?: string) {
     harvested: logs.filter((l) => l.status === 'harvested').length,
     failed: logs.filter((l) => l.status === 'failed').length,
   }
+}
+
+// Crop Performance Report
+export async function getCropPerformanceReport(startDate?: string, endDate?: string) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
+  const userId = session.user.id
+
+  const userCrops = await db.query.crops.findMany({
+    where: and(eq(crops.userId, userId), isNull(crops.deletedAt)),
+    columns: { id: true, name: true, variety: true },
+  })
+  if (userCrops.length === 0) return []
+
+  const cropIds = userCrops.map((c) => c.id)
+
+  // Total planted per crop (filtered by plantingDate)
+  const plantedConds = [
+    eq(plantingLogs.userId, userId),
+    isNull(plantingLogs.deletedAt),
+    inArray(plantingLogs.cropId, cropIds),
+  ]
+  if (startDate) plantedConds.push(gte(plantingLogs.plantingDate, startDate))
+  if (endDate) plantedConds.push(lte(plantingLogs.plantingDate, endDate))
+  const plantedRows = await db
+    .select({
+      cropId: plantingLogs.cropId,
+      total: sql<string>`COALESCE(SUM(${plantingLogs.quantityPlanted}), '0')`,
+    })
+    .from(plantingLogs)
+    .where(and(...plantedConds))
+    .groupBy(plantingLogs.cropId)
+
+  // Seedlings produced per crop (filtered by sowingDate)
+  const seedlingConds = [
+    eq(seedlingProductionLogs.userId, userId),
+    isNull(seedlingProductionLogs.deletedAt),
+    inArray(seedlingProductionLogs.cropId, cropIds),
+  ]
+  if (startDate) seedlingConds.push(gte(seedlingProductionLogs.sowingDate, startDate))
+  if (endDate) seedlingConds.push(lte(seedlingProductionLogs.sowingDate, endDate))
+  const producedRows = await db
+    .select({
+      cropId: seedlingProductionLogs.cropId,
+      total: sql<string>`COALESCE(SUM(${seedlingProductionLogs.actualSeedlingsProduced}), '0')`,
+    })
+    .from(seedlingProductionLogs)
+    .where(and(...seedlingConds))
+    .groupBy(seedlingProductionLogs.cropId)
+
+  // Total harvested per crop (filtered by harvestDate)
+  const harvestConds = [eq(harvestLogs.userId, userId), isNull(harvestLogs.deletedAt)]
+  if (startDate) harvestConds.push(gte(harvestLogs.harvestDate, startDate))
+  if (endDate) harvestConds.push(lte(harvestLogs.harvestDate, endDate))
+  const harvestedRows = await db
+    .select({
+      cropId: plantingLogs.cropId,
+      total: sql<string>`COALESCE(SUM(${harvestLogs.quantityHarvested}), '0')`,
+    })
+    .from(harvestLogs)
+    .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
+    .where(and(...harvestConds))
+    .groupBy(plantingLogs.cropId)
+
+  // Total sold per crop (via saleItems -> harvestLogs -> plantingLogs, filtered by saleDate)
+  const saleConds = [
+    eq(harvestLogs.userId, userId),
+    isNull(harvestLogs.deletedAt),
+    isNull(sales.deletedAt),
+  ]
+  if (startDate) saleConds.push(gte(sales.saleDate, startDate))
+  if (endDate) saleConds.push(lte(sales.saleDate, endDate))
+  const soldRows = await db
+    .select({
+      cropId: plantingLogs.cropId,
+      total: sql<string>`COALESCE(SUM(${saleItems.quantity}), '0')`,
+    })
+    .from(saleItems)
+    .innerJoin(harvestLogs, eq(saleItems.harvestLogId, harvestLogs.id))
+    .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
+    .innerJoin(sales, eq(saleItems.saleId, sales.id))
+    .where(and(...saleConds))
+    .groupBy(plantingLogs.cropId)
+
+  const plantedMap = new Map(plantedRows.map((r) => [r.cropId, Number(r.total)]))
+  const producedMap = new Map(producedRows.map((r) => [r.cropId, Number(r.total)]))
+  const harvestedMap = new Map(harvestedRows.map((r) => [r.cropId, Number(r.total)]))
+  const soldMap = new Map(soldRows.map((r) => [r.cropId, Number(r.total)]))
+
+  return userCrops
+    .map((crop) => {
+      const totalPlanted = plantedMap.get(crop.id) ?? 0
+      const plantsProduced = producedMap.get(crop.id) ?? 0
+      const totalProduced = harvestedMap.get(crop.id) ?? 0
+      const totalSales = soldMap.get(crop.id) ?? 0
+      return {
+        cropId: crop.id,
+        cropName: crop.name + (crop.variety ? ` - ${crop.variety}` : ''),
+        totalPlanted,
+        plantsProduced,
+        totalProduced,
+        totalSales,
+        difference: totalProduced - totalSales,
+      }
+    })
+    .filter(
+      (r) => r.totalPlanted > 0 || r.plantsProduced > 0 || r.totalProduced > 0 || r.totalSales > 0
+    )
+}
+
+// Seedling Lifecycle Report
+export async function getSeedlingLifecycleReport(startDate?: string, endDate?: string) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
+  const userId = session.user.id
+
+  const conditions = [
+    eq(seedlingProductionLogs.userId, userId),
+    isNull(seedlingProductionLogs.deletedAt),
+  ]
+  if (startDate) conditions.push(gte(seedlingProductionLogs.sowingDate, startDate))
+  if (endDate) conditions.push(lte(seedlingProductionLogs.sowingDate, endDate))
+
+  const logs = await db.query.seedlingProductionLogs.findMany({
+    where: and(...conditions),
+    orderBy: (l, { desc }) => [desc(l.sowingDate)],
+    with: { crop: { columns: { name: true, variety: true } } },
+  })
+
+  if (logs.length === 0) return []
+
+  const logIds = logs.map((l) => l.id)
+
+  // Transplanted = sum of quantityPlanted linked via selfProducedSeedlingId
+  const transplantedRows = await db
+    .select({
+      seedlingId: plantingLogs.selfProducedSeedlingId,
+      total: sql<string>`COALESCE(SUM(${plantingLogs.quantityPlanted}), '0')`,
+    })
+    .from(plantingLogs)
+    .where(
+      and(inArray(plantingLogs.selfProducedSeedlingId, logIds), isNull(plantingLogs.deletedAt))
+    )
+    .groupBy(plantingLogs.selfProducedSeedlingId)
+
+  // Harvested = sum of quantityHarvested via those plantingLogs
+  const harvestedRows = await db
+    .select({
+      seedlingId: plantingLogs.selfProducedSeedlingId,
+      total: sql<string>`COALESCE(SUM(${harvestLogs.quantityHarvested}), '0')`,
+    })
+    .from(harvestLogs)
+    .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
+    .where(
+      and(
+        inArray(plantingLogs.selfProducedSeedlingId, logIds),
+        isNull(harvestLogs.deletedAt),
+        isNull(plantingLogs.deletedAt)
+      )
+    )
+    .groupBy(plantingLogs.selfProducedSeedlingId)
+
+  // Sold = sum of saleItems.quantity via those plantingLogs
+  const soldRows = await db
+    .select({
+      seedlingId: plantingLogs.selfProducedSeedlingId,
+      total: sql<string>`COALESCE(SUM(${saleItems.quantity}), '0')`,
+    })
+    .from(saleItems)
+    .innerJoin(harvestLogs, eq(saleItems.harvestLogId, harvestLogs.id))
+    .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
+    .innerJoin(sales, eq(saleItems.saleId, sales.id))
+    .where(
+      and(
+        inArray(plantingLogs.selfProducedSeedlingId, logIds),
+        isNull(harvestLogs.deletedAt),
+        isNull(plantingLogs.deletedAt),
+        isNull(sales.deletedAt)
+      )
+    )
+    .groupBy(plantingLogs.selfProducedSeedlingId)
+
+  const transplantedMap = new Map(transplantedRows.map((r) => [r.seedlingId, Number(r.total)]))
+  const harvestedMap = new Map(harvestedRows.map((r) => [r.seedlingId, Number(r.total)]))
+  const soldMap = new Map(soldRows.map((r) => [r.seedlingId, Number(r.total)]))
+
+  return logs.map((log) => ({
+    id: log.id,
+    cropName: log.crop.name + (log.crop.variety ? ` - ${log.crop.variety}` : ''),
+    sowingDate: log.sowingDate,
+    sownQty: `${log.quantitySown} ${log.sowingUnit}`,
+    produced: log.actualSeedlingsProduced ?? 0,
+    transplanted: transplantedMap.get(log.id) ?? 0,
+    harvested: harvestedMap.get(log.id) ?? 0,
+    sold: soldMap.get(log.id) ?? 0,
+    remaining: log.currentSeedlingsAvailable ?? 0,
+  }))
 }
 
 // Cultivation Activity Report
