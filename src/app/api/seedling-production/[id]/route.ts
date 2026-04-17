@@ -2,14 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { seedlingProductionLogs, seedBatches } from '@/lib/db/schema'
-import { eq, and, isNull } from 'drizzle-orm'
+import { seedlingProductionLogs, seedBatches, plantingLogs } from '@/lib/db/schema'
+import { eq, and, isNull, sum } from 'drizzle-orm'
 import { z } from 'zod'
 
 const updateSchema = z.object({
   sowingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   actualSeedlingsProduced: z.number().int().min(0),
-  currentSeedlingsAvailable: z.number().int().min(0),
   nurseryLocation: z.string().optional().or(z.literal('')),
   readyForTransplantDate: z
     .string()
@@ -28,15 +27,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json()
     const data = updateSchema.parse(body)
 
+    // Calculate how many have already been planted from this seedling batch
+    const [plantedResult] = await db
+      .select({ total: sum(plantingLogs.quantityPlanted) })
+      .from(plantingLogs)
+      .where(and(eq(plantingLogs.selfProducedSeedlingId, id), isNull(plantingLogs.deletedAt)))
+    const totalPlanted = Math.round(parseFloat(plantedResult?.total ?? '0') || 0)
+    const newAvailable = Math.max(0, data.actualSeedlingsProduced - totalPlanted)
+
     const [updated] = await db
       .update(seedlingProductionLogs)
       .set({
         sowingDate: data.sowingDate,
         actualSeedlingsProduced: data.actualSeedlingsProduced,
-        currentSeedlingsAvailable: Math.min(
-          data.currentSeedlingsAvailable,
-          data.actualSeedlingsProduced
-        ),
+        currentSeedlingsAvailable: newAvailable,
         nurseryLocation: data.nurseryLocation || null,
         readyForTransplantDate: data.readyForTransplantDate || null,
         notes: data.notes || null,
