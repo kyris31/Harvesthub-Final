@@ -8,7 +8,7 @@ export const harvestLogSchema = z
     harvestDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
     quantityHarvested: z.string().min(1, 'Quantity is required'),
     quantityUnit: z.string().min(1, 'Unit is required'),
-    currentStock: z.string().min(1, 'Current stock is required'),
+    currentStock: z.string().optional().or(z.literal('')),
     qualityGrade: z
       .string()
       .max(50, 'Quality grade must be less than 50 characters')

@@ -59,7 +59,6 @@ export function HarvestForm({ plantings, trees, defaultValues, mode }: HarvestFo
       harvestDate: new Date().toISOString().split('T')[0],
       quantityHarvested: '',
       quantityUnit: 'kg',
-      currentStock: '',
       qualityGrade: '',
       notes: '',
     },
@@ -240,16 +239,7 @@ export function HarvestForm({ plantings, trees, defaultValues, mode }: HarvestFo
               <FormItem>
                 <FormLabel>Quantity Harvested *</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="e.g. 50"
-                    {...field}
-                    onChange={(e) => {
-                      field.onChange(e)
-                      if (!form.getValues('currentStock')) {
-                        form.setValue('currentStock', e.target.value)
-                      }
-                    }}
-                  />
+                  <Input placeholder="e.g. 50" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -282,23 +272,6 @@ export function HarvestForm({ plantings, trees, defaultValues, mode }: HarvestFo
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="currentStock"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Current Stock *</FormLabel>
-              <FormControl>
-                <Input placeholder="Auto-fills from quantity harvested" {...field} />
-              </FormControl>
-              <FormDescription>
-                Amount currently in stock (defaults to quantity harvested)
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}

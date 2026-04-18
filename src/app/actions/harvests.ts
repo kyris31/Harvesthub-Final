@@ -28,13 +28,20 @@ export async function getHarvestLogs(filters?: {
     whereConditions.push(lte(harvestLogs.harvestDate, filters.endDate))
   }
 
-  return await db.query.harvestLogs.findMany({
+  const rows = await db.query.harvestLogs.findMany({
     where: and(...whereConditions),
     orderBy: [desc(harvestLogs.harvestDate)],
     with: {
       plantingLog: { with: { crop: true, plot: true } },
       tree: true,
+      saleItems: true,
     },
+  })
+
+  return rows.map((h) => {
+    const totalSold = h.saleItems.reduce((sum, si) => sum + parseFloat(si.quantity), 0)
+    const computed = Math.max(0, parseFloat(h.quantityHarvested) - totalSold)
+    return { ...h, currentStock: computed.toFixed(2) }
   })
 }
 
@@ -51,11 +58,15 @@ export async function getHarvestLog(id: string) {
     with: {
       plantingLog: { with: { crop: true, plot: true } },
       tree: true,
+      saleItems: true,
     },
   })
 
   if (!harvest) throw new Error('Harvest not found')
-  return harvest
+
+  const totalSold = harvest.saleItems.reduce((sum, si) => sum + parseFloat(si.quantity), 0)
+  const computed = Math.max(0, parseFloat(harvest.quantityHarvested) - totalSold)
+  return { ...harvest, currentStock: computed.toFixed(2) }
 }
 
 export async function createHarvestLog(data: HarvestLogFormData) {
@@ -73,7 +84,7 @@ export async function createHarvestLog(data: HarvestLogFormData) {
       harvestDate: validated.harvestDate,
       quantityHarvested: validated.quantityHarvested,
       quantityUnit: validated.quantityUnit,
-      currentStock: validated.currentStock,
+      currentStock: validated.quantityHarvested,
       qualityGrade: validated.qualityGrade || null,
       notes: validated.notes || null,
     })
@@ -108,7 +119,7 @@ export async function updateHarvestLog(id: string, data: HarvestLogFormData) {
       harvestDate: validated.harvestDate,
       quantityHarvested: validated.quantityHarvested,
       quantityUnit: validated.quantityUnit,
-      currentStock: validated.currentStock,
+      currentStock: validated.quantityHarvested,
       qualityGrade: validated.qualityGrade || null,
       notes: validated.notes || null,
       updatedAt: new Date(),
