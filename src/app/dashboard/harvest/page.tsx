@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Plus } from 'lucide-react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -85,16 +87,24 @@ export default function HarvestPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Harvest Records</h1>
-        <p className="text-muted-foreground">
-          Track your harvests and stock levels{' '}
-          {totalHarvests > 0 && (
-            <span className="font-medium">
-              ({totalHarvests} records, {totalStock.toFixed(2)} total stock)
-            </span>
-          )}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Harvest Records</h1>
+          <p className="text-muted-foreground">
+            Track your harvests and stock levels{' '}
+            {totalHarvests > 0 && (
+              <span className="font-medium">
+                ({totalHarvests} records, {totalStock.toFixed(2)} total stock)
+              </span>
+            )}
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/dashboard/harvests/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Record Harvest
+          </Link>
+        </Button>
       </div>
 
       {isLoading ? (
@@ -106,8 +116,14 @@ export default function HarvestPage() {
           <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
             <h3 className="text-lg font-semibold">No harvest records yet</h3>
             <p className="text-muted-foreground mt-2 text-sm">
-              Record a harvest from an active planting in the Planting Records page.
+              Record your first harvest from a planting or tree.
             </p>
+            <Button asChild className="mt-4">
+              <Link href="/dashboard/harvests/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Record Harvest
+              </Link>
+            </Button>
           </div>
         </div>
       ) : (

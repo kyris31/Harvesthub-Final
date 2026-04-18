@@ -13,24 +13,17 @@ export async function getHarvestLogs(filters?: {
   startDate?: string
   endDate?: string
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
-
-  if (!session) {
-    throw new Error('Unauthorized')
-  }
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
 
   const whereConditions = [eq(harvestLogs.userId, session.user.id), isNull(harvestLogs.deletedAt)]
 
   if (filters?.plantingLogId) {
     whereConditions.push(eq(harvestLogs.plantingLogId, filters.plantingLogId))
   }
-
   if (filters?.startDate) {
     whereConditions.push(gte(harvestLogs.harvestDate, filters.startDate))
   }
-
   if (filters?.endDate) {
     whereConditions.push(lte(harvestLogs.harvestDate, filters.endDate))
   }
@@ -39,24 +32,15 @@ export async function getHarvestLogs(filters?: {
     where: and(...whereConditions),
     orderBy: [desc(harvestLogs.harvestDate)],
     with: {
-      plantingLog: {
-        with: {
-          crop: true,
-          plot: true,
-        },
-      },
+      plantingLog: { with: { crop: true, plot: true } },
+      tree: true,
     },
   })
 }
 
 export async function getHarvestLog(id: string) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
-
-  if (!session) {
-    throw new Error('Unauthorized')
-  }
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
 
   const harvest = await db.query.harvestLogs.findFirst({
     where: and(
@@ -65,59 +49,48 @@ export async function getHarvestLog(id: string) {
       isNull(harvestLogs.deletedAt)
     ),
     with: {
-      plantingLog: {
-        with: {
-          crop: true,
-          plot: true,
-        },
-      },
+      plantingLog: { with: { crop: true, plot: true } },
+      tree: true,
     },
   })
 
-  if (!harvest) {
-    throw new Error('Harvest not found')
-  }
-
+  if (!harvest) throw new Error('Harvest not found')
   return harvest
 }
 
 export async function createHarvestLog(data: HarvestLogFormData) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
-
-  if (!session) {
-    throw new Error('Unauthorized')
-  }
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
 
   const validated = harvestLogSchema.parse(data)
 
   const [harvest] = await db
     .insert(harvestLogs)
     .values({
-      ...validated,
-      qualityGrade: validated.qualityGrade || null,
       userId: session.user.id,
+      plantingLogId: validated.sourceType === 'planting' ? validated.plantingLogId || null : null,
+      treeId: validated.sourceType === 'tree' ? validated.treeId || null : null,
+      harvestDate: validated.harvestDate,
+      quantityHarvested: validated.quantityHarvested,
+      quantityUnit: validated.quantityUnit,
+      currentStock: validated.currentStock,
+      qualityGrade: validated.qualityGrade || null,
+      notes: validated.notes || null,
     })
     .returning()
 
   revalidatePath('/dashboard/harvests')
+  revalidatePath('/dashboard/harvest')
   revalidatePath('/dashboard/planting')
   return harvest
 }
 
 export async function updateHarvestLog(id: string, data: HarvestLogFormData) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
-
-  if (!session) {
-    throw new Error('Unauthorized')
-  }
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
 
   const validated = harvestLogSchema.parse(data)
 
-  // Verify ownership
   const existing = await db.query.harvestLogs.findFirst({
     where: and(
       eq(harvestLogs.id, id),
@@ -125,16 +98,19 @@ export async function updateHarvestLog(id: string, data: HarvestLogFormData) {
       isNull(harvestLogs.deletedAt)
     ),
   })
-
-  if (!existing) {
-    throw new Error('Harvest not found')
-  }
+  if (!existing) throw new Error('Harvest not found')
 
   const [updated] = await db
     .update(harvestLogs)
     .set({
-      ...validated,
+      plantingLogId: validated.sourceType === 'planting' ? validated.plantingLogId || null : null,
+      treeId: validated.sourceType === 'tree' ? validated.treeId || null : null,
+      harvestDate: validated.harvestDate,
+      quantityHarvested: validated.quantityHarvested,
+      quantityUnit: validated.quantityUnit,
+      currentStock: validated.currentStock,
       qualityGrade: validated.qualityGrade || null,
+      notes: validated.notes || null,
       updatedAt: new Date(),
     })
     .where(eq(harvestLogs.id, id))
@@ -147,15 +123,9 @@ export async function updateHarvestLog(id: string, data: HarvestLogFormData) {
 }
 
 export async function deleteHarvestLog(id: string) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
 
-  if (!session) {
-    throw new Error('Unauthorized')
-  }
-
-  // Verify ownership
   const existing = await db.query.harvestLogs.findFirst({
     where: and(
       eq(harvestLogs.id, id),
@@ -163,14 +133,11 @@ export async function deleteHarvestLog(id: string) {
       isNull(harvestLogs.deletedAt)
     ),
   })
+  if (!existing) throw new Error('Harvest not found')
 
-  if (!existing) {
-    throw new Error('Harvest not found')
-  }
-
-  // Soft delete
   await db.update(harvestLogs).set({ deletedAt: new Date() }).where(eq(harvestLogs.id, id))
 
   revalidatePath('/dashboard/harvests')
+  revalidatePath('/dashboard/harvest')
   revalidatePath('/dashboard/planting')
 }

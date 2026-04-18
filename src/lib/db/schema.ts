@@ -488,9 +488,10 @@ export const harvestLogs = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    plantingLogId: uuid('planting_log_id')
-      .notNull()
-      .references(() => plantingLogs.id, { onDelete: 'cascade' }),
+    plantingLogId: uuid('planting_log_id').references(() => plantingLogs.id, {
+      onDelete: 'cascade',
+    }),
+    treeId: uuid('tree_id').references(() => trees.id, { onDelete: 'set null' }),
     harvestDate: date('harvest_date').notNull(),
     quantityHarvested: decimal('quantity_harvested', { precision: 10, scale: 2 }).notNull(),
     quantityUnit: text('quantity_unit').notNull(), // kg, pieces, bunches, etc.
@@ -517,6 +518,10 @@ export const harvestLogsRelations = relations(harvestLogs, ({ one, many }) => ({
   plantingLog: one(plantingLogs, {
     fields: [harvestLogs.plantingLogId],
     references: [plantingLogs.id],
+  }),
+  tree: one(trees, {
+    fields: [harvestLogs.treeId],
+    references: [trees.id],
   }),
   saleItems: many(saleItems),
 }))
@@ -825,6 +830,7 @@ export const treesRelations = relations(trees, ({ one, many }) => ({
   }),
   reminders: many(reminders),
   cultivationActivityTrees: many(cultivationActivityTrees),
+  harvestLogs: many(harvestLogs),
 }))
 
 // Reminders

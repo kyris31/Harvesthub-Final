@@ -71,9 +71,11 @@ export default async function HarvestsPage() {
                   <TableRow key={harvest.id}>
                     <TableCell className="font-medium">
                       <Link href={`/dashboard/harvests/${harvest.id}`} className="hover:underline">
-                        {harvest.plantingLog.crop.name}
-                        {harvest.plantingLog.crop.variety &&
-                          ` (${harvest.plantingLog.crop.variety})`}
+                        {harvest.plantingLog
+                          ? `${harvest.plantingLog.crop.name}${harvest.plantingLog.crop.variety ? ` (${harvest.plantingLog.crop.variety})` : ''}`
+                          : harvest.tree
+                            ? `🌳 ${harvest.tree.species}${harvest.tree.variety ? ` (${harvest.tree.variety})` : ''} — ${harvest.tree.identifier}`
+                            : '—'}
                       </Link>
                     </TableCell>
                     <TableCell>
@@ -101,7 +103,9 @@ export default async function HarvestsPage() {
                         </Button>
                         <DeleteHarvestButton
                           harvestId={harvest.id}
-                          cropName={harvest.plantingLog.crop.name}
+                          cropName={
+                            harvest.plantingLog?.crop.name ?? harvest.tree?.species ?? 'Harvest'
+                          }
                         />
                       </div>
                     </TableCell>

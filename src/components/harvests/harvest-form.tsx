@@ -35,11 +35,17 @@ interface HarvestFormProps {
     crop: { name: string; variety: string | null }
     plot: { name: string } | null
   }>
+  trees: Array<{
+    id: string
+    identifier: string
+    species: string
+    variety: string | null
+  }>
   defaultValues?: HarvestLogFormData & { id?: string }
   mode: 'create' | 'edit'
 }
 
-export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps) {
+export function HarvestForm({ plantings, trees, defaultValues, mode }: HarvestFormProps) {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -47,7 +53,9 @@ export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps
   const form = useForm<HarvestLogFormData>({
     resolver: zodResolver(harvestLogSchema),
     defaultValues: defaultValues || {
+      sourceType: 'planting',
       plantingLogId: '',
+      treeId: '',
       harvestDate: new Date().toISOString().split('T')[0],
       quantityHarvested: '',
       quantityUnit: 'kg',
@@ -57,21 +65,17 @@ export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps
     },
   })
 
+  const sourceType = form.watch('sourceType')
+
   async function onSubmit(data: HarvestLogFormData) {
     setIsLoading(true)
     try {
       if (mode === 'edit' && defaultValues?.id) {
         await updateHarvestLog(defaultValues.id, data)
-        toast({
-          title: 'Harvest updated',
-          description: 'Harvest has been updated successfully.',
-        })
+        toast({ title: 'Harvest updated', description: 'Harvest updated successfully.' })
       } else {
         await createHarvestLog(data)
-        toast({
-          title: 'Harvest recorded',
-          description: 'Harvest has been recorded successfully.',
-        })
+        toast({ title: 'Harvest recorded', description: 'Harvest recorded successfully.' })
       }
       router.push('/dashboard/harvests')
       router.refresh()
@@ -89,33 +93,115 @@ export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Source type toggle */}
         <FormField
           control={form.control}
-          name="plantingLogId"
+          name="sourceType"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Planting *</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a planting to harvest" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {plantings.map((planting) => (
-                    <SelectItem key={planting.id} value={planting.id}>
-                      {planting.crop.name} {planting.crop.variety && `(${planting.crop.variety})`} -
-                      Planted {new Date(planting.plantingDate).toLocaleDateString('en-GB')}
-                      {planting.plot && ` in ${planting.plot.name}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>Which planting are you harvesting from?</FormDescription>
+              <FormLabel>Harvest Source *</FormLabel>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={field.value === 'planting' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    field.onChange('planting')
+                    form.setValue('treeId', '')
+                  }}
+                >
+                  🌱 From Planting
+                </Button>
+                <Button
+                  type="button"
+                  variant={field.value === 'tree' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    field.onChange('tree')
+                    form.setValue('plantingLogId', '')
+                  }}
+                >
+                  🌳 From Tree
+                </Button>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {/* Planting select */}
+        {sourceType === 'planting' && (
+          <FormField
+            control={form.control}
+            name="plantingLogId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Planting *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a planting to harvest" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {plantings.length === 0 ? (
+                      <SelectItem value="__none__" disabled>
+                        No active plantings
+                      </SelectItem>
+                    ) : (
+                      plantings.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.crop.name}
+                          {p.crop.variety && ` (${p.crop.variety})`} — Planted{' '}
+                          {new Date(p.plantingDate).toLocaleDateString('en-GB')}
+                          {p.plot && ` in ${p.plot.name}`}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormDescription>Which planting are you harvesting from?</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {/* Tree select */}
+        {sourceType === 'tree' && (
+          <FormField
+            control={form.control}
+            name="treeId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tree *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a tree to harvest" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {trees.length === 0 ? (
+                      <SelectItem value="__none__" disabled>
+                        No trees registered
+                      </SelectItem>
+                    ) : (
+                      trees.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.identifier} — {t.species}
+                          {t.variety && ` (${t.variety})`}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormDescription>Which tree are you harvesting from?</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
@@ -126,7 +212,6 @@ export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps
               <FormControl>
                 <Input type="date" {...field} />
               </FormControl>
-              <FormDescription>When did you harvest?</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -145,7 +230,6 @@ export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps
                     {...field}
                     onChange={(e) => {
                       field.onChange(e)
-                      // Auto-fill current stock if it's empty
                       if (!form.getValues('currentStock')) {
                         form.setValue('currentStock', e.target.value)
                       }
@@ -170,10 +254,12 @@ export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="kg">Kilograms</SelectItem>
-                    <SelectItem value="g">Grams</SelectItem>
-                    <SelectItem value="lbs">Pounds</SelectItem>
+                    <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                    <SelectItem value="g">Grams (g)</SelectItem>
+                    <SelectItem value="lbs">Pounds (lbs)</SelectItem>
                     <SelectItem value="pieces">Pieces</SelectItem>
+                    <SelectItem value="boxes">Boxes</SelectItem>
+                    <SelectItem value="crates">Crates</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -192,7 +278,7 @@ export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps
                 <Input placeholder="Auto-fills from quantity harvested" {...field} />
               </FormControl>
               <FormDescription>
-                Amount currently in stock (defaults to quantity harvested, adjust if sold/used)
+                Amount currently in stock (defaults to quantity harvested)
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -208,7 +294,6 @@ export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps
               <FormControl>
                 <Input placeholder="e.g. A, Premium, Grade 1" {...field} />
               </FormControl>
-              <FormDescription>Optional quality rating for this harvest</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -224,7 +309,7 @@ export function HarvestForm({ plantings, defaultValues, mode }: HarvestFormProps
                 <Textarea
                   placeholder="Add any notes about this harvest..."
                   className="resize-none"
-                  rows={4}
+                  rows={3}
                   {...field}
                 />
               </FormControl>
