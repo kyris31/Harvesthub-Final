@@ -298,17 +298,21 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     headStyles: { fillColor: [34, 139, 34] },
   })
 
-  // Build detailed input usage rows — Date/Activity/Crop/Plot written only on the first
-  // input row of each activity; subsequent inputs for the same activity leave those blank.
-  const inputRows: string[][] = []
+  // Two-row-type layout:
+  //   Activity header row  →  Date | Activity | Crop list | Plot list  (light green bg)
+  //   Input sub-rows       →  (blank x3) | Input Item | Qty | Unit     (normal bg)
+  // This keeps all inputs compact (1 line each) regardless of how many crops/plots.
+  const tableRows: string[][] = []
+  const headerRowIndices: number[] = []
+
   for (const a of data.activities) {
     const date = new Date(a.activityDate).toLocaleDateString('en-GB')
-    const activityLabel = a.activityType.replace('_', ' ')
+    const activityLabel = a.activityType.replace('_', ' ').toUpperCase()
     const crops =
       (a.activityPlantings ?? [])
         .map((ap: any) => ap.plantingLog?.crop?.name ?? '')
         .filter(Boolean)
-        .join(', ') || 'N/A'
+        .join(', ') || '—'
     const plots =
       [
         ...new Set(
@@ -316,45 +320,57 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
             .map((ap: any) => ap.plantingLog?.plot?.name ?? '')
             .filter(Boolean)
         ),
-      ].join(', ') || 'N/A'
+      ].join(', ') || '—'
 
+    // Activity header row
+    headerRowIndices.push(tableRows.length)
+    tableRows.push([date, activityLabel, crops, plots, '', '', ''])
+
+    // Input sub-rows
     if (a.activityInputs && a.activityInputs.length > 0) {
-      a.activityInputs.forEach((ai: any, idx: number) => {
-        // Only the first row of this activity carries Date/Activity/Crop/Plot
-        inputRows.push([
-          idx === 0 ? date : '',
-          ai.inputInventory?.name ?? 'N/A',
-          idx === 0 ? activityLabel : '',
-          idx === 0 ? crops : '',
-          idx === 0 ? plots : '',
-          ai.quantityUsed ?? 'N/A',
-          ai.quantityUnit ?? 'N/A',
+      for (const ai of a.activityInputs) {
+        tableRows.push([
+          '',
+          '',
+          '',
+          '',
+          ai.inputInventory?.name ?? '—',
+          ai.quantityUsed ?? '—',
+          ai.quantityUnit ?? '—',
         ])
-      })
+      }
     } else {
-      inputRows.push([date, '—', activityLabel, crops, plots, '—', '—'])
+      tableRows.push(['', '', '', '', '—', '—', '—'])
     }
   }
 
-  if (inputRows.length > 0) {
+  if (tableRows.length > 0) {
     doc.addPage()
     const inputPageY = addCompanyHeader(doc, logo, 'Detailed Input Usage Report')
 
     // @ts-ignore
     doc.autoTable({
       startY: inputPageY,
-      head: [['Date', 'Input Item', 'Activity', 'Crop', 'Plot', 'Qty Used', 'Unit']],
-      body: inputRows,
+      head: [['Date', 'Activity', 'Crop', 'Plot', 'Input Item', 'Qty', 'Unit']],
+      body: tableRows,
       styles: { font: 'NotoSans', fontSize: 9 },
       headStyles: { fillColor: [34, 139, 34] },
       columnStyles: {
         0: { cellWidth: 22 },
-        1: { cellWidth: 38 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 38 },
-        4: { cellWidth: 27 },
-        5: { cellWidth: 18 },
-        6: { cellWidth: 12 },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 45 },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 42 },
+        5: { cellWidth: 14 },
+        6: { cellWidth: 10 },
+      },
+      // Style activity header rows with a light green background + bold
+      didParseCell: (data: any) => {
+        if (data.section === 'body' && headerRowIndices.includes(data.row.index)) {
+          data.cell.styles.fillColor = [220, 245, 220]
+          data.cell.styles.fontStyle = 'bold'
+          data.cell.styles.fontSize = 8.5
+        }
       },
     })
   }
