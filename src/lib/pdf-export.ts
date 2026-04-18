@@ -306,30 +306,32 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
   for (const a of data.activities) {
     const date = new Date(a.activityDate).toLocaleDateString('en-GB')
     const activityLabel = a.activityType.replace('_', ' ').toUpperCase()
-    // Crops: from planting logs + tree species
+    // Crops: unique planting crop names + unique tree species
     const plantingCrops = (a.activityPlantings ?? [])
       .map((ap: any) => ap.plantingLog?.crop?.name ?? '')
       .filter(Boolean)
-    const treeCrops = (a.activityTrees ?? [])
-      .map((at: any) => {
-        const t = at.tree
-        if (!t) return ''
-        return t.variety ? `${t.species} (${t.variety})` : t.species
-      })
-      .filter(Boolean)
-    const crops = [...plantingCrops, ...treeCrops].join('\n') || '—'
+    const treeCrops = [
+      ...new Set(
+        (a.activityTrees ?? [])
+          .map((at: any) => {
+            const t = at.tree
+            if (!t) return ''
+            return t.variety ? `${t.species} (${t.variety})` : t.species
+          })
+          .filter(Boolean)
+      ),
+    ]
+    const crops = [...new Set([...plantingCrops, ...treeCrops])].join('\n') || '—'
 
-    // Plots: from planting logs + tree identifier/location
+    // Plots: unique planting plot names + unique tree locations
     const plantingPlots = (a.activityPlantings ?? [])
       .map((ap: any) => ap.plantingLog?.plot?.name ?? '')
       .filter(Boolean)
-    const treePlots = (a.activityTrees ?? [])
-      .map((at: any) => {
-        const t = at.tree
-        if (!t) return ''
-        return t.locationDescription || t.identifier || ''
-      })
-      .filter(Boolean)
+    const treePlots = [
+      ...new Set(
+        (a.activityTrees ?? []).map((at: any) => at.tree?.locationDescription ?? '').filter(Boolean)
+      ),
+    ]
     const plots = [...new Set([...plantingPlots, ...treePlots])].join('\n') || '—'
 
     const inputs = a.activityInputs && a.activityInputs.length > 0 ? a.activityInputs : []
