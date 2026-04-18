@@ -650,6 +650,9 @@ export async function getCultivationReport(startDate?: string, endDate?: string)
           },
         },
       },
+      activityTrees: {
+        with: { tree: true },
+      },
     },
   })
 

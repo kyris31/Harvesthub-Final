@@ -306,19 +306,31 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
   for (const a of data.activities) {
     const date = new Date(a.activityDate).toLocaleDateString('en-GB')
     const activityLabel = a.activityType.replace('_', ' ').toUpperCase()
-    const crops =
-      (a.activityPlantings ?? [])
-        .map((ap: any) => ap.plantingLog?.crop?.name ?? '')
-        .filter(Boolean)
-        .join('\n') || '—'
-    const plots =
-      [
-        ...new Set(
-          (a.activityPlantings ?? [])
-            .map((ap: any) => ap.plantingLog?.plot?.name ?? '')
-            .filter(Boolean)
-        ),
-      ].join('\n') || '—'
+    // Crops: from planting logs + tree species
+    const plantingCrops = (a.activityPlantings ?? [])
+      .map((ap: any) => ap.plantingLog?.crop?.name ?? '')
+      .filter(Boolean)
+    const treeCrops = (a.activityTrees ?? [])
+      .map((at: any) => {
+        const t = at.tree
+        if (!t) return ''
+        return t.variety ? `${t.species} (${t.variety})` : t.species
+      })
+      .filter(Boolean)
+    const crops = [...plantingCrops, ...treeCrops].join('\n') || '—'
+
+    // Plots: from planting logs + tree identifier/location
+    const plantingPlots = (a.activityPlantings ?? [])
+      .map((ap: any) => ap.plantingLog?.plot?.name ?? '')
+      .filter(Boolean)
+    const treePlots = (a.activityTrees ?? [])
+      .map((at: any) => {
+        const t = at.tree
+        if (!t) return ''
+        return t.locationDescription || t.identifier || ''
+      })
+      .filter(Boolean)
+    const plots = [...new Set([...plantingPlots, ...treePlots])].join('\n') || '—'
 
     const inputs = a.activityInputs && a.activityInputs.length > 0 ? a.activityInputs : []
     const inputNames =
