@@ -298,7 +298,8 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     headStyles: { fillColor: [34, 139, 34] },
   })
 
-  // Build detailed input usage rows (one row per input per activity)
+  // Build detailed input usage rows — Date/Activity/Crop/Plot written only on the first
+  // input row of each activity; subsequent inputs for the same activity leave those blank.
   const inputRows: string[][] = []
   for (const a of data.activities) {
     const date = new Date(a.activityDate).toLocaleDateString('en-GB')
@@ -309,25 +310,29 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
         .filter(Boolean)
         .join(', ') || 'N/A'
     const plots =
-      (a.activityPlantings ?? [])
-        .map((ap: any) => ap.plantingLog?.plot?.name ?? '')
-        .filter(Boolean)
-        .join(', ') || 'N/A'
+      [
+        ...new Set(
+          (a.activityPlantings ?? [])
+            .map((ap: any) => ap.plantingLog?.plot?.name ?? '')
+            .filter(Boolean)
+        ),
+      ].join(', ') || 'N/A'
 
     if (a.activityInputs && a.activityInputs.length > 0) {
-      for (const ai of a.activityInputs) {
+      a.activityInputs.forEach((ai: any, idx: number) => {
+        // Only the first row of this activity carries Date/Activity/Crop/Plot
         inputRows.push([
-          date,
+          idx === 0 ? date : '',
           ai.inputInventory?.name ?? 'N/A',
-          activityLabel,
-          crops,
-          plots,
+          idx === 0 ? activityLabel : '',
+          idx === 0 ? crops : '',
+          idx === 0 ? plots : '',
           ai.quantityUsed ?? 'N/A',
           ai.quantityUnit ?? 'N/A',
         ])
-      }
+      })
     } else {
-      inputRows.push([date, 'N/A', activityLabel, crops, plots, 'N/A', 'N/A'])
+      inputRows.push([date, '—', activityLabel, crops, plots, '—', '—'])
     }
   }
 
@@ -345,11 +350,11 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
       columnStyles: {
         0: { cellWidth: 22 },
         1: { cellWidth: 38 },
-        2: { cellWidth: 28 },
-        3: { cellWidth: 35 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: 17 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 38 },
+        4: { cellWidth: 27 },
+        5: { cellWidth: 18 },
+        6: { cellWidth: 12 },
       },
     })
   }
