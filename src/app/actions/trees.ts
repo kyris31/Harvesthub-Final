@@ -70,6 +70,46 @@ export async function createTree(data: {
   return tree
 }
 
+// ── Create multiple trees at once ────────────────────────────────────────────
+export async function createTrees(
+  treeList: Array<{
+    identifier: string
+    species: string
+    variety?: string
+    plantingDate?: string
+    plotId?: string
+    locationDescription?: string
+    status?: string
+    healthNotes?: string
+    estimatedAnnualYield?: number
+    yieldUnit?: string
+    notes?: string
+  }>
+) {
+  const userId = await getUserId()
+  const inserted = await db
+    .insert(trees)
+    .values(
+      treeList.map((data) => ({
+        userId,
+        identifier: data.identifier,
+        species: data.species,
+        variety: data.variety || null,
+        plantingDate: data.plantingDate || null,
+        plotId: data.plotId || null,
+        locationDescription: data.locationDescription || null,
+        status: data.status || 'healthy',
+        healthNotes: data.healthNotes || null,
+        estimatedAnnualYield: data.estimatedAnnualYield?.toString() || null,
+        yieldUnit: data.yieldUnit || null,
+        notes: data.notes || null,
+      }))
+    )
+    .returning()
+  revalidatePath('/dashboard/trees')
+  return inserted
+}
+
 // ── Update tree ───────────────────────────────────────────────────────────────
 export async function updateTree(
   id: string,
