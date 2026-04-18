@@ -23,6 +23,22 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createSupplierInvoice, updateSupplierInvoice } from '@/app/actions/supplier-invoices'
+
+const ITEM_UNITS = [
+  { value: 'kg', label: 'kg' },
+  { value: 'g', label: 'g' },
+  { value: 'L', label: 'L' },
+  { value: 'ml', label: 'ml' },
+  { value: 'pieces', label: 'Pieces' },
+  { value: 'seeds', label: 'Seeds' },
+  { value: 'seedlings', label: 'Seedlings' },
+  { value: 'bunches', label: 'Bunches' },
+  { value: 'trays', label: 'Trays' },
+  { value: 'boxes', label: 'Boxes' },
+  { value: 'crates', label: 'Crates' },
+  { value: 'bags', label: 'Bags' },
+  { value: 'tonnes', label: 'Tonnes' },
+]
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Loader2, Plus, Trash2 } from 'lucide-react'
@@ -379,9 +395,20 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Item Unit</FormLabel>
-                            <FormControl>
-                              <Input placeholder="L" {...field} />
-                            </FormControl>
+                            <Select onValueChange={field.onChange} value={field.value || undefined}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select unit" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {ITEM_UNITS.map((unit) => (
+                                  <SelectItem key={unit.value} value={unit.value}>
+                                    {unit.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -502,10 +529,10 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
 
                             return (
                               <>
-                                <div>Subtotal: ${lineSubtotal.toFixed(2)}</div>
-                                {discount > 0 && <div>Discount: -${discount.toFixed(2)}</div>}
+                                <div>Subtotal: €{lineSubtotal.toFixed(2)}</div>
+                                {discount > 0 && <div>Discount: -€{discount.toFixed(2)}</div>}
                                 <div className="text-foreground font-semibold">
-                                  Line Total: ${lineTotal.toFixed(2)}
+                                  Line Total: €{lineTotal.toFixed(2)}
                                 </div>
                               </>
                             )
@@ -527,14 +554,14 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
           <CardContent className="space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal (after line discounts):</span>
-              <span className="font-medium">${totals.subtotal.toFixed(2)}</span>
+              <span className="font-medium">€{totals.subtotal.toFixed(2)}</span>
             </div>
 
             {totals.invoiceDiscount > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Invoice Discount:</span>
                 <span className="font-medium text-red-600">
-                  -${totals.invoiceDiscount.toFixed(2)}
+                  -€{totals.invoiceDiscount.toFixed(2)}
                 </span>
               </div>
             )}
@@ -543,13 +570,13 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
               <>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">After Discount:</span>
-                  <span className="font-medium">${totals.afterDiscount.toFixed(2)}</span>
+                  <span className="font-medium">€{totals.afterDiscount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
                     Tax ({form.watch('taxRate') || 0}%):
                   </span>
-                  <span className="font-medium">${totals.taxAmount.toFixed(2)}</span>
+                  <span className="font-medium">€{totals.taxAmount.toFixed(2)}</span>
                 </div>
               </>
             )}
@@ -557,13 +584,13 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
             {totals.shippingCost > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping:</span>
-                <span className="font-medium">${totals.shippingCost.toFixed(2)}</span>
+                <span className="font-medium">€{totals.shippingCost.toFixed(2)}</span>
               </div>
             )}
 
             <div className="flex items-center justify-between border-t pt-3 text-lg font-semibold">
               <span>Total Amount</span>
-              <span className="text-2xl">${totals.total.toFixed(2)}</span>
+              <span className="text-2xl">€{totals.total.toFixed(2)}</span>
             </div>
           </CardContent>
         </Card>
