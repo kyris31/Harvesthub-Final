@@ -640,7 +640,16 @@ export async function getCultivationReport(startDate?: string, endDate?: string)
     where: and(...whereConditions),
     orderBy: (cultivationActivities, { desc }) => [desc(cultivationActivities.activityDate)],
     with: {
-      activityInputs: true,
+      activityInputs: {
+        with: { inputInventory: true },
+      },
+      activityPlantings: {
+        with: {
+          plantingLog: {
+            with: { crop: true, plot: true },
+          },
+        },
+      },
     },
   })
 
