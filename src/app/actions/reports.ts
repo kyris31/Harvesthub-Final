@@ -695,6 +695,11 @@ export async function getProfitabilityReport() {
   if (!session) throw new Error('Unauthorized')
   const userId = session.user.id
 
+  // Helper: sum costs from activityInputs (where costs actually live)
+  function inputsCost(activityInputs: Array<{ cost: string | null }>): number {
+    return activityInputs.reduce((s, ai) => s + parseFloat(ai.cost ?? '0'), 0)
+  }
+
   // ── Plantings ─────────────────────────────────────────────────────────────
   const plantingData = await db.query.plantingLogs.findMany({
     where: and(eq(plantingLogs.userId, userId), isNull(plantingLogs.deletedAt)),
@@ -707,9 +712,14 @@ export async function getProfitabilityReport() {
       },
       cultivationActivities: {
         where: isNull(cultivationActivities.deletedAt),
+        with: { activityInputs: true },
       },
       cultivationActivityPlantings: {
-        with: { cultivationActivity: true },
+        with: {
+          cultivationActivity: {
+            with: { activityInputs: true },
+          },
+        },
       },
     },
   })
@@ -723,17 +733,19 @@ export async function getProfitabilityReport() {
 
       const seen = new Set<string>()
       let cost = 0
+      // Direct activities (legacy plantingLogId link)
       for (const ca of p.cultivationActivities) {
-        if (!seen.has(ca.id) && ca.cost) {
+        if (!seen.has(ca.id)) {
           seen.add(ca.id)
-          cost += parseFloat(ca.cost)
+          cost += inputsCost(ca.activityInputs)
         }
       }
+      // Junction-based activities (new multi-planting approach)
       for (const cap of p.cultivationActivityPlantings) {
         const ca = cap.cultivationActivity
-        if (ca && !seen.has(ca.id) && ca.cost && !ca.deletedAt) {
+        if (ca && !seen.has(ca.id) && !ca.deletedAt) {
           seen.add(ca.id)
-          cost += parseFloat(ca.cost)
+          cost += inputsCost(ca.activityInputs)
         }
       }
 
@@ -759,7 +771,11 @@ export async function getProfitabilityReport() {
         with: { saleItems: true },
       },
       cultivationActivityTrees: {
-        with: { cultivationActivity: true },
+        with: {
+          cultivationActivity: {
+            with: { activityInputs: true },
+          },
+        },
       },
     },
   })
@@ -795,9 +811,9 @@ export async function getProfitabilityReport() {
     }
     for (const cat of t.cultivationActivityTrees) {
       const ca = cat.cultivationActivity
-      if (ca && !g.seen.has(ca.id) && ca.cost && !ca.deletedAt) {
+      if (ca && !g.seen.has(ca.id) && !ca.deletedAt) {
         g.seen.add(ca.id)
-        g.cost += parseFloat(ca.cost)
+        g.cost += inputsCost(ca.activityInputs)
       }
     }
   }
