@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select'
 import { createHarvestLog, updateHarvestLog } from '@/app/actions/harvests'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -66,6 +66,20 @@ export function HarvestForm({ plantings, trees, defaultValues, mode }: HarvestFo
   })
 
   const sourceType = form.watch('sourceType')
+
+  const treeSpeciesGroups = useMemo(() => {
+    const groups = new Map<string, { label: string; representativeId: string; count: number }>()
+    for (const t of trees) {
+      const key = t.variety ? `${t.species}||${t.variety}` : t.species
+      const label = t.variety ? `${t.species} (${t.variety})` : t.species
+      if (!groups.has(key)) {
+        groups.set(key, { label, representativeId: t.id, count: 1 })
+      } else {
+        groups.get(key)!.count++
+      }
+    }
+    return Array.from(groups.values())
+  }, [trees])
 
   async function onSubmit(data: HarvestLogFormData) {
     setIsLoading(true)
@@ -182,21 +196,22 @@ export function HarvestForm({ plantings, trees, defaultValues, mode }: HarvestFo
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {trees.length === 0 ? (
+                    {treeSpeciesGroups.length === 0 ? (
                       <SelectItem value="__none__" disabled>
                         No trees registered
                       </SelectItem>
                     ) : (
-                      trees.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.identifier} — {t.species}
-                          {t.variety && ` (${t.variety})`}
+                      treeSpeciesGroups.map((g) => (
+                        <SelectItem key={g.representativeId} value={g.representativeId}>
+                          {g.label} — {g.count} {g.count === 1 ? 'tree' : 'trees'}
                         </SelectItem>
                       ))
                     )}
                   </SelectContent>
                 </Select>
-                <FormDescription>Which tree are you harvesting from?</FormDescription>
+                <FormDescription>
+                  Select species — all trees of that species are harvested together
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
