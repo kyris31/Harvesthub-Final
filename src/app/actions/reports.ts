@@ -706,6 +706,8 @@ export async function getProfitabilityReport() {
     with: {
       crop: true,
       plot: true,
+      purchasedSeedling: true,
+      seedBatch: true,
       harvestLogs: {
         where: isNull(harvestLogs.deletedAt),
         with: { saleItems: true },
@@ -742,6 +744,27 @@ export async function getProfitabilityReport() {
 
       const seen = new Set<string>()
       let cost = 0
+
+      // Seedling / seed material cost
+      const qty = parseFloat(p.quantityPlanted)
+      if (p.purchasedSeedling) {
+        const s = p.purchasedSeedling
+        const cpu = parseFloat(s.costPerSeedling ?? '0')
+        if (cpu > 0) {
+          cost += cpu * qty
+        } else if (s.totalCost && s.quantityPurchased > 0) {
+          cost += (parseFloat(s.totalCost) / s.quantityPurchased) * qty
+        }
+      } else if (p.seedBatch) {
+        const b = p.seedBatch
+        const cpu = parseFloat(b.costPerUnit ?? '0')
+        if (cpu > 0) {
+          cost += cpu * qty
+        } else if (b.totalCost && parseFloat(b.initialQuantity) > 0) {
+          cost += (parseFloat(b.totalCost) / parseFloat(b.initialQuantity)) * qty
+        }
+      }
+
       // Direct activities (legacy single-planting link) — full cost to this planting
       for (const ca of p.cultivationActivities) {
         if (!seen.has(ca.id)) {
