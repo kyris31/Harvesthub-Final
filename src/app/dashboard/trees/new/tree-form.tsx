@@ -25,9 +25,9 @@ interface Plot {
 }
 
 interface TreeRow {
-  identifier: string
   species: string
   variety: string
+  quantity: string
   estimatedAnnualYield: string
   yieldUnit: string
 }
@@ -50,9 +50,9 @@ export function NewTreeForm({
 
   const [rows, setRows] = useState<TreeRow[]>([
     {
-      identifier: defaultIdentifier ?? 'T-001',
       species: '',
       variety: '',
+      quantity: '1',
       estimatedAnnualYield: '',
       yieldUnit: 'kg',
     },
@@ -67,16 +67,9 @@ export function NewTreeForm({
   const [notes, setNotes] = useState('')
 
   function addRow() {
-    const maxNum = rows.reduce((max, r) => Math.max(max, parseIdNum(r.identifier)), 0)
     setRows((prev) => [
       ...prev,
-      {
-        identifier: `T-${String(maxNum + 1).padStart(3, '0')}`,
-        species: '',
-        variety: '',
-        estimatedAnnualYield: '',
-        yieldUnit: 'kg',
-      },
+      { species: '', variety: '', quantity: '1', estimatedAnnualYield: '', yieldUnit: 'kg' },
     ])
   }
 
@@ -93,33 +86,40 @@ export function NewTreeForm({
     setError('')
 
     if (rows.some((r) => !r.species.trim())) {
-      setError('All tree rows must have a species.')
-      return
-    }
-    if (rows.some((r) => !r.identifier.trim())) {
-      setError('All tree rows must have a Tree ID.')
+      setError('All rows must have a species.')
       return
     }
 
     startTransition(async () => {
       try {
-        await createTrees(
-          rows.map((r) => ({
-            identifier: r.identifier.trim(),
-            species: r.species.trim(),
-            variety: r.variety?.trim() || undefined,
-            estimatedAnnualYield: r.estimatedAnnualYield
-              ? parseFloat(r.estimatedAnnualYield)
-              : undefined,
-            yieldUnit: r.yieldUnit || undefined,
-            plantingDate: plantingDate || undefined,
-            plotId: plotId || undefined,
-            locationDescription: locationDescription?.trim() || undefined,
-            status: status || 'healthy',
-            healthNotes: healthNotes?.trim() || undefined,
-            notes: notes?.trim() || undefined,
-          }))
-        )
+        // Expand each group row into N individual tree records with sequential IDs
+        const startNum = parseIdNum(defaultIdentifier ?? 'T-000')
+        let nextNum = startNum
+        const treeList: Parameters<typeof createTrees>[0] = []
+
+        for (const r of rows) {
+          const qty = Math.max(1, parseInt(r.quantity || '1', 10))
+          for (let i = 0; i < qty; i++) {
+            nextNum += 1
+            treeList.push({
+              identifier: `T-${String(nextNum).padStart(3, '0')}`,
+              species: r.species.trim(),
+              variety: r.variety?.trim() || undefined,
+              estimatedAnnualYield: r.estimatedAnnualYield
+                ? parseFloat(r.estimatedAnnualYield)
+                : undefined,
+              yieldUnit: r.yieldUnit || undefined,
+              plantingDate: plantingDate || undefined,
+              plotId: plotId || undefined,
+              locationDescription: locationDescription?.trim() || undefined,
+              status: status || 'healthy',
+              healthNotes: healthNotes?.trim() || undefined,
+              notes: notes?.trim() || undefined,
+            })
+          }
+        }
+
+        await createTrees(treeList)
         router.push('/dashboard/trees')
         router.refresh()
       } catch (e: any) {
@@ -157,16 +157,6 @@ export function NewTreeForm({
               )}
 
               <div className="space-y-1.5">
-                <Label>Tree ID / Code *</Label>
-                <Input
-                  value={row.identifier}
-                  onChange={(e) => updateRow(index, 'identifier', e.target.value)}
-                  required
-                  placeholder="e.g. T-001"
-                />
-              </div>
-
-              <div className="space-y-1.5">
                 <Label>Species *</Label>
                 <Input
                   value={row.species}
@@ -186,7 +176,22 @@ export function NewTreeForm({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Est. Annual Yield</Label>
+                <Label>Quantity *</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={row.quantity}
+                  onChange={(e) => updateRow(index, 'quantity', e.target.value)}
+                  placeholder="1"
+                />
+                <p className="text-muted-foreground text-xs">
+                  Number of trees — IDs are auto-generated
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Est. Annual Yield (per tree)</Label>
                 <div className="flex gap-2">
                   <Input
                     type="number"
@@ -313,9 +318,13 @@ export function NewTreeForm({
           )}
           {isPending
             ? 'Saving…'
-            : rows.length > 1
-              ? `Register ${rows.length} Trees`
-              : 'Register Tree'}
+            : (() => {
+                const total = rows.reduce(
+                  (s, r) => s + Math.max(1, parseInt(r.quantity || '1', 10)),
+                  0
+                )
+                return total > 1 ? `Register ${total} Trees` : 'Register Tree'
+              })()}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancel
