@@ -298,14 +298,10 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     headStyles: { fillColor: [34, 139, 34] },
   })
 
-  // Layout per activity (columns: Date | Activity | Input Item | Qty | Unit | Crop | Plot):
-  //   Header row : Date | Activity | first_input | first_qty | first_unit | Crops | Plots  ← bold, green
-  //   Extra rows : ''   | ''       | next_input  | next_qty  | next_unit  | ''    | ''     ← green
-  // Putting Input Item in column 3 ensures it appears at the TOP of each activity group,
-  // while Crop/Plot in columns 6-7 can grow tall without pushing inputs down.
+  // One row per activity — all inputs combined into a single cell via newlines so they
+  // always appear alongside the crops/plots, never pushed below a tall cell.
+  // Columns: Date | Activity | Input Item | Qty | Unit | Crop | Plot
   const tableRows: string[][] = []
-  const greenRowIndices: number[] = []
-  const headerRowIndices: number[] = []
 
   for (const a of data.activities) {
     const date = new Date(a.activityDate).toLocaleDateString('en-GB')
@@ -314,7 +310,7 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
       (a.activityPlantings ?? [])
         .map((ap: any) => ap.plantingLog?.crop?.name ?? '')
         .filter(Boolean)
-        .join(', ') || '—'
+        .join('\n') || '—'
     const plots =
       [
         ...new Set(
@@ -322,39 +318,17 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
             .map((ap: any) => ap.plantingLog?.plot?.name ?? '')
             .filter(Boolean)
         ),
-      ].join(', ') || '—'
+      ].join('\n') || '—'
 
-    const inputs = a.activityInputs && a.activityInputs.length > 0 ? a.activityInputs : [null]
+    const inputs = a.activityInputs && a.activityInputs.length > 0 ? a.activityInputs : []
+    const inputNames =
+      inputs.length > 0 ? inputs.map((ai: any) => ai.inputInventory?.name ?? '—').join('\n') : '—'
+    const inputQtys =
+      inputs.length > 0 ? inputs.map((ai: any) => ai.quantityUsed ?? '—').join('\n') : '—'
+    const inputUnits =
+      inputs.length > 0 ? inputs.map((ai: any) => ai.quantityUnit ?? '—').join('\n') : '—'
 
-    // First input goes on the header row itself — so it appears at the top
-    const firstInput = inputs[0]
-    const headerIdx = tableRows.length
-    greenRowIndices.push(headerIdx)
-    headerRowIndices.push(headerIdx)
-    tableRows.push([
-      date,
-      activityLabel,
-      firstInput ? (firstInput.inputInventory?.name ?? '—') : '—',
-      firstInput ? (firstInput.quantityUsed ?? '—') : '—',
-      firstInput ? (firstInput.quantityUnit ?? '—') : '—',
-      crops,
-      plots,
-    ])
-
-    // Remaining inputs stack as compact rows below the header
-    for (let i = 1; i < inputs.length; i++) {
-      const ai = inputs[i]
-      greenRowIndices.push(tableRows.length)
-      tableRows.push([
-        '',
-        '',
-        ai ? (ai.inputInventory?.name ?? '—') : '—',
-        ai ? (ai.quantityUsed ?? '—') : '—',
-        ai ? (ai.quantityUnit ?? '—') : '—',
-        '',
-        '',
-      ])
-    }
+    tableRows.push([date, activityLabel, inputNames, inputQtys, inputUnits, crops, plots])
   }
 
   if (tableRows.length > 0) {
@@ -366,24 +340,17 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
       startY: inputPageY,
       head: [['Date', 'Activity', 'Input Item', 'Qty', 'Unit', 'Crop', 'Plot']],
       body: tableRows,
-      styles: { font: 'NotoSans', fontSize: 9 },
+      styles: { font: 'NotoSans', fontSize: 9, fillColor: [220, 245, 220] },
       headStyles: { fillColor: [34, 139, 34] },
+      bodyStyles: { fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: 22 },
-        1: { cellWidth: 22 },
-        2: { cellWidth: 42 },
-        3: { cellWidth: 14 },
-        4: { cellWidth: 10 },
-        5: { cellWidth: 45 },
-        6: { cellWidth: 35 },
-      },
-      didParseCell: (data: any) => {
-        if (data.section === 'body' && greenRowIndices.includes(data.row.index)) {
-          data.cell.styles.fillColor = [220, 245, 220]
-          if (headerRowIndices.includes(data.row.index)) {
-            data.cell.styles.fontStyle = 'bold'
-          }
-        }
+        0: { cellWidth: 22, fontStyle: 'bold' },
+        1: { cellWidth: 22, fontStyle: 'bold' },
+        2: { cellWidth: 42, fontStyle: 'normal' },
+        3: { cellWidth: 14, fontStyle: 'normal' },
+        4: { cellWidth: 10, fontStyle: 'normal' },
+        5: { cellWidth: 45, fontStyle: 'normal' },
+        6: { cellWidth: 35, fontStyle: 'normal' },
       },
     })
   }
