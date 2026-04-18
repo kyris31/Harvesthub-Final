@@ -298,26 +298,59 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     headStyles: { fillColor: [34, 139, 34] },
   })
 
-  if (data.activities.length > 0) {
-    const activitiesData = data.activities
-      .slice(0, 15)
-      .map((a: any) => [
-        new Date(a.activityDate).toLocaleDateString('en-GB'),
-        a.activityType.replace('_', ' '),
-        a.quantityUsed ? `${a.quantityUsed} ${a.quantityUnit}` : 'N/A',
-        a.cost ? `€${Number(a.cost).toFixed(2)}` : 'N/A',
-      ])
+  // Build detailed input usage rows (one row per input per activity)
+  const inputRows: string[][] = []
+  for (const a of data.activities) {
+    const date = new Date(a.activityDate).toLocaleDateString('en-GB')
+    const activityLabel = a.activityType.replace('_', ' ')
+    const crops =
+      (a.activityPlantings ?? [])
+        .map((ap: any) => ap.plantingLog?.crop?.name ?? '')
+        .filter(Boolean)
+        .join(', ') || 'N/A'
+    const plots =
+      (a.activityPlantings ?? [])
+        .map((ap: any) => ap.plantingLog?.plot?.name ?? '')
+        .filter(Boolean)
+        .join(', ') || 'N/A'
 
+    if (a.activityInputs && a.activityInputs.length > 0) {
+      for (const ai of a.activityInputs) {
+        inputRows.push([
+          date,
+          ai.inputInventory?.name ?? 'N/A',
+          activityLabel,
+          crops,
+          plots,
+          ai.quantityUsed ?? 'N/A',
+          ai.quantityUnit ?? 'N/A',
+        ])
+      }
+    } else {
+      inputRows.push([date, 'N/A', activityLabel, crops, plots, 'N/A', 'N/A'])
+    }
+  }
+
+  if (inputRows.length > 0) {
     doc.addPage()
-    const actPageY = addCompanyHeader(doc, logo, 'Recent Activities')
+    const inputPageY = addCompanyHeader(doc, logo, 'Detailed Input Usage Report')
 
     // @ts-ignore
     doc.autoTable({
-      startY: actPageY,
-      head: [['Date', 'Type', 'Quantity', 'Cost']],
-      body: activitiesData,
+      startY: inputPageY,
+      head: [['Date', 'Input Item', 'Activity', 'Crop', 'Plot', 'Qty Used', 'Unit']],
+      body: inputRows,
       styles: { font: 'NotoSans', fontSize: 9 },
       headStyles: { fillColor: [34, 139, 34] },
+      columnStyles: {
+        0: { cellWidth: 22 },
+        1: { cellWidth: 38 },
+        2: { cellWidth: 28 },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 17 },
+      },
     })
   }
 
