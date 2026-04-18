@@ -50,7 +50,8 @@ export function EditTreeForm({ tree, plots }: { tree: Tree; plots: Plot[] }) {
     setError('')
     const fd = new FormData(e.currentTarget)
     const yieldVal = fd.get('estimatedAnnualYield') as string
-    const plotId = fd.get('plotId') as string
+    const plotIdRaw = fd.get('plotId') as string | null
+    const plotId = plotIdRaw === '__none__' ? '' : (plotIdRaw ?? '')
 
     startTransition(async () => {
       try {
@@ -117,12 +118,12 @@ export function EditTreeForm({ tree, plots }: { tree: Tree; plots: Plot[] }) {
           {plots.length > 0 && (
             <div className="space-y-1.5">
               <Label htmlFor="plotId">Plot</Label>
-              <Select name="plotId" defaultValue={tree.plotId ?? ''}>
+              <Select name="plotId" defaultValue={tree.plotId ?? '__none__'}>
                 <SelectTrigger id="plotId">
                   <SelectValue placeholder="Select plot (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No plot</SelectItem>
+                  <SelectItem value="__none__">No plot</SelectItem>
                   {plots.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
