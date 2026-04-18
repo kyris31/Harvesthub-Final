@@ -18,7 +18,11 @@
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
       "Bash(git push:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run *)",
+      "Bash(git commit -m ' *)",
+      "Bash(cat drizzle.config.ts)",
+      "Bash(cat drizzle.config.js)"
     ]
   }
 }

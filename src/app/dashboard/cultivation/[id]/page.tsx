@@ -1,6 +1,7 @@
 import { getCultivationActivity, deleteCultivationActivity } from '@/app/actions/cultivation'
 import { getPlantingLogs } from '@/app/actions/planting'
 import { getInputInventory } from '@/app/actions/input-inventory'
+import { getTrees } from '@/app/actions/trees'
 import { CultivationForm } from '@/components/cultivation/cultivation-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,9 +17,12 @@ interface CultivationDetailPageProps {
 
 export default async function CultivationDetailPage({ params }: CultivationDetailPageProps) {
   const { id } = await params
-  const activity = await getCultivationActivity(id)
-  const plantingLogs = await getPlantingLogs()
-  const inputInventory = await getInputInventory()
+  const [activity, plantingLogs, inputInventory, treeList] = await Promise.all([
+    getCultivationActivity(id),
+    getPlantingLogs(),
+    getInputInventory(),
+    getTrees(),
+  ])
 
   async function handleDelete() {
     'use server'
@@ -56,10 +60,12 @@ export default async function CultivationDetailPage({ params }: CultivationDetai
         <CardContent>
           <CultivationForm
             plantingLogs={plantingLogs}
+            trees={treeList}
             inputInventory={inputInventory}
             defaultValues={{
               id: activity.id,
               plantingLogIds: activity.activityPlantings.map((ap) => ap.plantingLogId),
+              treeIds: activity.activityTrees.map((at) => at.treeId),
               activityType: activity.activityType as any,
               activityDate: activity.activityDate,
               inputs: activity.activityInputs.map((ai) => ({

@@ -7,6 +7,7 @@ import {
   cultivationActivities,
   cultivationActivityPlantings,
   cultivationActivityInputs,
+  cultivationActivityTrees,
   inputInventory,
 } from '@/lib/db/schema'
 import { and, eq, isNull, desc, gte, lte } from 'drizzle-orm'
@@ -61,6 +62,9 @@ export async function getCultivationActivities(filters?: {
       activityInputs: {
         with: { inputInventory: true },
       },
+      activityTrees: {
+        with: { tree: true },
+      },
     },
   })
 }
@@ -90,6 +94,9 @@ export async function getCultivationActivity(id: string) {
       },
       activityInputs: {
         with: { inputInventory: true },
+      },
+      activityTrees: {
+        with: { tree: true },
       },
     },
   })
@@ -176,6 +183,16 @@ export async function createCultivationActivity(data: CultivationActivityFormDat
     )
   }
 
+  // Insert tree associations
+  if (validated.treeIds && validated.treeIds.length > 0) {
+    await db.insert(cultivationActivityTrees).values(
+      validated.treeIds.map((treeId) => ({
+        cultivationActivityId: activity.id,
+        treeId,
+      }))
+    )
+  }
+
   revalidatePath('/dashboard/cultivation')
   revalidatePath('/dashboard/inventory')
   return activity
@@ -243,6 +260,17 @@ export async function updateCultivationActivity(id: string, data: CultivationAct
         cost: item.cost || null,
       }))
     )
+  }
+
+  // Sync tree associations
+  await db
+    .delete(cultivationActivityTrees)
+    .where(eq(cultivationActivityTrees.cultivationActivityId, id))
+
+  if (validated.treeIds && validated.treeIds.length > 0) {
+    await db
+      .insert(cultivationActivityTrees)
+      .values(validated.treeIds.map((treeId) => ({ cultivationActivityId: id, treeId })))
   }
 
   revalidatePath('/dashboard/cultivation')

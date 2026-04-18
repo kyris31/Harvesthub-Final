@@ -389,6 +389,28 @@ export const cultivationActivityPlantingsRelations = relations(
   })
 )
 
+// Cultivation Activity Trees (junction: activity → many trees)
+export const cultivationActivityTrees = pgTable('cultivation_activity_trees', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  cultivationActivityId: uuid('cultivation_activity_id')
+    .notNull()
+    .references(() => cultivationActivities.id, { onDelete: 'cascade' }),
+  treeId: uuid('tree_id')
+    .notNull()
+    .references(() => trees.id, { onDelete: 'cascade' }),
+})
+
+export const cultivationActivityTreesRelations = relations(cultivationActivityTrees, ({ one }) => ({
+  cultivationActivity: one(cultivationActivities, {
+    fields: [cultivationActivityTrees.cultivationActivityId],
+    references: [cultivationActivities.id],
+  }),
+  tree: one(trees, {
+    fields: [cultivationActivityTrees.treeId],
+    references: [trees.id],
+  }),
+}))
+
 // Cultivation Activity Inputs (junction: activity → many inputs)
 export const cultivationActivityInputs = pgTable('cultivation_activity_inputs', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -455,6 +477,7 @@ export const cultivationActivitiesRelations = relations(cultivationActivities, (
   }),
   activityPlantings: many(cultivationActivityPlantings),
   activityInputs: many(cultivationActivityInputs),
+  activityTrees: many(cultivationActivityTrees),
 }))
 
 // Harvest Logs
@@ -801,6 +824,7 @@ export const treesRelations = relations(trees, ({ one, many }) => ({
     references: [plots.id],
   }),
   reminders: many(reminders),
+  cultivationActivityTrees: many(cultivationActivityTrees),
 }))
 
 // Reminders

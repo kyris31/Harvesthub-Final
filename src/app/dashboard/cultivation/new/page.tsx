@@ -1,11 +1,15 @@
 import { getPlantingLogs } from '@/app/actions/planting'
 import { getInputInventory } from '@/app/actions/input-inventory'
+import { getTrees } from '@/app/actions/trees'
 import { CultivationForm } from '@/components/cultivation/cultivation-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default async function NewCultivationPage() {
-  const plantingLogs = await getPlantingLogs()
-  const inputInventory = await getInputInventory()
+  const [plantingLogs, inputInventory, treeList] = await Promise.all([
+    getPlantingLogs(),
+    getInputInventory(),
+    getTrees(),
+  ])
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -22,6 +26,7 @@ export default async function NewCultivationPage() {
         <CardContent>
           <CultivationForm
             plantingLogs={plantingLogs}
+            trees={treeList}
             inputInventory={inputInventory}
             mode="create"
           />

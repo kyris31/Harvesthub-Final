@@ -39,6 +39,13 @@ interface PlantingLog {
   plot: { name: string } | null
 }
 
+interface TreeItem {
+  id: string
+  identifier: string
+  species: string
+  variety: string | null
+}
+
 interface InputInventoryItem {
   id: string
   name: string
@@ -49,6 +56,7 @@ interface InputInventoryItem {
 
 interface CultivationFormProps {
   plantingLogs: PlantingLog[]
+  trees: TreeItem[]
   inputInventory: InputInventoryItem[]
   defaultValues?: CultivationActivityFormData & { id?: string }
   mode: 'create' | 'edit'
@@ -56,6 +64,7 @@ interface CultivationFormProps {
 
 export function CultivationForm({
   plantingLogs,
+  trees,
   inputInventory,
   defaultValues,
   mode,
@@ -68,6 +77,7 @@ export function CultivationForm({
     resolver: zodResolver(cultivationActivitySchema),
     defaultValues: defaultValues || {
       plantingLogIds: [],
+      treeIds: [],
       activityType: 'watering',
       activityDate: new Date().toISOString().split('T')[0],
       inputs: [],
@@ -208,6 +218,53 @@ export function CultivationForm({
                             {log.crop.name}
                             {log.crop.variety && ` (${log.crop.variety})`}
                             {log.plot && ` — ${log.plot.name}`}
+                          </FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Related Trees — multi-select checkboxes */}
+        <FormField
+          control={form.control}
+          name="treeIds"
+          render={() => (
+            <FormItem>
+              <FormLabel>Related Trees (Optional)</FormLabel>
+              <FormDescription>Select all trees this activity applies to</FormDescription>
+              {trees.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No trees registered yet.</p>
+              ) : (
+                <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3">
+                  {trees.map((tree) => (
+                    <FormField
+                      key={tree.id}
+                      control={form.control}
+                      name="treeIds"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value?.includes(tree.id)}
+                              onCheckedChange={(checked) => {
+                                const current = field.value ?? []
+                                field.onChange(
+                                  checked
+                                    ? [...current, tree.id]
+                                    : current.filter((v) => v !== tree.id)
+                                )
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="cursor-pointer font-normal">
+                            {tree.identifier} — {tree.species}
+                            {tree.variety && ` (${tree.variety})`}
                           </FormLabel>
                         </FormItem>
                       )}
