@@ -140,7 +140,7 @@ export function TreesClient({ trees }: { trees: Tree[] }) {
             <p className="text-muted-foreground text-sm">
               {selectedGroup
                 ? `${selectedGroup.trees.length} tree${selectedGroup.trees.length !== 1 ? 's' : ''} registered`
-                : 'Track fruit and timber trees on your farm'}
+                : `${trees.length} tree${trees.length !== 1 ? 's' : ''} total · ${speciesGroups.length} species`}
             </p>
           </div>
         </div>
