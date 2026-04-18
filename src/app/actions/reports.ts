@@ -724,6 +724,15 @@ export async function getProfitabilityReport() {
     },
   })
 
+  // Build map: activityId → how many plantings it covers (for proportional cost split)
+  const activityPlantingCount = new Map<string, number>()
+  for (const p of plantingData) {
+    for (const cap of p.cultivationActivityPlantings) {
+      const id = cap.cultivationActivity?.id
+      if (id) activityPlantingCount.set(id, (activityPlantingCount.get(id) ?? 0) + 1)
+    }
+  }
+
   const plantingResults = plantingData
     .map((p) => {
       const revenue = p.harvestLogs.reduce(
@@ -733,19 +742,20 @@ export async function getProfitabilityReport() {
 
       const seen = new Set<string>()
       let cost = 0
-      // Direct activities (legacy plantingLogId link)
+      // Direct activities (legacy single-planting link) — full cost to this planting
       for (const ca of p.cultivationActivities) {
         if (!seen.has(ca.id)) {
           seen.add(ca.id)
           cost += inputsCost(ca.activityInputs)
         }
       }
-      // Junction-based activities (new multi-planting approach)
+      // Junction activities — split cost proportionally across all linked plantings
       for (const cap of p.cultivationActivityPlantings) {
         const ca = cap.cultivationActivity
         if (ca && !seen.has(ca.id) && !ca.deletedAt) {
           seen.add(ca.id)
-          cost += inputsCost(ca.activityInputs)
+          const linkedCount = activityPlantingCount.get(ca.id) ?? 1
+          cost += inputsCost(ca.activityInputs) / linkedCount
         }
       }
 
@@ -780,16 +790,18 @@ export async function getProfitabilityReport() {
     },
   })
 
+  // Build map: activityId → how many individual trees it covers
+  const activityTreeCount = new Map<string, number>()
+  for (const t of treeData) {
+    for (const cat of t.cultivationActivityTrees) {
+      const id = cat.cultivationActivity?.id
+      if (id) activityTreeCount.set(id, (activityTreeCount.get(id) ?? 0) + 1)
+    }
+  }
+
   const treeGroups = new Map<
     string,
-    {
-      species: string
-      variety: string | null
-      revenue: number
-      cost: number
-      treeCount: number
-      seen: Set<string>
-    }
+    { species: string; variety: string | null; revenue: number; cost: number; treeCount: number }
   >()
 
   for (const t of treeData) {
@@ -801,7 +813,6 @@ export async function getProfitabilityReport() {
         revenue: 0,
         cost: 0,
         treeCount: 0,
-        seen: new Set(),
       })
     }
     const g = treeGroups.get(key)!
@@ -809,11 +820,12 @@ export async function getProfitabilityReport() {
     for (const hl of t.harvestLogs) {
       for (const si of hl.saleItems) g.revenue += parseFloat(si.subtotal)
     }
+    // Each tree gets its proportional share of each activity's cost
     for (const cat of t.cultivationActivityTrees) {
       const ca = cat.cultivationActivity
-      if (ca && !g.seen.has(ca.id) && !ca.deletedAt) {
-        g.seen.add(ca.id)
-        g.cost += inputsCost(ca.activityInputs)
+      if (ca && !ca.deletedAt) {
+        const linkedCount = activityTreeCount.get(ca.id) ?? 1
+        g.cost += inputsCost(ca.activityInputs) / linkedCount
       }
     }
   }
