@@ -854,7 +854,7 @@ export async function getProfitabilityReport() {
   }
 
   const treeResults = Array.from(treeGroups.values())
-    .map(({ seen: _seen, ...g }) => ({
+    .map((g) => ({
       ...g,
       label: g.variety ? `${g.species} (${g.variety})` : g.species,
       profit: g.revenue - g.cost,
