@@ -298,12 +298,11 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     headStyles: { fillColor: [34, 139, 34] },
   })
 
-  // Two-row-type layout:
-  //   Activity header row  →  Date | Activity | Crop list | Plot list  (light green bg)
-  //   Input sub-rows       →  (blank x3) | Input Item | Qty | Unit     (normal bg)
-  // This keeps all inputs compact (1 line each) regardless of how many crops/plots.
+  // All rows for the same activity share a light green background.
+  // First row: Date | Activity | Crop | Plot | Input1 | Qty1 | Unit1
+  // Extra input rows: '' | '' | '' | '' | InputN | QtyN | UnitN  (still green)
   const tableRows: string[][] = []
-  const headerRowIndices: number[] = []
+  const greenRowIndices: number[] = [] // every row index that belongs to a green group
 
   for (const a of data.activities) {
     const date = new Date(a.activityDate).toLocaleDateString('en-GB')
@@ -322,26 +321,20 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
         ),
       ].join(', ') || '—'
 
-    // Activity header row
-    headerRowIndices.push(tableRows.length)
-    tableRows.push([date, activityLabel, crops, plots, '', '', ''])
+    const inputs = a.activityInputs && a.activityInputs.length > 0 ? a.activityInputs : [null]
 
-    // Input sub-rows
-    if (a.activityInputs && a.activityInputs.length > 0) {
-      for (const ai of a.activityInputs) {
-        tableRows.push([
-          '',
-          '',
-          '',
-          '',
-          ai.inputInventory?.name ?? '—',
-          ai.quantityUsed ?? '—',
-          ai.quantityUnit ?? '—',
-        ])
-      }
-    } else {
-      tableRows.push(['', '', '', '', '—', '—', '—'])
-    }
+    inputs.forEach((ai: any, idx: number) => {
+      greenRowIndices.push(tableRows.length)
+      tableRows.push([
+        idx === 0 ? date : '',
+        idx === 0 ? activityLabel : '',
+        idx === 0 ? crops : '',
+        idx === 0 ? plots : '',
+        ai ? (ai.inputInventory?.name ?? '—') : '—',
+        ai ? (ai.quantityUsed ?? '—') : '—',
+        ai ? (ai.quantityUnit ?? '—') : '—',
+      ])
+    })
   }
 
   if (tableRows.length > 0) {
@@ -364,12 +357,13 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
         5: { cellWidth: 14 },
         6: { cellWidth: 10 },
       },
-      // Style activity header rows with a light green background + bold
       didParseCell: (data: any) => {
-        if (data.section === 'body' && headerRowIndices.includes(data.row.index)) {
+        if (data.section === 'body' && greenRowIndices.includes(data.row.index)) {
           data.cell.styles.fillColor = [220, 245, 220]
-          data.cell.styles.fontStyle = 'bold'
-          data.cell.styles.fontSize = 8.5
+          // Bold only on the first row of each group (where Date is filled)
+          if (tableRows[data.row.index][0] !== '') {
+            data.cell.styles.fontStyle = 'bold'
+          }
         }
       },
     })
