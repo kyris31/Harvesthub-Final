@@ -329,7 +329,7 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
       .filter(Boolean)
     const treePlots = [
       ...new Set(
-        (a.activityTrees ?? []).map((at: any) => at.tree?.locationDescription ?? '').filter(Boolean)
+        (a.activityTrees ?? []).map((at: any) => at.tree?.plot?.name ?? '').filter(Boolean)
       ),
     ]
     const plots = [...new Set([...plantingPlots, ...treePlots])].join('\n') || '—'
