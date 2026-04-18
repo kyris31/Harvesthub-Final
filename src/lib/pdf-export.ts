@@ -298,10 +298,11 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     headStyles: { fillColor: [34, 139, 34] },
   })
 
-  // Layout per activity (all rows share the light green background):
-  //   Header row : Date | Activity | Crop | Plot | '' | '' | ''   ← bold
-  //   Input rows : ''   | ''       | ''   | ''   | Input | Qty | Unit  (one per input, compact)
-  // This ensures all inputs are stacked one under the other at the same level.
+  // Layout per activity (columns: Date | Activity | Input Item | Qty | Unit | Crop | Plot):
+  //   Header row : Date | Activity | first_input | first_qty | first_unit | Crops | Plots  ← bold, green
+  //   Extra rows : ''   | ''       | next_input  | next_qty  | next_unit  | ''    | ''     ← green
+  // Putting Input Item in column 3 ensures it appears at the TOP of each activity group,
+  // while Crop/Plot in columns 6-7 can grow tall without pushing inputs down.
   const tableRows: string[][] = []
   const greenRowIndices: number[] = []
   const headerRowIndices: number[] = []
@@ -323,24 +324,35 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
         ),
       ].join(', ') || '—'
 
-    // Activity header row — no input data here
+    const inputs = a.activityInputs && a.activityInputs.length > 0 ? a.activityInputs : [null]
+
+    // First input goes on the header row itself — so it appears at the top
+    const firstInput = inputs[0]
     const headerIdx = tableRows.length
     greenRowIndices.push(headerIdx)
     headerRowIndices.push(headerIdx)
-    tableRows.push([date, activityLabel, crops, plots, '', '', ''])
+    tableRows.push([
+      date,
+      activityLabel,
+      firstInput ? (firstInput.inputInventory?.name ?? '—') : '—',
+      firstInput ? (firstInput.quantityUsed ?? '—') : '—',
+      firstInput ? (firstInput.quantityUnit ?? '—') : '—',
+      crops,
+      plots,
+    ])
 
-    // One compact row per input, all below the header
-    const inputs = a.activityInputs && a.activityInputs.length > 0 ? a.activityInputs : [null]
-    for (const ai of inputs) {
+    // Remaining inputs stack as compact rows below the header
+    for (let i = 1; i < inputs.length; i++) {
+      const ai = inputs[i]
       greenRowIndices.push(tableRows.length)
       tableRows.push([
-        '',
-        '',
         '',
         '',
         ai ? (ai.inputInventory?.name ?? '—') : '—',
         ai ? (ai.quantityUsed ?? '—') : '—',
         ai ? (ai.quantityUnit ?? '—') : '—',
+        '',
+        '',
       ])
     }
   }
@@ -352,18 +364,18 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     // @ts-ignore
     doc.autoTable({
       startY: inputPageY,
-      head: [['Date', 'Activity', 'Crop', 'Plot', 'Input Item', 'Qty', 'Unit']],
+      head: [['Date', 'Activity', 'Input Item', 'Qty', 'Unit', 'Crop', 'Plot']],
       body: tableRows,
       styles: { font: 'NotoSans', fontSize: 9 },
       headStyles: { fillColor: [34, 139, 34] },
       columnStyles: {
         0: { cellWidth: 22 },
         1: { cellWidth: 22 },
-        2: { cellWidth: 45 },
-        3: { cellWidth: 35 },
-        4: { cellWidth: 42 },
-        5: { cellWidth: 14 },
-        6: { cellWidth: 10 },
+        2: { cellWidth: 42 },
+        3: { cellWidth: 14 },
+        4: { cellWidth: 10 },
+        5: { cellWidth: 45 },
+        6: { cellWidth: 35 },
       },
       didParseCell: (data: any) => {
         if (data.section === 'body' && greenRowIndices.includes(data.row.index)) {
