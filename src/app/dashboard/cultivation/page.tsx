@@ -79,7 +79,7 @@ export default async function CultivationPage() {
             <CardTitle className="text-sm font-medium">Total Cost</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalCost.toFixed(2)}</div>
+            <div className="text-2xl font-bold">€{totalCost.toFixed(2)}</div>
             <p className="text-muted-foreground text-xs">All activities combined</p>
           </CardContent>
         </Card>
@@ -143,7 +143,7 @@ export default async function CultivationPage() {
                   </div>
                   <div className="flex items-center gap-4">
                     {activity.cost && (
-                      <p className="font-medium">${Number(activity.cost).toFixed(2)}</p>
+                      <p className="font-medium">€{Number(activity.cost).toFixed(2)}</p>
                     )}
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/dashboard/cultivation/${activity.id}`}>View</Link>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   cultivationActivitySchema,
@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select'
 import { createCultivationActivity, updateCultivationActivity } from '@/app/actions/cultivation'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -42,6 +42,7 @@ interface CultivationFormProps {
     name: string
     currentQuantity: string | null
     quantityUnit: string | null
+    costPerUnit: string | null
   }>
   defaultValues?: CultivationActivityFormData & { id?: string }
   mode: 'create' | 'edit'
@@ -71,6 +72,20 @@ export function CultivationForm({
     },
   })
 
+  const selectedInputId = useWatch({ control: form.control, name: 'inputInventoryId' })
+  const quantityUsed = useWatch({ control: form.control, name: 'quantityUsed' })
+
+  useEffect(() => {
+    if (!selectedInputId) return
+    const selectedInput = inputInventory.find((i) => i.id === selectedInputId)
+    if (!selectedInput?.costPerUnit) return
+    const qty = parseFloat(quantityUsed || '0')
+    if (qty > 0) {
+      const calculated = (qty * parseFloat(selectedInput.costPerUnit)).toFixed(2)
+      form.setValue('cost', calculated)
+    }
+  }, [selectedInputId, quantityUsed, inputInventory, form])
+
   async function onSubmit(data: CultivationActivityFormData) {
     setIsLoading(true)
     try {
@@ -99,6 +114,8 @@ export function CultivationForm({
       setIsLoading(false)
     }
   }
+
+  const selectedInput = inputInventory.find((i) => i.id === selectedInputId)
 
   return (
     <Form {...form}>
@@ -188,6 +205,7 @@ export function CultivationForm({
                   {inputInventory.map((input) => (
                     <SelectItem key={input.id} value={input.id}>
                       {input.name} ({input.currentQuantity || 0} {input.quantityUnit || ''})
+                      {input.costPerUnit && ` · €${Number(input.costPerUnit).toFixed(2)}/unit`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -247,11 +265,15 @@ export function CultivationForm({
           name="cost"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cost (Optional)</FormLabel>
+              <FormLabel>Cost (€)</FormLabel>
               <FormControl>
                 <Input type="number" step="0.01" placeholder="0.00" {...field} />
               </FormControl>
-              <FormDescription>Cost associated with this activity</FormDescription>
+              <FormDescription>
+                {selectedInput?.costPerUnit
+                  ? `Auto-calculated from €${Number(selectedInput.costPerUnit).toFixed(2)}/unit · you can override manually`
+                  : 'Auto-calculated when an input with a known price is selected'}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

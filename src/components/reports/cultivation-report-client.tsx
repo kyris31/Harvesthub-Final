@@ -98,7 +98,7 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
             <Activity className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${data.totalCost.toFixed(2)}</div>
+            <div className="text-2xl font-bold">€{data.totalCost.toFixed(2)}</div>
             <p className="text-muted-foreground text-xs">Input costs</p>
           </CardContent>
         </Card>
@@ -137,9 +137,9 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold">${stats.totalCost.toFixed(2)}</p>
+                    <p className="text-sm font-semibold">€{stats.totalCost.toFixed(2)}</p>
                     <p className="text-muted-foreground text-xs">
-                      ${stats.count > 0 ? (stats.totalCost / stats.count).toFixed(2) : 0} avg
+                      €{stats.count > 0 ? (stats.totalCost / stats.count).toFixed(2) : 0} avg
                     </p>
                   </div>
                 </div>
@@ -194,7 +194,7 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
                     </div>
                     <div className="text-right">
                       {activity.cost && (
-                        <p className="text-sm font-semibold">${Number(activity.cost).toFixed(2)}</p>
+                        <p className="text-sm font-semibold">€{Number(activity.cost).toFixed(2)}</p>
                       )}
                     </div>
                   </div>
