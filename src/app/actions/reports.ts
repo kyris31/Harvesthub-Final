@@ -9,6 +9,7 @@ import {
   expenses,
   harvestLogs,
   cultivationActivities,
+  cultivationActivityInputs,
   seedBatches,
   inputInventory,
   purchasedSeedlings,
@@ -79,9 +80,13 @@ export async function getFinancialReport(startDate?: string, endDate?: string) {
 
   const activityCosts = await db
     .select({
-      total: sql<number>`COALESCE(SUM(CAST(${cultivationActivities.cost} AS DECIMAL)), 0)`,
+      total: sql<number>`COALESCE(SUM(CAST(${cultivationActivityInputs.cost} AS DECIMAL)), 0)`,
     })
-    .from(cultivationActivities)
+    .from(cultivationActivityInputs)
+    .innerJoin(
+      cultivationActivities,
+      eq(cultivationActivityInputs.cultivationActivityId, cultivationActivities.id)
+    )
     .where(and(eq(cultivationActivities.userId, session.user.id), ...activityConditions))
 
   const totalRevenue = Number(revenue[0]?.total || 0)
@@ -634,7 +639,13 @@ export async function getCultivationReport(startDate?: string, endDate?: string)
   const activities = await db.query.cultivationActivities.findMany({
     where: and(...whereConditions),
     orderBy: (cultivationActivities, { desc }) => [desc(cultivationActivities.activityDate)],
+    with: {
+      activityInputs: true,
+    },
   })
+
+  const activityCost = (a: (typeof activities)[number]) =>
+    a.activityInputs.reduce((s, ai) => s + Number(ai.cost || 0), 0)
 
   // Group by activity type
   const activityByType = activities.reduce(
@@ -647,13 +658,13 @@ export async function getCultivationReport(startDate?: string, endDate?: string)
         }
       }
       acc[type].count += 1
-      acc[type].totalCost += Number(activity.cost || 0)
+      acc[type].totalCost += activityCost(activity)
       return acc
     },
     {} as Record<string, { count: number; totalCost: number }>
   )
 
-  const totalCost = activities.reduce((sum, a) => sum + Number(a.cost || 0), 0)
+  const totalCost = activities.reduce((sum, a) => sum + activityCost(a), 0)
 
   return {
     activities,

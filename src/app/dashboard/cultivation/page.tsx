@@ -16,7 +16,10 @@ export default async function CultivationPage() {
     return activityDate >= weekAgo
   })
 
-  const totalCost = activities.reduce((sum, a) => sum + Number(a.cost || 0), 0)
+  const totalCost = activities.reduce(
+    (sum, a) => sum + a.activityInputs.reduce((s, ai) => s + Number(ai.cost || 0), 0),
+    0
+  )
 
   const activityTypeIcons: Record<string, React.ReactNode> = {
     watering: <Droplets className="h-4 w-4" />,
@@ -126,24 +129,37 @@ export default async function CultivationPage() {
                           {new Date(activity.activityDate).toLocaleDateString('en-GB')}
                         </Badge>
                       </div>
-                      {activity.plantingLog && (
+                      {activity.activityPlantings && activity.activityPlantings.length > 0 && (
                         <p className="text-muted-foreground text-sm">
-                          {activity.plantingLog.crop.name}
-                          {activity.plantingLog.plot && ` - ${activity.plantingLog.plot.name}`}
+                          {activity.activityPlantings
+                            .map(
+                              (ap) =>
+                                `${ap.plantingLog.crop.name}${ap.plantingLog.plot ? ` - ${ap.plantingLog.plot.name}` : ''}`
+                            )
+                            .join(', ')}
                         </p>
                       )}
-                      {activity.inputInventory && (
+                      {activity.activityInputs && activity.activityInputs.length > 0 && (
                         <p className="text-muted-foreground text-sm">
-                          Used: {activity.inputInventory.name}
-                          {activity.quantityUsed &&
-                            ` (${activity.quantityUsed} ${activity.quantityUnit})`}
+                          Used:{' '}
+                          {activity.activityInputs
+                            .map(
+                              (ai) =>
+                                `${ai.inputInventory.name}${ai.quantityUsed ? ` (${ai.quantityUsed} ${ai.quantityUnit ?? ''})` : ''}`
+                            )
+                            .join(', ')}
                         </p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    {activity.cost && (
-                      <p className="font-medium">€{Number(activity.cost).toFixed(2)}</p>
+                    {activity.activityInputs && activity.activityInputs.length > 0 && (
+                      <p className="font-medium">
+                        €
+                        {activity.activityInputs
+                          .reduce((s, ai) => s + Number(ai.cost || 0), 0)
+                          .toFixed(2)}
+                      </p>
                     )}
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/dashboard/cultivation/${activity.id}`}>View</Link>

@@ -3,7 +3,12 @@
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { cultivationActivities, inputInventory } from '@/lib/db/schema'
+import {
+  cultivationActivities,
+  cultivationActivityPlantings,
+  cultivationActivityInputs,
+  inputInventory,
+} from '@/lib/db/schema'
 import { and, eq, isNull, desc, gte, lte } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import {
@@ -30,10 +35,6 @@ export async function getCultivationActivities(filters?: {
     isNull(cultivationActivities.deletedAt),
   ]
 
-  if (filters?.plantingLogId) {
-    whereConditions.push(eq(cultivationActivities.plantingLogId, filters.plantingLogId))
-  }
-
   if (filters?.activityType) {
     whereConditions.push(eq(cultivationActivities.activityType, filters.activityType))
   }
@@ -50,13 +51,16 @@ export async function getCultivationActivities(filters?: {
     where: and(...whereConditions),
     orderBy: [desc(cultivationActivities.activityDate)],
     with: {
-      plantingLog: {
+      activityPlantings: {
         with: {
-          crop: true,
-          plot: true,
+          plantingLog: {
+            with: { crop: true, plot: true },
+          },
         },
       },
-      inputInventory: true,
+      activityInputs: {
+        with: { inputInventory: true },
+      },
     },
   })
 }
@@ -77,13 +81,16 @@ export async function getCultivationActivity(id: string) {
       isNull(cultivationActivities.deletedAt)
     ),
     with: {
-      plantingLog: {
+      activityPlantings: {
         with: {
-          crop: true,
-          plot: true,
+          plantingLog: {
+            with: { crop: true, plot: true },
+          },
         },
       },
-      inputInventory: true,
+      activityInputs: {
+        with: { inputInventory: true },
+      },
     },
   })
 
@@ -105,11 +112,11 @@ export async function createCultivationActivity(data: CultivationActivityFormDat
 
   const validated = cultivationActivitySchema.parse(data)
 
-  // Validate inventory quantity if input is being used
-  if (validated.inputInventoryId && validated.quantityUsed) {
+  // Validate and deduct inventory for each input
+  for (const inputItem of validated.inputs ?? []) {
     const input = await db.query.inputInventory.findFirst({
       where: and(
-        eq(inputInventory.id, validated.inputInventoryId),
+        eq(inputInventory.id, inputItem.inputInventoryId),
         eq(inputInventory.userId, session.user.id),
         isNull(inputInventory.deletedAt)
       ),
@@ -119,37 +126,55 @@ export async function createCultivationActivity(data: CultivationActivityFormDat
       throw new Error('Input inventory item not found')
     }
 
-    const requestedQuantity = Number(validated.quantityUsed)
-    const availableQuantity = Number(input.currentQuantity || 0)
+    if (inputItem.quantityUsed) {
+      const requested = Number(inputItem.quantityUsed)
+      const available = Number(input.currentQuantity || 0)
 
-    if (requestedQuantity > availableQuantity) {
-      throw new Error(
-        `Insufficient inventory. You are trying to use ${requestedQuantity} ${validated.quantityUnit || input.quantityUnit} but only ${availableQuantity} ${input.quantityUnit} is available.`
-      )
+      if (requested > available) {
+        throw new Error(
+          `Insufficient inventory for "${input.name}". Requested ${requested} ${inputItem.quantityUnit || input.quantityUnit} but only ${available} ${input.quantityUnit} available.`
+        )
+      }
+
+      await db
+        .update(inputInventory)
+        .set({ currentQuantity: String(available - requested), updatedAt: new Date() })
+        .where(eq(inputInventory.id, inputItem.inputInventoryId))
     }
-
-    // Deduct the quantity from inventory
-    await db
-      .update(inputInventory)
-      .set({
-        currentQuantity: String(availableQuantity - requestedQuantity),
-        updatedAt: new Date(),
-      })
-      .where(eq(inputInventory.id, validated.inputInventoryId))
   }
 
   const [activity] = await db
     .insert(cultivationActivities)
     .values({
-      ...validated,
-      plantingLogId: validated.plantingLogId || null,
-      inputInventoryId: validated.inputInventoryId || null,
-      quantityUsed: validated.quantityUsed || null,
-      quantityUnit: validated.quantityUnit || null,
-      cost: validated.cost || null,
+      activityType: validated.activityType,
+      activityDate: validated.activityDate,
+      notes: validated.notes || null,
       userId: session.user.id,
     })
     .returning()
+
+  // Insert planting associations
+  if (validated.plantingLogIds && validated.plantingLogIds.length > 0) {
+    await db.insert(cultivationActivityPlantings).values(
+      validated.plantingLogIds.map((plantingLogId) => ({
+        cultivationActivityId: activity.id,
+        plantingLogId,
+      }))
+    )
+  }
+
+  // Insert input associations
+  if (validated.inputs && validated.inputs.length > 0) {
+    await db.insert(cultivationActivityInputs).values(
+      validated.inputs.map((item) => ({
+        cultivationActivityId: activity.id,
+        inputInventoryId: item.inputInventoryId,
+        quantityUsed: item.quantityUsed || null,
+        quantityUnit: item.quantityUnit || null,
+        cost: item.cost || null,
+      }))
+    )
+  }
 
   revalidatePath('/dashboard/cultivation')
   revalidatePath('/dashboard/inventory')
@@ -167,7 +192,6 @@ export async function updateCultivationActivity(id: string, data: CultivationAct
 
   const validated = cultivationActivitySchema.parse(data)
 
-  // Verify ownership
   const existing = await db.query.cultivationActivities.findFirst({
     where: and(
       eq(cultivationActivities.id, id),
@@ -180,23 +204,50 @@ export async function updateCultivationActivity(id: string, data: CultivationAct
     throw new Error('Activity not found')
   }
 
-  const [updated] = await db
+  await db
     .update(cultivationActivities)
     .set({
-      ...validated,
-      plantingLogId: validated.plantingLogId || null,
-      inputInventoryId: validated.inputInventoryId || null,
-      quantityUsed: validated.quantityUsed || null,
-      quantityUnit: validated.quantityUnit || null,
-      cost: validated.cost || null,
+      activityType: validated.activityType,
+      activityDate: validated.activityDate,
+      notes: validated.notes || null,
       updatedAt: new Date(),
     })
     .where(eq(cultivationActivities.id, id))
-    .returning()
+
+  // Sync planting associations
+  await db
+    .delete(cultivationActivityPlantings)
+    .where(eq(cultivationActivityPlantings.cultivationActivityId, id))
+
+  if (validated.plantingLogIds && validated.plantingLogIds.length > 0) {
+    await db.insert(cultivationActivityPlantings).values(
+      validated.plantingLogIds.map((plantingLogId) => ({
+        cultivationActivityId: id,
+        plantingLogId,
+      }))
+    )
+  }
+
+  // Sync input associations (no inventory adjustment on edit)
+  await db
+    .delete(cultivationActivityInputs)
+    .where(eq(cultivationActivityInputs.cultivationActivityId, id))
+
+  if (validated.inputs && validated.inputs.length > 0) {
+    await db.insert(cultivationActivityInputs).values(
+      validated.inputs.map((item) => ({
+        cultivationActivityId: id,
+        inputInventoryId: item.inputInventoryId,
+        quantityUsed: item.quantityUsed || null,
+        quantityUnit: item.quantityUnit || null,
+        cost: item.cost || null,
+      }))
+    )
+  }
 
   revalidatePath('/dashboard/cultivation')
   revalidatePath(`/dashboard/cultivation/${id}`)
-  return updated
+  return existing
 }
 
 export async function deleteCultivationActivity(id: string) {
@@ -208,7 +259,6 @@ export async function deleteCultivationActivity(id: string) {
     throw new Error('Unauthorized')
   }
 
-  // Verify ownership
   const existing = await db.query.cultivationActivities.findFirst({
     where: and(
       eq(cultivationActivities.id, id),
@@ -221,7 +271,6 @@ export async function deleteCultivationActivity(id: string) {
     throw new Error('Activity not found')
   }
 
-  // Soft delete
   await db
     .update(cultivationActivities)
     .set({ deletedAt: new Date() })

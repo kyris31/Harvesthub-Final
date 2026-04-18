@@ -59,13 +59,15 @@ export default async function CultivationDetailPage({ params }: CultivationDetai
             inputInventory={inputInventory}
             defaultValues={{
               id: activity.id,
-              plantingLogId: activity.plantingLogId || '',
+              plantingLogIds: activity.activityPlantings.map((ap) => ap.plantingLogId),
               activityType: activity.activityType as any,
               activityDate: activity.activityDate,
-              inputInventoryId: activity.inputInventoryId || '',
-              quantityUsed: activity.quantityUsed || '',
-              quantityUnit: activity.quantityUnit || '',
-              cost: activity.cost || '',
+              inputs: activity.activityInputs.map((ai) => ({
+                inputInventoryId: ai.inputInventoryId,
+                quantityUsed: ai.quantityUsed || '',
+                quantityUnit: ai.quantityUnit || '',
+                cost: ai.cost || '',
+              })),
               notes: activity.notes || '',
             }}
             mode="edit"

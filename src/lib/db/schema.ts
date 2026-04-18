@@ -223,6 +223,7 @@ export const inputInventoryRelations = relations(inputInventory, ({ one, many })
     references: [suppliers.id],
   }),
   cultivationActivities: many(cultivationActivities),
+  cultivationActivityInputs: many(cultivationActivityInputs),
 }))
 
 // Purchased Seedlings
@@ -358,9 +359,63 @@ export const plantingLogsRelations = relations(plantingLogs, ({ one, many }) => 
     references: [purchasedSeedlings.id],
   }),
   cultivationActivities: many(cultivationActivities),
+  cultivationActivityPlantings: many(cultivationActivityPlantings),
   harvestLogs: many(harvestLogs),
   reminders: many(reminders),
 }))
+
+// Cultivation Activity Plantings (junction: activity → many plantings)
+export const cultivationActivityPlantings = pgTable('cultivation_activity_plantings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  cultivationActivityId: uuid('cultivation_activity_id')
+    .notNull()
+    .references(() => cultivationActivities.id, { onDelete: 'cascade' }),
+  plantingLogId: uuid('planting_log_id')
+    .notNull()
+    .references(() => plantingLogs.id, { onDelete: 'cascade' }),
+})
+
+export const cultivationActivityPlantingsRelations = relations(
+  cultivationActivityPlantings,
+  ({ one }) => ({
+    cultivationActivity: one(cultivationActivities, {
+      fields: [cultivationActivityPlantings.cultivationActivityId],
+      references: [cultivationActivities.id],
+    }),
+    plantingLog: one(plantingLogs, {
+      fields: [cultivationActivityPlantings.plantingLogId],
+      references: [plantingLogs.id],
+    }),
+  })
+)
+
+// Cultivation Activity Inputs (junction: activity → many inputs)
+export const cultivationActivityInputs = pgTable('cultivation_activity_inputs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  cultivationActivityId: uuid('cultivation_activity_id')
+    .notNull()
+    .references(() => cultivationActivities.id, { onDelete: 'cascade' }),
+  inputInventoryId: uuid('input_inventory_id')
+    .notNull()
+    .references(() => inputInventory.id, { onDelete: 'cascade' }),
+  quantityUsed: decimal('quantity_used', { precision: 10, scale: 2 }),
+  quantityUnit: text('quantity_unit'),
+  cost: decimal('cost', { precision: 10, scale: 2 }),
+})
+
+export const cultivationActivityInputsRelations = relations(
+  cultivationActivityInputs,
+  ({ one }) => ({
+    cultivationActivity: one(cultivationActivities, {
+      fields: [cultivationActivityInputs.cultivationActivityId],
+      references: [cultivationActivities.id],
+    }),
+    inputInventory: one(inputInventory, {
+      fields: [cultivationActivityInputs.inputInventoryId],
+      references: [inputInventory.id],
+    }),
+  })
+)
 
 // Cultivation Activities
 export const cultivationActivities = pgTable('cultivation_activities', {
@@ -385,7 +440,7 @@ export const cultivationActivities = pgTable('cultivation_activities', {
   deletedAt: timestamp('deleted_at'),
 })
 
-export const cultivationActivitiesRelations = relations(cultivationActivities, ({ one }) => ({
+export const cultivationActivitiesRelations = relations(cultivationActivities, ({ one, many }) => ({
   user: one(users, {
     fields: [cultivationActivities.userId],
     references: [users.id],
@@ -398,6 +453,8 @@ export const cultivationActivitiesRelations = relations(cultivationActivities, (
     fields: [cultivationActivities.inputInventoryId],
     references: [inputInventory.id],
   }),
+  activityPlantings: many(cultivationActivityPlantings),
+  activityInputs: many(cultivationActivityInputs),
 }))
 
 // Harvest Logs
