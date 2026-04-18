@@ -298,11 +298,13 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     headStyles: { fillColor: [34, 139, 34] },
   })
 
-  // All rows for the same activity share a light green background.
-  // First row: Date | Activity | Crop | Plot | Input1 | Qty1 | Unit1
-  // Extra input rows: '' | '' | '' | '' | InputN | QtyN | UnitN  (still green)
+  // Layout per activity (all rows share the light green background):
+  //   Header row : Date | Activity | Crop | Plot | '' | '' | ''   ← bold
+  //   Input rows : ''   | ''       | ''   | ''   | Input | Qty | Unit  (one per input, compact)
+  // This ensures all inputs are stacked one under the other at the same level.
   const tableRows: string[][] = []
-  const greenRowIndices: number[] = [] // every row index that belongs to a green group
+  const greenRowIndices: number[] = []
+  const headerRowIndices: number[] = []
 
   for (const a of data.activities) {
     const date = new Date(a.activityDate).toLocaleDateString('en-GB')
@@ -321,20 +323,26 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
         ),
       ].join(', ') || '—'
 
-    const inputs = a.activityInputs && a.activityInputs.length > 0 ? a.activityInputs : [null]
+    // Activity header row — no input data here
+    const headerIdx = tableRows.length
+    greenRowIndices.push(headerIdx)
+    headerRowIndices.push(headerIdx)
+    tableRows.push([date, activityLabel, crops, plots, '', '', ''])
 
-    inputs.forEach((ai: any, idx: number) => {
+    // One compact row per input, all below the header
+    const inputs = a.activityInputs && a.activityInputs.length > 0 ? a.activityInputs : [null]
+    for (const ai of inputs) {
       greenRowIndices.push(tableRows.length)
       tableRows.push([
-        idx === 0 ? date : '',
-        idx === 0 ? activityLabel : '',
-        idx === 0 ? crops : '',
-        idx === 0 ? plots : '',
+        '',
+        '',
+        '',
+        '',
         ai ? (ai.inputInventory?.name ?? '—') : '—',
         ai ? (ai.quantityUsed ?? '—') : '—',
         ai ? (ai.quantityUnit ?? '—') : '—',
       ])
-    })
+    }
   }
 
   if (tableRows.length > 0) {
@@ -360,8 +368,7 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
       didParseCell: (data: any) => {
         if (data.section === 'body' && greenRowIndices.includes(data.row.index)) {
           data.cell.styles.fillColor = [220, 245, 220]
-          // Bold only on the first row of each group (where Date is filled)
-          if (tableRows[data.row.index][0] !== '') {
+          if (headerRowIndices.includes(data.row.index)) {
             data.cell.styles.fontStyle = 'bold'
           }
         }
