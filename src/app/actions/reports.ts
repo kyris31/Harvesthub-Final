@@ -10,12 +10,15 @@ import {
   harvestLogs,
   cultivationActivities,
   cultivationActivityInputs,
+  cultivationActivityPlantings,
+  cultivationActivityTrees,
   seedBatches,
   inputInventory,
   purchasedSeedlings,
   plantingLogs,
   seedlingProductionLogs,
   crops,
+  trees,
 } from '@/lib/db/schema'
 import { and, eq, isNull, gte, lte, sql, count, inArray } from 'drizzle-orm'
 
@@ -683,5 +686,140 @@ export async function getCultivationReport(startDate?: string, endDate?: string)
     activityByType,
     totalActivities: activities.length,
     totalCost,
+  }
+}
+
+// Profitability Report — plantings and tree species ranked by profit
+export async function getProfitabilityReport() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
+  const userId = session.user.id
+
+  // ── Plantings ─────────────────────────────────────────────────────────────
+  const plantingData = await db.query.plantingLogs.findMany({
+    where: and(eq(plantingLogs.userId, userId), isNull(plantingLogs.deletedAt)),
+    with: {
+      crop: true,
+      plot: true,
+      harvestLogs: {
+        where: isNull(harvestLogs.deletedAt),
+        with: { saleItems: true },
+      },
+      cultivationActivities: {
+        where: isNull(cultivationActivities.deletedAt),
+      },
+      cultivationActivityPlantings: {
+        with: { cultivationActivity: true },
+      },
+    },
+  })
+
+  const plantingResults = plantingData
+    .map((p) => {
+      const revenue = p.harvestLogs.reduce(
+        (sum, hl) => sum + hl.saleItems.reduce((s, si) => s + parseFloat(si.subtotal), 0),
+        0
+      )
+
+      const seen = new Set<string>()
+      let cost = 0
+      for (const ca of p.cultivationActivities) {
+        if (!seen.has(ca.id) && ca.cost) {
+          seen.add(ca.id)
+          cost += parseFloat(ca.cost)
+        }
+      }
+      for (const cap of p.cultivationActivityPlantings) {
+        const ca = cap.cultivationActivity
+        if (ca && !seen.has(ca.id) && ca.cost && !ca.deletedAt) {
+          seen.add(ca.id)
+          cost += parseFloat(ca.cost)
+        }
+      }
+
+      return {
+        id: p.id,
+        label: `${p.crop.name}${p.crop.variety ? ` (${p.crop.variety})` : ''}`,
+        plotName: p.plot?.name ?? null,
+        plantingDate: p.plantingDate,
+        revenue,
+        cost,
+        profit: revenue - cost,
+        harvestCount: p.harvestLogs.length,
+      }
+    })
+    .sort((a, b) => b.profit - a.profit)
+
+  // ── Trees (grouped by species + variety) ──────────────────────────────────
+  const treeData = await db.query.trees.findMany({
+    where: and(eq(trees.userId, userId), isNull(trees.deletedAt)),
+    with: {
+      harvestLogs: {
+        where: isNull(harvestLogs.deletedAt),
+        with: { saleItems: true },
+      },
+      cultivationActivityTrees: {
+        with: { cultivationActivity: true },
+      },
+    },
+  })
+
+  const treeGroups = new Map<
+    string,
+    {
+      species: string
+      variety: string | null
+      revenue: number
+      cost: number
+      treeCount: number
+      seen: Set<string>
+    }
+  >()
+
+  for (const t of treeData) {
+    const key = `${t.species}||${t.variety ?? ''}`
+    if (!treeGroups.has(key)) {
+      treeGroups.set(key, {
+        species: t.species,
+        variety: t.variety,
+        revenue: 0,
+        cost: 0,
+        treeCount: 0,
+        seen: new Set(),
+      })
+    }
+    const g = treeGroups.get(key)!
+    g.treeCount++
+    for (const hl of t.harvestLogs) {
+      for (const si of hl.saleItems) g.revenue += parseFloat(si.subtotal)
+    }
+    for (const cat of t.cultivationActivityTrees) {
+      const ca = cat.cultivationActivity
+      if (ca && !g.seen.has(ca.id) && ca.cost && !ca.deletedAt) {
+        g.seen.add(ca.id)
+        g.cost += parseFloat(ca.cost)
+      }
+    }
+  }
+
+  const treeResults = Array.from(treeGroups.values())
+    .map(({ seen: _seen, ...g }) => ({
+      ...g,
+      label: g.variety ? `${g.species} (${g.variety})` : g.species,
+      profit: g.revenue - g.cost,
+    }))
+    .sort((a, b) => b.profit - a.profit)
+
+  // ── Totals ─────────────────────────────────────────────────────────────────
+  const allRevenue =
+    plantingResults.reduce((s, r) => s + r.revenue, 0) +
+    treeResults.reduce((s, r) => s + r.revenue, 0)
+  const allCost =
+    plantingResults.reduce((s, r) => s + r.cost, 0) + treeResults.reduce((s, r) => s + r.cost, 0)
+
+  return {
+    plantings: plantingResults,
+    trees: treeResults,
+    totals: { revenue: allRevenue, cost: allCost, profit: allRevenue - allCost },
   }
 }

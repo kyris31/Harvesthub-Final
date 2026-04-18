@@ -125,6 +125,16 @@ export default async function ReportsPage() {
       ],
     },
     {
+      title: 'Profitability Report',
+      description: 'Revenue vs. costs per planting and tree species — ranked by profit',
+      icon: TrendingUp,
+      href: '/dashboard/reports/profitability',
+      stats: [
+        { label: 'Plantings', value: 'ranked' },
+        { label: 'Tree Species', value: 'ranked' },
+      ],
+    },
+    {
       title: 'Broiler Profit Report',
       description: 'Lifecycle profit tracking per broiler flock — from chick cost to sale',
       icon: TrendingUp,
