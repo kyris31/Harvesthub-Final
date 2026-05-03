@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { getHarvestOrders } from '@/app/actions/harvest-orders'
+import { getHarvestOrders, getActiveProducts } from '@/app/actions/harvest-orders'
 import { Plus, ShoppingBasket } from 'lucide-react'
 import { HarvestOrdersClient } from './harvest-orders-client'
+import { SmsComposerDialog } from '@/components/harvest-orders/sms-composer-dialog'
 
 export default async function HarvestOrdersPage() {
-  const orders = await getHarvestOrders()
+  const [orders, products] = await Promise.all([getHarvestOrders(), getActiveProducts()])
 
   return (
     <div className="page-animate space-y-6">
@@ -17,12 +18,15 @@ export default async function HarvestOrdersPage() {
             Record customer orders received by SMS and view harvest totals
           </p>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/harvest-orders/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Order Batch
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <SmsComposerDialog products={products} />
+          <Button asChild>
+            <Link href="/dashboard/harvest-orders/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Order Batch
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card>
