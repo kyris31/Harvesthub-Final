@@ -116,16 +116,19 @@ export function SmsComposerDialog({ products }: SmsComposerDialogProps) {
               <div className="space-y-1.5">
                 <p className="text-muted-foreground text-xs">Plantings</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {plantingOptions.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => insertProduct(p.label)}
-                      className="bg-muted hover:bg-primary hover:text-primary-foreground rounded-full px-2.5 py-1 text-xs transition-colors"
-                    >
-                      {p.label}
-                    </button>
-                  ))}
+                  {plantingOptions.map((p) => {
+                    const name = p.label.split(' (')[0]
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => insertProduct(name)}
+                        className="bg-muted hover:bg-primary hover:text-primary-foreground rounded-full px-2.5 py-1 text-xs transition-colors"
+                      >
+                        {name}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -134,16 +137,19 @@ export function SmsComposerDialog({ products }: SmsComposerDialogProps) {
               <div className="space-y-1.5">
                 <p className="text-muted-foreground text-xs">Trees</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {treeOptions.map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => insertProduct(t.label)}
-                      className="bg-muted hover:bg-primary hover:text-primary-foreground rounded-full px-2.5 py-1 text-xs transition-colors"
-                    >
-                      {t.label}
-                    </button>
-                  ))}
+                  {treeOptions.map((t) => {
+                    const name = t.label.split(' - ')[0]
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => insertProduct(name)}
+                        className="bg-muted hover:bg-primary hover:text-primary-foreground rounded-full px-2.5 py-1 text-xs transition-colors"
+                      >
+                        {name}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -152,16 +158,19 @@ export function SmsComposerDialog({ products }: SmsComposerDialogProps) {
               <div className="space-y-1.5">
                 <p className="text-muted-foreground text-xs">Eggs</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {eggOptions.map((e) => (
-                    <button
-                      key={e.id}
-                      type="button"
-                      onClick={() => insertProduct(e.label)}
-                      className="bg-muted hover:bg-primary hover:text-primary-foreground rounded-full px-2.5 py-1 text-xs transition-colors"
-                    >
-                      {e.label}
-                    </button>
-                  ))}
+                  {eggOptions.map((e) => {
+                    const name = e.label.split(' (')[0]
+                    return (
+                      <button
+                        key={e.id}
+                        type="button"
+                        onClick={() => insertProduct(name)}
+                        className="bg-muted hover:bg-primary hover:text-primary-foreground rounded-full px-2.5 py-1 text-xs transition-colors"
+                      >
+                        {name}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
