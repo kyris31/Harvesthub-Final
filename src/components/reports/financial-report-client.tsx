@@ -20,7 +20,7 @@ interface FinancialReportClientProps {
 }
 
 export default function FinancialReportClient({ initialData }: FinancialReportClientProps) {
-  const [data, setData] = useState(initialData)
+  const [data] = useState(initialData)
 
   const handleExportCSV = () => {
     const csvData = [
@@ -33,8 +33,8 @@ export default function FinancialReportClient({ initialData }: FinancialReportCl
 
   const handleExportPDF = async () => {
     try {
-      const endDate = new Date().toISOString().split('T')[0]
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const endDate = new Date().toISOString().slice(0, 10)
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
       await exportFinancialReportPDF(data, startDate, endDate)
     } catch (err: any) {
       console.error('PDF export failed:', err)

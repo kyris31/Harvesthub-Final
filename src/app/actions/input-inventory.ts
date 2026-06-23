@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { inputInventory } from '@/lib/db/schema'
-import { and, eq, isNull, desc, or, ilike, sql, gt } from 'drizzle-orm'
+import { and, eq, isNull, desc, or, ilike, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { inputInventorySchema, type InputInventoryFormData } from '@/lib/validations/inventory'
 

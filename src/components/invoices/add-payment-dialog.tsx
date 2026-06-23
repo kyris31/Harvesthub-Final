@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { paymentSchema, type PaymentFormData } from '@/lib/validations/invoices'
 import {
   Dialog,
@@ -46,9 +46,9 @@ export function AddPaymentDialog({ invoiceId, open, onOpenChange }: AddPaymentDi
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<PaymentFormData>({
-    resolver: zodResolver(paymentSchema),
+    resolver: formResolver<PaymentFormData>(paymentSchema),
     defaultValues: {
-      paymentDate: new Date().toISOString().split('T')[0],
+      paymentDate: new Date().toISOString().slice(0, 10),
       amount: '',
       paymentMethod: '',
       referenceNumber: '',

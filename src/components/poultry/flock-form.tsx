@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { flockSchema, type FlockFormData } from '@/lib/validations/poultry'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,7 +38,7 @@ export function FlockForm({ initialData, flockId }: FlockFormProps) {
     setValue,
     watch,
   } = useForm<FlockFormData>({
-    resolver: zodResolver(flockSchema),
+    resolver: formResolver<FlockFormData>(flockSchema),
     defaultValues: initialData || {
       status: 'active',
       purpose: 'layers',

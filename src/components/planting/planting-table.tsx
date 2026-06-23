@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Loader2, Trash2, Edit } from 'lucide-react'
+import { Loader2, Trash2 } from 'lucide-react'
 import {
   Table,
   TableBody,

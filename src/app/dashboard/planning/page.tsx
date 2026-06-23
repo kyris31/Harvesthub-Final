@@ -18,8 +18,8 @@ export default async function PlanningPage() {
   const inProgress = allPlans.filter((p) => p.status === 'in_progress').length
   const completed = allPlans.filter((p) => p.status === 'completed').length
 
-  const today = new Date().toISOString().split('T')[0]!
-  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!
+  const today = new Date().toISOString().slice(0, 10)!
+  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)!
   const upcoming = allPlans.filter(
     (p) =>
       p.plannedPlantingDate && p.plannedPlantingDate >= today && p.plannedPlantingDate <= nextWeek

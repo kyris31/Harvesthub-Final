@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { Plus, Loader2 } from 'lucide-react'
 import {
   Dialog,
@@ -48,12 +48,12 @@ export function SeedBatchFormDialog({ onSuccess }: SeedBatchFormDialogProps) {
   const [isLoadingCrops, setIsLoadingCrops] = useState(true)
 
   const form = useForm<SeedBatchFormValues>({
-    resolver: zodResolver(seedBatchSchema),
+    resolver: formResolver<SeedBatchFormValues>(seedBatchSchema),
     defaultValues: {
       cropId: '',
       supplierId: null,
       batchCode: '',
-      purchaseDate: new Date().toISOString().split('T')[0],
+      purchaseDate: new Date().toISOString().slice(0, 10),
       initialQuantity: '',
       quantityUnit: 'seeds',
       costPerUnit: '',

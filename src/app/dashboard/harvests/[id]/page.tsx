@@ -14,7 +14,7 @@ export default async function HarvestDetailPage({ params }: HarvestDetailPagePro
   const { id } = await params
   const harvest = await getHarvestLog(id).catch(() => null)
 
-  if (!harvest) {
+  if (!harvest || !harvest.plantingLog) {
     notFound()
   }
 

@@ -6,7 +6,7 @@ import { db } from '@/lib/db'
 import { plots, trees } from '@/lib/db/schema'
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
-import { eq, isNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 
 async function generateNextTreeId(userId: string): Promise<string> {
   const existingTrees = await db
@@ -19,7 +19,7 @@ async function generateNextTreeId(userId: string): Promise<string> {
   for (const { identifier } of existingTrees) {
     const match = identifier.match(/^T-(\d+)$/i)
     if (match) {
-      const num = parseInt(match[1], 10)
+      const num = parseInt(match[1] ?? '', 10)
       if (num > max) max = num
     }
   }

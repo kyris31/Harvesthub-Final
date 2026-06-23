@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { Plus, Loader2 } from 'lucide-react'
 import {
   Dialog,
@@ -47,7 +47,7 @@ export function SupplierFormDialog({ onSuccess }: SupplierFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<SupplierFormValues>({
-    resolver: zodResolver(supplierSchema),
+    resolver: formResolver<SupplierFormValues>(supplierSchema),
     defaultValues: {
       name: '',
       contactPerson: '',

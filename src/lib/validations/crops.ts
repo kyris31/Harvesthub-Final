@@ -11,7 +11,7 @@ export const cropSchema = z.object({
     .optional()
     .or(z.literal('')),
   category: z.enum(['vegetable', 'fruit', 'herb', 'grain'], {
-    required_error: 'Please select a category',
+    error: 'Please select a category',
   }),
   description: z
     .string()

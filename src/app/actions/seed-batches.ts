@@ -131,7 +131,7 @@ export async function createSeedBatch(data: SeedBatchFormData) {
   const maxSequence = existingBatches
     .map((b) => b.batchCode)
     .filter((code) => code.startsWith(pattern))
-    .map((code) => parseInt(code.split('-')[3]) || 0)
+    .map((code) => parseInt(code.split('-')[3] ?? '', 10) || 0)
     .reduce((max, num) => Math.max(max, num), 0)
 
   const sequence = String(maxSequence + 1).padStart(3, '0')
@@ -184,7 +184,7 @@ export async function updateSeedBatch(id: string, data: SeedBatchFormData) {
   // Check if batch code is taken by another batch
   const duplicate = await db.query.seedBatches.findFirst({
     where: and(
-      eq(seedBatches.batchCode, validated.batchCode),
+      eq(seedBatches.batchCode, validated.batchCode ?? ''),
       eq(seedBatches.userId, session.user.id),
       isNull(seedBatches.deletedAt)
     ),

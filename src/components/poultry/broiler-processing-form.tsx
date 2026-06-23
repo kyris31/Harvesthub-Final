@@ -2,14 +2,13 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import { broilerProcessingSchema, type BroilerProcessingFormData } from '@/lib/validations/poultry'
 import { createProcessingRecord } from '@/app/actions/broiler-processing'
 
@@ -31,13 +30,12 @@ export function BroilerProcessingForm({
     register,
     handleSubmit,
     watch,
-    setValue,
     formState: { errors },
   } = useForm<BroilerProcessingFormData>({
-    resolver: zodResolver(broilerProcessingSchema),
+    resolver: formResolver<BroilerProcessingFormData>(broilerProcessingSchema),
     defaultValues: {
       flockId,
-      processingDate: new Date().toISOString().split('T')[0],
+      processingDate: new Date().toISOString().slice(0, 10),
       birdsProcessed: currentCount,
       processingCost: 0,
       transportCost: 0,

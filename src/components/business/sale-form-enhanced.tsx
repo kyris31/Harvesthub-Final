@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm, useFieldArray } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
@@ -68,10 +68,10 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<EnhancedSaleFormData>({
-    resolver: zodResolver(enhancedSaleSchema),
+    resolver: formResolver<EnhancedSaleFormData>(enhancedSaleSchema),
     defaultValues: {
       customerId: '',
-      saleDate: new Date().toISOString().split('T')[0],
+      saleDate: new Date().toISOString().slice(0, 10),
       items: [{ harvestLogId: '', quantity: '', pricePerUnit: '' }],
       paymentStatus: 'pending',
       paymentMethod: '',

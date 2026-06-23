@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { harvestLogSchema, type HarvestLogFormData } from '@/lib/validations/harvest'
 import { Button } from '@/components/ui/button'
 import {
@@ -51,12 +51,12 @@ export function HarvestForm({ plantings, trees, defaultValues, mode }: HarvestFo
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<HarvestLogFormData>({
-    resolver: zodResolver(harvestLogSchema),
+    resolver: formResolver<HarvestLogFormData>(harvestLogSchema),
     defaultValues: defaultValues || {
       sourceType: 'planting',
       plantingLogId: '',
       treeId: '',
-      harvestDate: new Date().toISOString().split('T')[0],
+      harvestDate: new Date().toISOString().slice(0, 10),
       quantityHarvested: '',
       quantityUnit: 'kg',
       qualityGrade: '',

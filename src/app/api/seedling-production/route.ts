@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { seedlingProductionLogs, seedBatches, plantingLogs } from '@/lib/db/schema'
+import { seedlingProductionLogs, seedBatches } from '@/lib/db/schema'
 import { eq, and, isNull, desc, gt, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 

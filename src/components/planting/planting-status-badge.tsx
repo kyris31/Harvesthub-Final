@@ -8,7 +8,7 @@ interface PlantingStatusBadgeProps {
 }
 
 export function PlantingStatusBadge({ status }: PlantingStatusBadgeProps) {
-  const statusInfo = PLANTING_STATUS.find((s) => s.value === status) || PLANTING_STATUS[0]
+  const statusInfo = PLANTING_STATUS.find((s) => s.value === status) || PLANTING_STATUS[0]!
 
   const colorMap: Record<string, string> = {
     green: 'bg-green-100 text-green-800 hover:bg-green-100',

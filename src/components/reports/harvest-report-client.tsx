@@ -41,8 +41,8 @@ export default function HarvestReportClient({ initialData }: HarvestReportProps)
 
   const handleExportPDF = async () => {
     try {
-      const endDate = new Date().toISOString().split('T')[0]
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const endDate = new Date().toISOString().slice(0, 10)
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
       await exportHarvestReportPDF(data, startDate, endDate)
     } catch (err: any) {
       console.error('PDF export failed:', err)
@@ -124,7 +124,7 @@ export default function HarvestReportClient({ initialData }: HarvestReportProps)
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
-                        {new Date(harvest.harvestDate).toISOString().split('T')[0]}
+                        {new Date(harvest.harvestDate).toISOString().slice(0, 10)}
                       </Badge>
                       <Badge variant="outline">{harvest.quantityUnit}</Badge>
                     </div>

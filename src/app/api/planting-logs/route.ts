@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Deduct quantity from seed batch
+      // Deduct quantity from seed batch (decimal column → string)
       const newQuantity = (available - quantityToPlant).toFixed(2)
       await db
         .update(seedBatches)
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
 
       // Validate sufficient quantity
       const quantityToPlant = parseFloat(validatedData.quantityPlanted)
-      const available = parseFloat(seedling.currentQuantity)
+      const available = Number(seedling.currentQuantity)
 
       if (quantityToPlant > available) {
         return NextResponse.json(
@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Deduct quantity from purchased seedlings
-      const newQuantity = (available - quantityToPlant).toFixed(2)
+      // Deduct quantity from purchased seedlings (integer column → number)
+      const newQuantity = Math.round(available - quantityToPlant)
       await db
         .update(purchasedSeedlings)
         .set({
@@ -161,6 +161,7 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         cropId: validatedData.cropId,
         plotId: validatedData.plotId || null,
+        plantingSource: validatedData.purchasedSeedlingId ? 'purchased' : 'direct_sow',
         plantingDate: validatedData.plantingDate,
         quantityPlanted: validatedData.quantityPlanted,
         quantityUnit: validatedData.quantityUnit,

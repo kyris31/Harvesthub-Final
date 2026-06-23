@@ -44,10 +44,10 @@ export async function getUpcomingVaccinations() {
     throw new Error('Unauthorized')
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().slice(0, 10)
   const futureDate = new Date()
   futureDate.setDate(futureDate.getDate() + 30) // Next 30 days
-  const future = futureDate.toISOString().split('T')[0]
+  const future = futureDate.toISOString().slice(0, 10)
 
   const upcoming = await db.query.healthRecords.findMany({
     where: and(

@@ -6,7 +6,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Edit, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowLeft, Edit, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ProcessInvoiceButton } from '@/components/invoices/process-invoice-button'
@@ -104,7 +104,7 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {invoice.items.map((item, index) => (
+            {invoice.items.map((item) => (
               <div key={item.id} className="rounded-lg border p-4">
                 <div className="mb-2 flex items-start justify-between">
                   <div>

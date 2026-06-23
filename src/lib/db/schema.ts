@@ -112,6 +112,7 @@ export const suppliers = pgTable('suppliers', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
+  supplierType: text('supplier_type'),
   contactPerson: text('contact_person'),
   email: text('email'),
   phone: text('phone'),

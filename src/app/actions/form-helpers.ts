@@ -14,7 +14,7 @@ import {
   seedlingProductionLogs,
   purchasedSeedlings,
 } from '@/lib/db/schema'
-import { and, eq, isNull, gt, sql, asc } from 'drizzle-orm'
+import { and, eq, isNull, gt, sql } from 'drizzle-orm'
 
 export async function getCropsForSelect() {
   const session = await auth.api.getSession({
@@ -247,7 +247,9 @@ export async function getAvailableHarvestsForSale() {
 
   const harvestResults = harvests.map((harvest) => ({
     id: harvest.id,
-    productName: `${harvest.plantingLog.crop.name}${harvest.plantingLog.crop.variety ? ` (${harvest.plantingLog.crop.variety})` : ''}`,
+    productName: harvest.plantingLog
+      ? `${harvest.plantingLog.crop.name}${harvest.plantingLog.crop.variety ? ` (${harvest.plantingLog.crop.variety})` : ''}`
+      : 'Unknown',
     currentStock: harvest.currentStock,
     unit: harvest.quantityUnit,
     harvestDate: harvest.harvestDate,

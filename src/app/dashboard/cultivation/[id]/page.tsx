@@ -30,6 +30,17 @@ export default async function CultivationDetailPage({ params }: CultivationDetai
     redirect('/dashboard/cultivation')
   }
 
+  // getInputInventory() only returns in-stock items (quantity > 0). Materials this
+  // activity already used may now be depleted and missing from that list, which would
+  // make their dropdown render blank on edit. Merge them back in so they stay selectable.
+  const inventoryById = new Map(inputInventory.map((i) => [i.id, i]))
+  for (const ai of activity.activityInputs) {
+    if (ai.inputInventory && !inventoryById.has(ai.inputInventory.id)) {
+      inventoryById.set(ai.inputInventory.id, ai.inputInventory as (typeof inputInventory)[number])
+    }
+  }
+  const formInventory = Array.from(inventoryById.values())
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
@@ -61,7 +72,7 @@ export default async function CultivationDetailPage({ params }: CultivationDetai
           <CultivationForm
             plantingLogs={plantingLogs}
             trees={treeList}
-            inputInventory={inputInventory}
+            inputInventory={formInventory}
             defaultValues={{
               id: activity.id,
               plantingLogIds: activity.activityPlantings.map((ap) => ap.plantingLogId),

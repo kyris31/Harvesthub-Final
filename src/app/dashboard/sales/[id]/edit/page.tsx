@@ -24,8 +24,14 @@ export default async function EditSalePage({ params }: { params: { id: string } 
           saleDate: sale.saleDate,
           totalAmount: sale.totalAmount,
           paymentStatus: sale.paymentStatus as 'pending' | 'paid' | 'partial' | 'overdue',
-          paymentMethod: sale.paymentMethod || '',
-          amountPaid: sale.amountPaid,
+          paymentMethod: (sale.paymentMethod ?? '') as
+            | ''
+            | 'cash'
+            | 'bank_transfer'
+            | 'card'
+            | 'check'
+            | 'other',
+          amountPaid: sale.amountPaid ?? '0',
           notes: sale.notes || '',
         }}
       />

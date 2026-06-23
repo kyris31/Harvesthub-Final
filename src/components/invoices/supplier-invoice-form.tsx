@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm, useFieldArray } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { supplierInvoiceSchema, type SupplierInvoiceFormData } from '@/lib/validations/invoices'
 import { Button } from '@/components/ui/button'
 import {
@@ -57,11 +57,11 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<SupplierInvoiceFormData>({
-    resolver: zodResolver(supplierInvoiceSchema),
+    resolver: formResolver<SupplierInvoiceFormData>(supplierInvoiceSchema),
     defaultValues: defaultValues || {
       supplierId: '',
       invoiceNumber: '',
-      invoiceDate: new Date().toISOString().split('T')[0],
+      invoiceDate: new Date().toISOString().slice(0, 10),
       dueDate: '',
       taxRate: '',
       shippingCost: '',

@@ -4,11 +4,11 @@ import { z } from 'zod'
 export const flockSchema = z.object({
   name: z.string().min(1, 'Flock name is required'),
   type: z.enum(['chicken', 'duck', 'turkey', 'goose', 'quail'], {
-    required_error: 'Poultry type is required',
+    error: 'Poultry type is required',
   }),
   breed: z.string().optional(),
   purpose: z.enum(['layers', 'broilers', 'dual_purpose'], {
-    required_error: 'Purpose is required',
+    error: 'Purpose is required',
   }),
   initialCount: z.coerce.number().int().positive('Initial count must be positive'),
   currentCount: z.coerce.number().int().nonnegative('Current count cannot be negative'),
@@ -26,7 +26,7 @@ export type FlockFormData = z.infer<typeof flockSchema>
 // Poultry Feed validation schema
 export const poultryFeedSchema = z.object({
   feedType: z.enum(['starter', 'grower', 'layer', 'finisher'], {
-    required_error: 'Feed type is required',
+    error: 'Feed type is required',
   }),
   brand: z.string().optional(),
   description: z.string().optional(),
@@ -77,7 +77,7 @@ export const healthRecordSchema = z.object({
   flockId: z.string().uuid('Invalid flock selected'),
   recordDate: z.string().min(1, 'Record date is required'),
   recordType: z.enum(['vaccination', 'treatment', 'observation', 'deworming'], {
-    required_error: 'Record type is required',
+    error: 'Record type is required',
   }),
   description: z.string().min(1, 'Description is required'),
   productUsed: z.string().optional(),

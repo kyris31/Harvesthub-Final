@@ -185,7 +185,7 @@ export async function exportInventoryReportPDF(data: any) {
   const doc = new jsPDF()
   await setupNotoSans(doc)
   const logo = await loadLogoDataUrl()
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().slice(0, 10)
   const startY = addCompanyHeader(doc, logo, 'Inventory Report')
 
   // Summary table
@@ -608,7 +608,7 @@ export function exportToCSV(data: any[], filename: string) {
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${filename}-${new Date().toISOString().split('T')[0]}.csv`
+  a.download = `${filename}-${new Date().toISOString().slice(0, 10)}.csv`
   a.click()
   window.URL.revokeObjectURL(url)
 }

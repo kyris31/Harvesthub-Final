@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { inputInventorySchema, type InputInventoryFormData } from '@/lib/validations/inventory'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,7 +40,7 @@ export function InputInventoryForm({ suppliers, defaultValues, mode }: InputInve
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<InputInventoryFormData>({
-    resolver: zodResolver(inputInventorySchema),
+    resolver: formResolver<InputInventoryFormData>(inputInventorySchema),
     defaultValues: defaultValues || {
       name: '',
       type: 'fertilizer',

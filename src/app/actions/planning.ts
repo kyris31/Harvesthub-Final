@@ -174,7 +174,7 @@ export async function getCalendarEvents(year: number, month: number) {
   if (!session?.user?.id) throw new Error('Unauthorized')
 
   const startOfMonth = `${year}-${String(month).padStart(2, '0')}-01`
-  const endOfMonth = new Date(year, month, 0).toISOString().split('T')[0]
+  const endOfMonth = new Date(year, month, 0).toISOString().slice(0, 10)
 
   const plans = await db.query.cropPlans.findMany({
     where: and(

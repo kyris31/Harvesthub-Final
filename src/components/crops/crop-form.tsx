@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { cropSchema, type CropFormData } from '@/lib/validations/crops'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,7 +39,7 @@ export function CropForm({ defaultValues, mode }: CropFormProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<CropFormData>({
-    resolver: zodResolver(cropSchema),
+    resolver: formResolver<CropFormData>(cropSchema),
     defaultValues: defaultValues || {
       name: '',
       variety: '',

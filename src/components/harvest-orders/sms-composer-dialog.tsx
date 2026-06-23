@@ -117,7 +117,7 @@ export function SmsComposerDialog({ products }: SmsComposerDialogProps) {
                 <p className="text-muted-foreground text-xs">Plantings</p>
                 <div className="flex flex-wrap gap-1.5">
                   {plantingOptions.map((p) => {
-                    const name = p.label.split(' (')[0]
+                    const name = p.label.split(' (')[0] ?? ''
                     return (
                       <button
                         key={p.id}
@@ -138,7 +138,7 @@ export function SmsComposerDialog({ products }: SmsComposerDialogProps) {
                 <p className="text-muted-foreground text-xs">Trees</p>
                 <div className="flex flex-wrap gap-1.5">
                   {treeOptions.map((t) => {
-                    const name = t.label.split(' - ')[0]
+                    const name = t.label.split(' - ')[0] ?? ''
                     return (
                       <button
                         key={t.id}
@@ -159,7 +159,7 @@ export function SmsComposerDialog({ products }: SmsComposerDialogProps) {
                 <p className="text-muted-foreground text-xs">Eggs</p>
                 <div className="flex flex-wrap gap-1.5">
                   {eggOptions.map((e) => {
-                    const name = e.label.split(' (')[0]
+                    const name = e.label.split(' (')[0] ?? ''
                     return (
                       <button
                         key={e.id}

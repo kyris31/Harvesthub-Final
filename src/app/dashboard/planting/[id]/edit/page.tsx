@@ -33,6 +33,7 @@ export default async function EditPlantingPage({ params }: EditPlantingPageProps
         defaultValues={{
           id: planting.id,
           cropId: planting.cropId,
+          plantingSource: planting.plantingSource as 'purchased' | 'self_produced' | 'direct_sow',
           plotId: planting.plotId || '',
           plantingDate: planting.plantingDate,
           quantityPlanted: planting.quantityPlanted,

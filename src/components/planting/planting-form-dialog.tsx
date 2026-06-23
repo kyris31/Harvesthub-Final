@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { Plus, Loader2 } from 'lucide-react'
 import {
   Dialog,
@@ -54,11 +54,11 @@ export function PlantingFormDialog({ mode, planting, onSuccess }: PlantingFormDi
   const [isLoadingData, setIsLoadingData] = useState(true)
 
   const form = useForm<PlantingLogFormValues>({
-    resolver: zodResolver(plantingLogSchema),
+    resolver: formResolver<PlantingLogFormValues>(plantingLogSchema),
     defaultValues: {
       cropId: planting?.cropId || '',
       plotId: planting?.plotId || '',
-      plantingDate: planting?.plantingDate || new Date().toISOString().split('T')[0],
+      plantingDate: planting?.plantingDate || new Date().toISOString().slice(0, 10),
       quantityPlanted: planting?.quantityPlanted || '',
       quantityUnit: planting?.quantityUnit || 'seeds',
       expectedHarvestDate: planting?.expectedHarvestDate || '',

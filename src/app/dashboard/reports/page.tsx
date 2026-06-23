@@ -22,8 +22,8 @@ import Link from 'next/link'
 
 export default async function ReportsPage() {
   // Get last 30 days data
-  const endDate = new Date().toISOString().split('T')[0]
-  const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const endDate = new Date().toISOString().slice(0, 10)
+  const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
   const [financial, harvest, inventory, cultivation, planting, cropPerf, seedlingLC] =
     await Promise.all([
@@ -120,7 +120,7 @@ export default async function ReportsPage() {
         { label: 'Batches', value: seedlingLC.length.toString() },
         {
           label: 'Remaining',
-          value: seedlingLC.reduce((s, r) => s + r.remaining, 0).toString(),
+          value: seedlingLC.reduce((s, r) => s + (r.remaining ?? 0), 0).toString(),
         },
       ],
     },

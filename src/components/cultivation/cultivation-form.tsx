@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm, useFieldArray, useWatch } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import {
   cultivationActivitySchema,
   type CultivationActivityFormData,
@@ -74,12 +74,12 @@ export function CultivationForm({
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<CultivationActivityFormData>({
-    resolver: zodResolver(cultivationActivitySchema),
+    resolver: formResolver<CultivationActivityFormData>(cultivationActivitySchema),
     defaultValues: defaultValues || {
       plantingLogIds: [],
       treeIds: [],
       activityType: 'watering',
-      activityDate: new Date().toISOString().split('T')[0],
+      activityDate: new Date().toISOString().slice(0, 10),
       inputs: [],
       notes: '',
     },

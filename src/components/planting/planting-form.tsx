@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { plantingLogSchema, type PlantingLogFormData } from '@/lib/validations/planting'
 import { Button } from '@/components/ui/button'
 import {
@@ -73,7 +73,7 @@ export function PlantingForm({
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<PlantingLogFormData>({
-    resolver: zodResolver(plantingLogSchema),
+    resolver: formResolver<PlantingLogFormData>(plantingLogSchema),
     defaultValues: defaultValues || {
       cropId: '',
       plotId: '',
@@ -81,7 +81,7 @@ export function PlantingForm({
       seedBatchId: '',
       selfProducedSeedlingId: '',
       purchasedSeedlingId: '',
-      plantingDate: new Date().toISOString().split('T')[0],
+      plantingDate: new Date().toISOString().slice(0, 10),
       quantityPlanted: '',
       quantityUnit: 'plants',
       expectedHarvestDate: '',

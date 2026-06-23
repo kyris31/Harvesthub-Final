@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { supplierSchema, type SupplierFormData } from '@/lib/validations/business'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,7 +31,7 @@ export function SupplierForm({ defaultValues, mode }: SupplierFormProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<SupplierFormData>({
-    resolver: zodResolver(supplierSchema),
+    resolver: formResolver<SupplierFormData>(supplierSchema),
     defaultValues: defaultValues || {
       name: '',
       supplierType: '',

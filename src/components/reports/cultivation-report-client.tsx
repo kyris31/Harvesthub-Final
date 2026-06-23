@@ -8,6 +8,7 @@ import { ArrowLeft, Activity, Droplets, Sprout, Bug, Leaf, Scissors, FileText } 
 import Link from 'next/link'
 import { ReportFilters } from '@/components/reports/report-filters'
 import { exportToCSV, exportCultivationReportPDF } from '@/lib/pdf-export'
+import { getCultivationReport } from '@/app/actions/reports'
 
 interface CultivationReportProps {
   initialData: {
@@ -37,7 +38,25 @@ const activityColors: Record<string, string> = {
 }
 
 export default function CultivationReportClient({ initialData }: CultivationReportProps) {
-  const [data] = useState(initialData)
+  const [data, setData] = useState(initialData)
+  const [isLoading, setIsLoading] = useState(false)
+  const [range, setRange] = useState<{ startDate: string; endDate: string }>(() => ({
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    endDate: new Date().toISOString().slice(0, 10),
+  }))
+
+  const handleFilterChange = async (startDate: string, endDate: string) => {
+    setIsLoading(true)
+    try {
+      const fresh = await getCultivationReport(startDate, endDate)
+      setData(fresh)
+      setRange({ startDate, endDate })
+    } catch (err) {
+      console.error('Failed to load report:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleExportCSV = () => {
     const csvData = data.activities.map((a: any) => ({
@@ -52,9 +71,7 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
 
   const handleExportPDF = async () => {
     try {
-      const endDate = new Date().toISOString().split('T')[0]
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      await exportCultivationReportPDF(data, startDate, endDate)
+      await exportCultivationReportPDF(data, range.startDate, range.endDate)
     } catch (err: any) {
       console.error('PDF export failed:', err)
     }
@@ -76,7 +93,12 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
 
       {/* Filters */}
       <div className="print:hidden">
-        <ReportFilters onExport={handleExportCSV} onExportPDF={handleExportPDF} />
+        <ReportFilters
+          onExport={handleExportCSV}
+          onExportPDF={handleExportPDF}
+          onFilterChange={handleFilterChange}
+        />
+        {isLoading && <p className="text-muted-foreground mt-2 text-sm">Loading…</p>}
       </div>
 
       {/* Summary Cards */}
@@ -88,7 +110,9 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{data.totalActivities}</div>
-            <p className="text-muted-foreground text-xs">Last 30 days</p>
+            <p className="text-muted-foreground text-xs">
+              {range.startDate} → {range.endDate}
+            </p>
           </CardContent>
         </Card>
 
@@ -179,7 +203,7 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
                             {activity.activityType.replace('_', ' ')}
                           </p>
                           <Badge variant="outline" className="text-xs">
-                            {new Date(activity.activityDate).toISOString().split('T')[0]}
+                            {new Date(activity.activityDate).toISOString().slice(0, 10)}
                           </Badge>
                         </div>
                         {activity.notes && (

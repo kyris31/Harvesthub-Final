@@ -160,6 +160,10 @@ export async function createCultivationActivity(data: CultivationActivityFormDat
     })
     .returning()
 
+  if (!activity) {
+    throw new Error('Failed to create cultivation activity')
+  }
+
   // Insert planting associations
   if (validated.plantingLogIds && validated.plantingLogIds.length > 0) {
     await db.insert(cultivationActivityPlantings).values(

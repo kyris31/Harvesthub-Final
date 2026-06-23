@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { saleSchema, type SaleFormData } from '@/lib/validations/business'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,10 +40,10 @@ export function SaleForm({ customers, defaultValues, mode }: SaleFormProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<SaleFormData>({
-    resolver: zodResolver(saleSchema),
+    resolver: formResolver<SaleFormData>(saleSchema),
     defaultValues: defaultValues || {
       customerId: '',
-      saleDate: new Date().toISOString().split('T')[0],
+      saleDate: new Date().toISOString().slice(0, 10),
       totalAmount: '',
       paymentStatus: 'pending',
       paymentMethod: '',

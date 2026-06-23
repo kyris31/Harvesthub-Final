@@ -17,13 +17,6 @@ export default async function ExpensesPage() {
   const expensesData = await getExpenses()
 
   const totalExpenses = expensesData.reduce((sum, exp) => sum + parseFloat(exp.amount), 0)
-  const byCategory = expensesData.reduce(
-    (acc, exp) => {
-      acc[exp.category] = (acc[exp.category] || 0) + parseFloat(exp.amount)
-      return acc
-    },
-    {} as Record<string, number>
-  )
 
   return (
     <div className="space-y-6">

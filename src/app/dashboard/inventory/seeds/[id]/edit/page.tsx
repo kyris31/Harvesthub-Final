@@ -41,7 +41,7 @@ export default async function EditSeedBatchPage({ params }: EditSeedBatchPagePro
           quantityUnit: batch.quantityUnit,
           costPerUnit: batch.costPerUnit || '',
           totalCost: batch.totalCost || '',
-          organicCertified: batch.organicCertified || false,
+          organicCertified: batch.organicCertified || '',
           notes: batch.notes || '',
         }}
       />

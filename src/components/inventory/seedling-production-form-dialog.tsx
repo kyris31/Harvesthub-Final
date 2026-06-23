@@ -59,7 +59,7 @@ export function SeedlingProductionFormDialog({ onSuccess }: Props) {
     defaultValues: {
       seedBatchId: '',
       cropId: '',
-      sowingDate: new Date().toISOString().split('T')[0],
+      sowingDate: new Date().toISOString().slice(0, 10),
       quantitySown: '',
       sowingUnit: '',
       expectedSeedlings: '',

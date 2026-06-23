@@ -17,7 +17,7 @@ export default async function SalesPage() {
   const salesData = await getSales()
 
   const totalRevenue = salesData.reduce((sum, sale) => sum + parseFloat(sale.totalAmount), 0)
-  const totalPaid = salesData.reduce((sum, sale) => sum + parseFloat(sale.amountPaid), 0)
+  const totalPaid = salesData.reduce((sum, sale) => sum + parseFloat(sale.amountPaid ?? '0'), 0)
 
   return (
     <div className="space-y-6">

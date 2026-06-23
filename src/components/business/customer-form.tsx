@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { customerSchema, type CustomerFormData } from '@/lib/validations/business'
 import { Button } from '@/components/ui/button'
 import {
@@ -38,7 +38,7 @@ export function CustomerForm({ defaultValues, mode }: CustomerFormProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<CustomerFormData>({
-    resolver: zodResolver(customerSchema),
+    resolver: formResolver<CustomerFormData>(customerSchema),
     defaultValues: defaultValues || {
       name: '',
       customerType: 'individual',

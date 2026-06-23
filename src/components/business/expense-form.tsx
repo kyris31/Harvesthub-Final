@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { expenseSchema, type ExpenseFormData } from '@/lib/validations/business'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,12 +39,12 @@ export function ExpenseForm({ suppliers, defaultValues, mode }: ExpenseFormProps
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<ExpenseFormData>({
-    resolver: zodResolver(expenseSchema),
+    resolver: formResolver<ExpenseFormData>(expenseSchema),
     defaultValues: defaultValues || {
       supplierId: '',
       category: 'other',
       description: '',
-      expenseDate: new Date().toISOString().split('T')[0],
+      expenseDate: new Date().toISOString().slice(0, 10),
       amount: '',
       paymentMethod: '',
       notes: '',

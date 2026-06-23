@@ -16,11 +16,11 @@ type LifecycleRow = {
   sourceLabel: string
   sowingDate: string | null
   sownQty: string
-  produced: number
-  transplanted: number
+  produced: number | null
+  transplanted: number | null
   harvested: number
   sold: number
-  remaining: number
+  remaining: number | null
 }
 
 function fmt(date: string | null) {
@@ -199,7 +199,9 @@ export default function SeedlingLifecycleClient({
                     <td className="px-4 py-3 text-right">
                       <span
                         className={
-                          row.remaining > 0 ? 'font-medium text-amber-600' : 'text-muted-foreground'
+                          (row.remaining ?? 0) > 0
+                            ? 'font-medium text-amber-600'
+                            : 'text-muted-foreground'
                         }
                       >
                         {row.remaining}

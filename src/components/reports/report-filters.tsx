@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,14 +20,13 @@ export function ReportFilters({
   onFilterChange,
   showCategoryFilter,
 }: ReportFiltersProps) {
-  const router = useRouter()
   const [startDate, setStartDate] = useState(() => {
     const date = new Date()
     date.setDate(date.getDate() - 30)
-    return date.toISOString().split('T')[0]
+    return date.toISOString().slice(0, 10)
   })
   const [endDate, setEndDate] = useState(() => {
-    return new Date().toISOString().split('T')[0]
+    return new Date().toISOString().slice(0, 10)
   })
 
   const handleApplyFilters = () => {

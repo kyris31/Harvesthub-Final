@@ -16,7 +16,7 @@ export default function NewHarvestOrderPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const today = new Date().toISOString().split('T')[0]!
+  const today = new Date().toISOString().slice(0, 10)!
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

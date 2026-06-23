@@ -46,7 +46,7 @@ export default async function PrintSalePage({ params }: Props) {
   }
 
   const total = parseFloat(sale.totalAmount)
-  const paid = parseFloat(sale.amountPaid)
+  const paid = parseFloat(sale.amountPaid ?? '0')
   const balance = total - paid
   const dateStr = format(new Date(sale.saleDate), 'dd/MM/yyyy')
   const customerName = sale.customer?.name ?? 'Walk-in Customer'
@@ -159,7 +159,7 @@ export default async function PrintSalePage({ params }: Props) {
             <div className="flex justify-between border-t bg-gray-50 px-4 py-2">
               <span className="text-gray-600">Status</span>
               <span className="font-semibold capitalize">
-                {STATUS_LABELS[sale.paymentStatus] ?? sale.paymentStatus}
+                {STATUS_LABELS[sale.paymentStatus ?? ''] ?? sale.paymentStatus}
               </span>
             </div>
             {sale.paymentMethod && (

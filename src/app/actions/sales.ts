@@ -144,6 +144,10 @@ export async function createSaleWithItems(data: {
     })
     .returning()
 
+  if (!sale) {
+    throw new Error('Failed to create sale')
+  }
+
   // Insert sale items and decrement stock
   for (const item of data.items) {
     const qty = parseFloat(item.quantity)

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -46,9 +46,9 @@ export default function RecordFeedUsagePage() {
     watch,
     formState: { errors },
   } = useForm<FeedUsageFormData>({
-    resolver: zodResolver(feedUsageSchema),
+    resolver: formResolver<FeedUsageFormData>(feedUsageSchema),
     defaultValues: {
-      usageDate: new Date().toISOString().split('T')[0],
+      usageDate: new Date().toISOString().slice(0, 10),
       quantityUnit: 'kg',
     },
   })

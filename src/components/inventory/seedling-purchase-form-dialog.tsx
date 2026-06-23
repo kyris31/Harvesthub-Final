@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { Plus, Loader2 } from 'lucide-react'
 import {
   Dialog,
@@ -47,11 +47,11 @@ export function SeedlingPurchaseFormDialog({ onSuccess }: SeedlingPurchaseFormDi
   const [isLoadingCrops, setIsLoadingCrops] = useState(true)
 
   const form = useForm<PurchasedSeedlingFormValues>({
-    resolver: zodResolver(purchasedSeedlingSchema),
+    resolver: formResolver<PurchasedSeedlingFormValues>(purchasedSeedlingSchema),
     defaultValues: {
       cropId: '',
       supplierId: null,
-      purchaseDate: new Date().toISOString().split('T')[0],
+      purchaseDate: new Date().toISOString().slice(0, 10),
       quantityPurchased: '',
       costPerSeedling: '',
       notes: '',

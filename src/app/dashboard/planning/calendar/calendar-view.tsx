@@ -80,7 +80,7 @@ export function CalendarView({ year, month, events }: Props) {
     return acc
   }, {})
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = new Date().toISOString().slice(0, 10)
 
   const plantingCount = events.filter((e) => e.type === 'planting').length
   const harvestCount = events.filter((e) => e.type === 'harvest').length

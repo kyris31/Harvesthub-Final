@@ -17,7 +17,6 @@ export default async function SupplierInvoicesPage() {
   const invoices = await getSupplierInvoices()
 
   const draftInvoices = invoices.filter((inv) => inv.status === 'draft')
-  const processedInvoices = invoices.filter((inv) => inv.status === 'processed')
   const totalValue = invoices.reduce((sum, inv) => sum + parseFloat(inv.totalAmount), 0)
 
   return (

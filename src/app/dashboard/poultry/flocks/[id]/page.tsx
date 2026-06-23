@@ -10,7 +10,6 @@ import {
   Bird,
   Scale,
   Wheat,
-  Plus,
   Calendar,
 } from 'lucide-react'
 import { getFlockProfitReport } from '@/app/actions/broiler-processing'

@@ -34,7 +34,7 @@ interface TreeRow {
 
 function parseIdNum(id: string): number {
   const m = id.match(/^T-(\d+)$/i)
-  return m ? parseInt(m[1], 10) : 0
+  return m ? parseInt(m[1] ?? '', 10) : 0
 }
 
 export function NewTreeForm({

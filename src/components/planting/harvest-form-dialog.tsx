@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { Loader2 } from 'lucide-react'
 import {
   Dialog,
@@ -49,10 +49,10 @@ export function HarvestFormDialog({ planting, onSuccess }: HarvestFormDialogProp
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<HarvestLogFormValues>({
-    resolver: zodResolver(harvestLogSchema),
+    resolver: formResolver<HarvestLogFormValues>(harvestLogSchema),
     defaultValues: {
       plantingLogId: planting.id,
-      harvestDate: new Date().toISOString().split('T')[0],
+      harvestDate: new Date().toISOString().slice(0, 10),
       quantityHarvested: '',
       quantityUnit: planting.quantityUnit || 'kg',
       currentStock: '',

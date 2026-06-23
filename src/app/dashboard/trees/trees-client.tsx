@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, TreePine, Leaf, AlertTriangle, Skull, Search, ArrowLeft, Trees } from 'lucide-react'
+import { Plus, TreePine, Leaf, AlertTriangle, Skull, Search, ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
 
 type Tree = {
@@ -234,7 +234,7 @@ export function TreesClient({ trees }: { trees: Tree[] }) {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(g.counts).map(([s, count]) => {
-                          const cfg = STATUS_CONFIG[s] ?? STATUS_CONFIG.healthy
+                          const cfg = STATUS_CONFIG[s] ?? STATUS_CONFIG.healthy!
                           return (
                             <span
                               key={s}
@@ -265,7 +265,7 @@ export function TreesClient({ trees }: { trees: Tree[] }) {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredTrees.map((tree) => {
-                const status = STATUS_CONFIG[tree.status ?? 'healthy'] ?? STATUS_CONFIG.healthy
+                const status = STATUS_CONFIG[tree.status ?? 'healthy'] ?? STATUS_CONFIG.healthy!
                 return (
                   <Link key={tree.id} href={`/dashboard/trees/${tree.id}`}>
                     <Card className="hover:border-primary/40 cursor-pointer border transition-all hover:shadow-md">

@@ -1,11 +1,11 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { plots, plantingLogs, cropPlans, harvestLogs, saleItems } from '@/lib/db/schema'
+import { plots, plantingLogs, cropPlans, harvestLogs } from '@/lib/db/schema'
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { plotSchema } from '@/lib/validations/plots'
-import { eq, and, isNull, desc, sql } from 'drizzle-orm'
+import { eq, and, isNull, desc } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 const revalidate = () => {

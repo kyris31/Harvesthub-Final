@@ -5,7 +5,7 @@ import { poultryFeedInventory, feedUsageRecords, flocks } from '@/lib/db/schema'
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { poultryFeedSchema, feedUsageSchema } from '@/lib/validations/poultry'
-import { eq, and, desc, sql, lt } from 'drizzle-orm'
+import { eq, and, desc, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 // Get poultry feed inventory

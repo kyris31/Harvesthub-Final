@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { Plus, Loader2 } from 'lucide-react'
 import {
   Dialog,
@@ -45,7 +45,7 @@ export function CropFormDialog({ mode, crop, onSuccess }: CropFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<CropFormValues>({
-    resolver: zodResolver(cropSchema),
+    resolver: formResolver<CropFormValues>(cropSchema),
     defaultValues: {
       name: crop?.name || '',
       variety: crop?.variety || '',

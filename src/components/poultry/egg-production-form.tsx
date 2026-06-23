@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { eggProductionSchema, type EggProductionFormData } from '@/lib/validations/poultry'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,9 +37,9 @@ export function EggProductionForm({ initialData }: EggProductionFormProps) {
     setValue,
     watch,
   } = useForm<EggProductionFormData>({
-    resolver: zodResolver(eggProductionSchema),
+    resolver: formResolver<EggProductionFormData>(eggProductionSchema),
     defaultValues: initialData || {
-      collectionDate: new Date().toISOString().split('T')[0],
+      collectionDate: new Date().toISOString().slice(0, 10),
       eggsCracked: 0,
       eggsSmall: 0,
       eggsMedium: 0,

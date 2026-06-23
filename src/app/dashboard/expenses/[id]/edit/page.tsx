@@ -35,7 +35,13 @@ export default async function EditExpensePage({ params }: { params: { id: string
           description: expense.description,
           expenseDate: expense.expenseDate,
           amount: expense.amount,
-          paymentMethod: expense.paymentMethod || '',
+          paymentMethod: (expense.paymentMethod ?? '') as
+            | ''
+            | 'cash'
+            | 'bank_transfer'
+            | 'card'
+            | 'check'
+            | 'other',
           notes: expense.notes || '',
         }}
       />

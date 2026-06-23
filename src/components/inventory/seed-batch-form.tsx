@@ -1,7 +1,7 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import { seedBatchSchema, type SeedBatchFormData } from '@/lib/validations/inventory'
 import { Button } from '@/components/ui/button'
 import {
@@ -42,7 +42,7 @@ export function SeedBatchForm({ crops, suppliers, defaultValues, mode }: SeedBat
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<SeedBatchFormData>({
-    resolver: zodResolver(seedBatchSchema),
+    resolver: formResolver<SeedBatchFormData>(seedBatchSchema),
     defaultValues: defaultValues || {
       cropId: '',
       supplierId: '',

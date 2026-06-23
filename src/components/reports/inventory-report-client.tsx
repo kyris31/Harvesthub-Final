@@ -16,7 +16,6 @@ interface InventoryReportProps {
     lowStockCount: number
     seeds: {
       items: Array<any>
-      lowStock: Array<any>
       totalValue: number
     }
     inputs: {

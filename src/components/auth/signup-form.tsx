@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { formResolver } from '@/lib/form-resolver'
 import * as z from 'zod'
 import { authClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/button'
@@ -31,7 +31,7 @@ export function SignupForm() {
   const [loading, setLoading] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: formResolver<z.infer<typeof formSchema>>(formSchema),
     defaultValues: {
       name: '',
       email: '',

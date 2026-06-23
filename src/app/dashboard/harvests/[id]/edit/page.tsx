@@ -1,6 +1,7 @@
 import { getHarvestLog } from '@/app/actions/harvests'
 import { HarvestForm } from '@/components/harvests/harvest-form'
 import { getActivePlantingsForSelect } from '@/app/actions/form-helpers'
+import { getTrees } from '@/app/actions/trees'
 import { notFound } from 'next/navigation'
 
 interface EditHarvestPageProps {
@@ -9,9 +10,10 @@ interface EditHarvestPageProps {
 
 export default async function EditHarvestPage({ params }: EditHarvestPageProps) {
   const { id } = await params
-  const [harvest, plantings] = await Promise.all([
+  const [harvest, plantings, trees] = await Promise.all([
     getHarvestLog(id).catch(() => null),
     getActivePlantingsForSelect(),
+    getTrees(),
   ])
 
   if (!harvest) {
@@ -28,9 +30,12 @@ export default async function EditHarvestPage({ params }: EditHarvestPageProps) 
       <HarvestForm
         mode="edit"
         plantings={plantings}
+        trees={trees}
         defaultValues={{
           id: harvest.id,
-          plantingLogId: harvest.plantingLogId,
+          sourceType: (harvest.treeId ? 'tree' : 'planting') as 'tree' | 'planting',
+          plantingLogId: harvest.plantingLogId ?? undefined,
+          treeId: harvest.treeId ?? undefined,
           harvestDate: harvest.harvestDate,
           quantityHarvested: harvest.quantityHarvested,
           quantityUnit: harvest.quantityUnit,

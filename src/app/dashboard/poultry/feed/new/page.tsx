@@ -60,7 +60,7 @@ function newLine(id: number): FeedLine {
 export default function AddFeedPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0])
+  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().slice(0, 10))
   const [supplierId, setSupplierId] = useState('')
   const [supplierName, setSupplierName] = useState('')
   const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([])
@@ -93,15 +93,6 @@ export default function AddFeedPage() {
     const qty = parseFloat(l.quantity) || 0
     const cost = parseFloat(l.costPerUnit) || 0
     return sum + qty * cost
-  }, 0)
-
-  // Total kg summary
-  const grandTotalKg = lines.reduce((sum, l) => {
-    const qty = parseFloat(l.quantity) || 0
-    if (l.unit === 'bags') {
-      return sum + qty * (parseFloat(l.bagWeightKg) || 0)
-    }
-    return sum + qty
   }, 0)
 
   async function handleSubmit(e: React.FormEvent) {

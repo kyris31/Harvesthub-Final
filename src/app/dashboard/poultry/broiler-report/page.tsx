@@ -2,16 +2,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getAllBroilerFlocksSummary } from '@/app/actions/broiler-processing'
-import {
-  TrendingUp,
-  TrendingDown,
-  Bird,
-  DollarSign,
-  Scale,
-  Wheat,
-  Plus,
-  AlertCircle,
-} from 'lucide-react'
+import { TrendingUp, TrendingDown, Bird, DollarSign, Plus, AlertCircle } from 'lucide-react'
 
 export default async function BroilerReportPage() {
   const flocks = await getAllBroilerFlocksSummary()
