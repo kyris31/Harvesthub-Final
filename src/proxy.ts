@@ -2,7 +2,7 @@ import { betterFetch } from '@better-fetch/fetch'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Session } from 'better-auth/types'
 
-export default async function authMiddleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { data: session } = await betterFetch<Session>('/api/auth/get-session', {
     baseURL: request.nextUrl.origin,
     headers: {

@@ -2,6 +2,9 @@
   "name": "harvesthub-v2",
   "version": "0.1.0",
   "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": ["core-js", "esbuild", "sharp", "unrs-resolver"]
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
