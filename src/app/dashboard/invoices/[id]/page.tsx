@@ -25,6 +25,9 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
   const auditLog = await getInvoiceAuditLog(id).catch(() => [])
 
   const subtotal = parseFloat(invoice.subtotal || '0')
+  const taxAmount = parseFloat(invoice.taxAmount || '0')
+  const shippingCost = parseFloat(invoice.shippingCost || '0')
+  const discountAmount = parseFloat(invoice.discountAmount || '0')
   const total = parseFloat(invoice.totalAmount)
 
   return (
@@ -133,6 +136,12 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
                     )}
                   </div>
                 </div>
+                {item.taxAmount && parseFloat(item.taxAmount) > 0 && (
+                  <div className="text-muted-foreground mt-1 text-sm">
+                    VAT{item.taxRate ? ` (${parseFloat(item.taxRate).toFixed(0)}%)` : ''}: €
+                    {parseFloat(item.taxAmount).toFixed(2)}
+                  </div>
+                )}
                 {item.notes && (
                   <div className="text-muted-foreground mt-2 text-sm">Note: {item.notes}</div>
                 )}
@@ -145,6 +154,24 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
               <span>Subtotal</span>
               <span>€{subtotal.toFixed(2)}</span>
             </div>
+            {discountAmount > 0 && (
+              <div className="text-muted-foreground flex justify-between">
+                <span>Invoice Discount</span>
+                <span className="text-red-600">-€{discountAmount.toFixed(2)}</span>
+              </div>
+            )}
+            {taxAmount > 0 && (
+              <div className="text-muted-foreground flex justify-between">
+                <span>VAT</span>
+                <span>€{taxAmount.toFixed(2)}</span>
+              </div>
+            )}
+            {shippingCost > 0 && (
+              <div className="text-muted-foreground flex justify-between">
+                <span>Shipping</span>
+                <span>€{shippingCost.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-lg font-bold">
               <span>Total</span>
               <span>€{total.toFixed(2)}</span>

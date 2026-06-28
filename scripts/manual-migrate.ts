@@ -9,7 +9,9 @@ async function main() {
   console.log('Running manual migration...')
   const { db } = await import('../src/lib/db')
 
-  const migrationFile = path.resolve(process.cwd(), 'drizzle', '0000_fair_cobalt_man.sql')
+  // Optional CLI arg: the migration filename inside drizzle/ to run.
+  const fileArg = process.argv[2] || '0000_fair_cobalt_man.sql'
+  const migrationFile = path.resolve(process.cwd(), 'drizzle', fileArg)
   console.log(`Reading migration file: ${migrationFile}`)
 
   try {

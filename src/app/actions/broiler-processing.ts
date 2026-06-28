@@ -11,7 +11,7 @@ import {
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { broilerProcessingSchema } from '@/lib/validations/poultry'
-import { eq, and, desc, sql } from 'drizzle-orm'
+import { eq, and, desc, gte, lte, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 // Create a processing record and mark flock as sold
@@ -208,16 +208,20 @@ export async function getFlockProfitReport(flockId: string) {
 }
 
 // Summary of ALL broiler flocks for the report page
-export async function getAllBroilerFlocksSummary() {
+export async function getAllBroilerFlocksSummary(startDate?: string, endDate?: string) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user?.id) throw new Error('Unauthorized')
 
+  const conditions = [
+    eq(flocks.userId, session.user.id),
+    eq(flocks.purpose, 'broilers'),
+    sql`${flocks.deletedAt} IS NULL`,
+  ]
+  if (startDate) conditions.push(gte(flocks.dateAcquired, startDate))
+  if (endDate) conditions.push(lte(flocks.dateAcquired, endDate))
+
   const broilerFlocks = await db.query.flocks.findMany({
-    where: and(
-      eq(flocks.userId, session.user.id),
-      eq(flocks.purpose, 'broilers'),
-      sql`${flocks.deletedAt} IS NULL`
-    ),
+    where: and(...conditions),
     with: {
       processingRecords: true,
       feedUsageRecords: {

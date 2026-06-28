@@ -133,6 +133,13 @@ export async function createCultivationActivity(data: CultivationActivityFormDat
       throw new Error('Input inventory item not found')
     }
 
+    // A material can't be used before it was purchased.
+    if (input.purchaseDate && input.purchaseDate > validated.activityDate) {
+      throw new Error(
+        `"${input.name}" was purchased on ${input.purchaseDate}, which is after the activity date (${validated.activityDate}). Choose a later activity date or a different material.`
+      )
+    }
+
     if (inputItem.quantityUsed) {
       const requested = Number(inputItem.quantityUsed)
       const available = Number(input.currentQuantity || 0)
@@ -223,6 +230,23 @@ export async function updateCultivationActivity(id: string, data: CultivationAct
 
   if (!existing) {
     throw new Error('Activity not found')
+  }
+
+  // A material can't be used before it was purchased. (Don't block edits when a
+  // material no longer exists — only enforce the date when we can find it.)
+  for (const inputItem of validated.inputs ?? []) {
+    const input = await db.query.inputInventory.findFirst({
+      where: and(
+        eq(inputInventory.id, inputItem.inputInventoryId),
+        eq(inputInventory.userId, session.user.id)
+      ),
+    })
+
+    if (input?.purchaseDate && input.purchaseDate > validated.activityDate) {
+      throw new Error(
+        `"${input.name}" was purchased on ${input.purchaseDate}, which is after the activity date (${validated.activityDate}). Choose a later activity date or a different material.`
+      )
+    }
   }
 
   await db

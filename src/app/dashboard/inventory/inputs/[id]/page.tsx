@@ -128,13 +128,13 @@ export default async function InputItemDetailPage({ params }: InputItemDetailPag
             {item.costPerUnit && (
               <div>
                 <p className="text-muted-foreground text-sm font-medium">Cost Per Unit</p>
-                <p className="text-base">${item.costPerUnit}</p>
+                <p className="text-base">€{item.costPerUnit}</p>
               </div>
             )}
             {item.totalCost && (
               <div>
                 <p className="text-muted-foreground text-sm font-medium">Total Cost</p>
-                <p className="text-base">${item.totalCost}</p>
+                <p className="text-base">€{item.totalCost}</p>
               </div>
             )}
           </div>

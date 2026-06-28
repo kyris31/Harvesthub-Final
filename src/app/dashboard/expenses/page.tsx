@@ -38,7 +38,7 @@ export default async function ExpensesPage() {
           <CardTitle>Total Expenses</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">${totalExpenses.toFixed(2)}</div>
+          <div className="text-3xl font-bold">€{totalExpenses.toFixed(2)}</div>
         </CardContent>
       </Card>
 
@@ -84,7 +84,7 @@ export default async function ExpensesPage() {
                     </TableCell>
                     <TableCell>{expense.supplier?.name || '-'}</TableCell>
                     <TableCell className="font-medium">
-                      ${parseFloat(expense.amount).toFixed(2)}
+                      €{parseFloat(expense.amount).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" asChild>

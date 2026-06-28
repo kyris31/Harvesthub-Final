@@ -1,18 +1,9 @@
 import { getHarvestLogs } from '@/app/actions/harvests'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Plus, Edit } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
-import { DeleteHarvestButton } from '@/components/harvests/delete-harvest-button'
+import { HarvestsTable } from '@/components/harvests/harvests-table'
 
 export default async function HarvestsPage() {
   const harvests = await getHarvestLogs()
@@ -55,64 +46,7 @@ export default async function HarvestsPage() {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Crop</TableHead>
-                  <TableHead>Harvest Date</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Current Stock</TableHead>
-                  <TableHead>Quality</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {harvests.map((harvest) => (
-                  <TableRow key={harvest.id}>
-                    <TableCell className="font-medium">
-                      <Link href={`/dashboard/harvests/${harvest.id}`} className="hover:underline">
-                        {harvest.plantingLog
-                          ? `${harvest.plantingLog.crop.name}${harvest.plantingLog.crop.variety ? ` (${harvest.plantingLog.crop.variety})` : ''}`
-                          : harvest.tree
-                            ? `🌳 ${harvest.tree.species}${harvest.tree.variety ? ` (${harvest.tree.variety})` : ''} — ${harvest.tree.identifier}`
-                            : '—'}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(harvest.harvestDate).toLocaleDateString('en-GB')}
-                    </TableCell>
-                    <TableCell>
-                      {harvest.quantityHarvested} {harvest.quantityUnit}
-                    </TableCell>
-                    <TableCell>
-                      {harvest.currentStock} {harvest.quantityUnit}
-                    </TableCell>
-                    <TableCell>
-                      {harvest.qualityGrade ? (
-                        <Badge variant="outline">{harvest.qualityGrade}</Badge>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/dashboard/harvests/${harvest.id}/edit`}>
-                            <Edit className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <DeleteHarvestButton
-                          harvestId={harvest.id}
-                          cropName={
-                            harvest.plantingLog?.crop.name ?? harvest.tree?.species ?? 'Harvest'
-                          }
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <HarvestsTable harvests={harvests} />
           )}
         </CardContent>
       </Card>

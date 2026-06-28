@@ -10,8 +10,10 @@ import {
   expenses,
   invoiceAuditLog,
   invoicePayments,
+  users,
 } from '@/lib/db/schema'
 import { and, eq, isNull, desc } from 'drizzle-orm'
+import { lineGrossCost, computeInvoice } from '@/lib/invoice-cost'
 import { revalidatePath } from 'next/cache'
 import {
   supplierInvoiceSchema,
@@ -20,52 +22,24 @@ import {
   type PaymentFormData,
 } from '@/lib/validations/invoices'
 
-// Helper function to calculate line item discount
-function calculateLineDiscount(
-  lineSubtotal: number,
-  discountType?: string | null,
-  discountValue?: string | null
-): { discountAmount: number; lineTotal: number } {
-  if (!discountType || !discountValue) {
-    return { discountAmount: 0, lineTotal: lineSubtotal }
-  }
-
-  const value = parseFloat(discountValue)
-  const discountAmount = discountType === 'percentage' ? lineSubtotal * (value / 100) : value
-
-  return {
-    discountAmount,
-    lineTotal: lineSubtotal - discountAmount,
-  }
+// Per-line VAT amount for a stored invoice item, with a fallback for older
+// invoices that predate per-line tax (allocate the invoice tax proportionally).
+function itemTaxAmount(
+  item: { taxAmount?: string | null; lineTotal: string },
+  invoiceSubtotal: number,
+  invoiceTax: number
+): number {
+  if (item.taxAmount !== null && item.taxAmount !== undefined) return parseFloat(item.taxAmount)
+  return invoiceSubtotal > 0 ? invoiceTax * (parseFloat(item.lineTotal) / invoiceSubtotal) : 0
 }
 
-// Helper function to calculate invoice totals
-function calculateInvoiceTotals(
-  items: any[],
-  taxRate: string | null | undefined,
-  shippingCost: string | null | undefined,
-  invoiceDiscount: string | null | undefined
-): { subtotal: number; taxAmount: number; total: number } {
-  // Calculate subtotal from line items (after line-item discounts)
-  const subtotal = items.reduce((sum, item) => {
-    const lineSubtotal = parseFloat(item.quantity) * parseFloat(item.pricePerUnit)
-    const { lineTotal } = calculateLineDiscount(lineSubtotal, item.discountType, item.discountValue)
-    return sum + lineTotal
-  }, 0)
-
-  // Apply invoice-level discount
-  const discount = parseFloat(invoiceDiscount || '0')
-  const afterDiscount = subtotal - discount
-
-  // Calculate tax
-  const rate = parseFloat(taxRate || '0')
-  const taxAmount = afterDiscount * (rate / 100)
-
-  // Calculate total
-  const shipping = parseFloat(shippingCost || '0')
-  const total = afterDiscount + taxAmount + shipping
-
-  return { subtotal, taxAmount, total }
+// Whether the current user is VAT-registered (controls VAT-inclusive costing)
+async function getUserVatRegistered(userId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ vatRegistered: users.vatRegistered })
+    .from(users)
+    .where(eq(users.id, userId))
+  return row?.vatRegistered ?? false
 }
 
 // Audit logging helper
@@ -140,13 +114,12 @@ export async function createSupplierInvoice(data: SupplierInvoiceFormData) {
 
   const validated = supplierInvoiceSchema.parse(data)
 
-  // Calculate totals with new logic
-  const calculations = calculateInvoiceTotals(
-    validated.items,
-    validated.taxRate,
-    validated.shippingCost,
-    validated.discountAmount
-  )
+  // Calculate totals (per-line VAT, header rate as default)
+  const computed = computeInvoice(validated.items, {
+    defaultTaxRate: validated.taxRate,
+    shippingCost: validated.shippingCost,
+    invoiceDiscount: validated.discountAmount,
+  })
 
   const [invoice] = await db
     .insert(supplierInvoices)
@@ -157,12 +130,12 @@ export async function createSupplierInvoice(data: SupplierInvoiceFormData) {
       invoiceDate: validated.invoiceDate,
       dueDate: validated.dueDate || null,
       status: 'draft',
-      subtotal: calculations.subtotal.toFixed(2),
+      subtotal: computed.subtotal.toFixed(2),
       taxRate: validated.taxRate || null,
-      taxAmount: calculations.taxAmount.toFixed(2),
+      taxAmount: computed.taxAmount.toFixed(2),
       shippingCost: validated.shippingCost || '0',
       discountAmount: validated.discountAmount || '0',
-      totalAmount: calculations.total.toFixed(2),
+      totalAmount: computed.total.toFixed(2),
       paymentStatus: 'unpaid',
       paidAmount: '0',
       notes: validated.notes || null,
@@ -173,15 +146,9 @@ export async function createSupplierInvoice(data: SupplierInvoiceFormData) {
     throw new Error('Failed to create invoice')
   }
 
-  // Create invoice items with discount calculations
-  const itemsToInsert = validated.items.map((item) => {
-    const lineSubtotal = parseFloat(item.quantity) * parseFloat(item.pricePerUnit)
-    const { discountAmount, lineTotal } = calculateLineDiscount(
-      lineSubtotal,
-      item.discountType,
-      item.discountValue
-    )
-
+  // Create invoice items with discount + per-line tax calculations
+  const itemsToInsert = validated.items.map((item, i) => {
+    const line = computed.lines[i]!
     return {
       invoiceId: invoice.id,
       description: item.description,
@@ -192,8 +159,10 @@ export async function createSupplierInvoice(data: SupplierInvoiceFormData) {
       pricePerUnit: item.pricePerUnit,
       discountType: item.discountType || null,
       discountValue: item.discountValue || null,
-      discountAmount: discountAmount.toFixed(2),
-      lineTotal: lineTotal.toFixed(2),
+      discountAmount: line.lineDiscount.toFixed(2),
+      lineTotal: line.lineTotal.toFixed(2),
+      taxRate: line.taxRate.toFixed(2),
+      taxAmount: line.lineTax.toFixed(2),
       category: item.category || null,
       notes: item.notes || null,
     }
@@ -225,13 +194,12 @@ export async function updateSupplierInvoice(id: string, data: SupplierInvoiceFor
 
   if (!existing) throw new Error('Invoice not found')
 
-  // Calculate new totals with enhanced logic
-  const calculations = calculateInvoiceTotals(
-    validated.items,
-    validated.taxRate,
-    validated.shippingCost,
-    validated.discountAmount
-  )
+  // Calculate new totals (per-line VAT, header rate as default)
+  const computed = computeInvoice(validated.items, {
+    defaultTaxRate: validated.taxRate,
+    shippingCost: validated.shippingCost,
+    invoiceDiscount: validated.discountAmount,
+  })
 
   // Update invoice header
   const [updated] = await db
@@ -241,12 +209,12 @@ export async function updateSupplierInvoice(id: string, data: SupplierInvoiceFor
       invoiceNumber: validated.invoiceNumber,
       invoiceDate: validated.invoiceDate,
       dueDate: validated.dueDate || null,
-      subtotal: calculations.subtotal.toFixed(2),
+      subtotal: computed.subtotal.toFixed(2),
       taxRate: validated.taxRate || null,
-      taxAmount: calculations.taxAmount.toFixed(2),
+      taxAmount: computed.taxAmount.toFixed(2),
       shippingCost: validated.shippingCost || '0',
       discountAmount: validated.discountAmount || '0',
-      totalAmount: calculations.total.toFixed(2),
+      totalAmount: computed.total.toFixed(2),
       notes: validated.notes || null,
       updatedAt: new Date(),
     })
@@ -260,15 +228,9 @@ export async function updateSupplierInvoice(id: string, data: SupplierInvoiceFor
   // Delete old items
   await db.delete(supplierInvoiceItems).where(eq(supplierInvoiceItems.invoiceId, id))
 
-  // Create new items with discount calculations
-  const itemsToInsert = validated.items.map((item) => {
-    const lineSubtotal = parseFloat(item.quantity) * parseFloat(item.pricePerUnit)
-    const { discountAmount, lineTotal } = calculateLineDiscount(
-      lineSubtotal,
-      item.discountType,
-      item.discountValue
-    )
-
+  // Create new items with discount + per-line tax calculations
+  const itemsToInsert = validated.items.map((item, i) => {
+    const line = computed.lines[i]!
     return {
       invoiceId: id,
       description: item.description,
@@ -279,8 +241,10 @@ export async function updateSupplierInvoice(id: string, data: SupplierInvoiceFor
       pricePerUnit: item.pricePerUnit,
       discountType: item.discountType || null,
       discountValue: item.discountValue || null,
-      discountAmount: discountAmount.toFixed(2),
-      lineTotal: lineTotal.toFixed(2),
+      discountAmount: line.lineDiscount.toFixed(2),
+      lineTotal: line.lineTotal.toFixed(2),
+      taxRate: line.taxRate.toFixed(2),
+      taxAmount: line.lineTax.toFixed(2),
       category: item.category || null,
       notes: item.notes || null,
     }
@@ -311,9 +275,32 @@ export async function deleteSupplierInvoice(id: string) {
       eq(supplierInvoices.userId, session.user.id),
       isNull(supplierInvoices.deletedAt)
     ),
+    with: { items: true },
   })
 
   if (!existing) throw new Error('Invoice not found')
+
+  // If the invoice was processed, undo its side effects first so we don't
+  // leave orphaned inventory items or an expense record behind.
+  if (existing.status === 'processed') {
+    for (const item of existing.items) {
+      if (item.createdInventoryId) {
+        await db
+          .update(inputInventory)
+          .set({ deletedAt: new Date() })
+          .where(eq(inputInventory.id, item.createdInventoryId))
+      }
+    }
+
+    await db
+      .delete(expenses)
+      .where(
+        and(
+          eq(expenses.userId, session.user.id),
+          eq(expenses.description, `Invoice ${existing.invoiceNumber}`)
+        )
+      )
+  }
 
   // Soft delete
   await db
@@ -323,7 +310,12 @@ export async function deleteSupplierInvoice(id: string) {
     })
     .where(eq(supplierInvoices.id, id))
 
+  // Log audit entry
+  await logInvoiceAudit(id, session.user.id, 'deleted')
+
   revalidatePath('/dashboard/invoices')
+  revalidatePath('/dashboard/inventory/inputs')
+  revalidatePath('/dashboard/expenses')
 }
 
 export async function processInvoice(id: string) {
@@ -342,17 +334,24 @@ export async function processInvoice(id: string) {
   if (!invoice) throw new Error('Invoice not found')
   if (invoice.status === 'processed') throw new Error('Invoice already processed')
 
+  // VAT handling depends on whether the business is VAT-registered.
+  const invoiceSubtotal = parseFloat(invoice.subtotal || '0')
+  const invoiceTax = parseFloat(invoice.taxAmount || '0')
+  const vatRegistered = await getUserVatRegistered(session.user.id)
+
   // Create input inventory items for each line item
   for (const item of invoice.items) {
     const packages = parseFloat(item.quantity)
     const qtyPerPackage = item.itemQtyPerPackage ? parseFloat(item.itemQtyPerPackage) : null
     const useContentQty = qtyPerPackage !== null && qtyPerPackage > 0 && item.itemUnit
 
+    const lineTax = itemTaxAmount(item, invoiceSubtotal, invoiceTax)
+    const lineGross = lineGrossCost(parseFloat(item.lineTotal), lineTax, vatRegistered)
+
+    const baseUnits = useContentQty ? packages * qtyPerPackage! : packages
     const inventoryQty = useContentQty ? (packages * qtyPerPackage!).toFixed(4) : item.quantity
     const inventoryUnit = useContentQty ? item.itemUnit! : item.unit
-    const inventoryCostPerUnit = useContentQty
-      ? (parseFloat(item.lineTotal) / (packages * qtyPerPackage!)).toFixed(6)
-      : item.pricePerUnit
+    const inventoryCostPerUnit = baseUnits > 0 ? (lineGross / baseUnits).toFixed(6) : '0'
 
     const [inventoryItem] = await db
       .insert(inputInventory)
@@ -366,7 +365,7 @@ export async function processInvoice(id: string) {
         currentQuantity: inventoryQty,
         quantityUnit: inventoryUnit,
         costPerUnit: inventoryCostPerUnit,
-        totalCost: item.lineTotal,
+        totalCost: lineGross.toFixed(2),
         notes: item.notes,
       })
       .returning()
@@ -488,19 +487,37 @@ async function syncInventoryFromInvoice(invoiceId: string) {
 
   if (!invoice) return
 
+  // VAT handling depends on whether the business is VAT-registered (matches
+  // processInvoice so the stored inventory cost stays consistent).
+  const invoiceSubtotal = parseFloat(invoice.subtotal || '0')
+  const invoiceTax = parseFloat(invoice.taxAmount || '0')
+  const vatRegistered = await getUserVatRegistered(session.user.id)
+
   // Update existing linked inventory items
   for (const item of invoice.items) {
     if (item.createdInventoryId) {
+      const packages = parseFloat(item.quantity)
+      const qtyPerPackage = item.itemQtyPerPackage ? parseFloat(item.itemQtyPerPackage) : null
+      const useContentQty = qtyPerPackage !== null && qtyPerPackage > 0 && item.itemUnit
+
+      const lineTax = itemTaxAmount(item, invoiceSubtotal, invoiceTax)
+      const lineGross = lineGrossCost(parseFloat(item.lineTotal), lineTax, vatRegistered)
+
+      const baseUnits = useContentQty ? packages * qtyPerPackage! : packages
+      const inventoryQty = useContentQty ? (packages * qtyPerPackage!).toFixed(4) : item.quantity
+      const inventoryUnit = useContentQty ? item.itemUnit! : item.unit
+      const inventoryCostPerUnit = baseUnits > 0 ? (lineGross / baseUnits).toFixed(6) : '0'
+
       await db
         .update(inputInventory)
         .set({
           name: item.description,
           type: item.category || 'other',
-          initialQuantity: item.quantity,
-          currentQuantity: item.quantity,
-          quantityUnit: item.unit,
-          costPerUnit: item.pricePerUnit,
-          totalCost: item.lineTotal,
+          initialQuantity: inventoryQty,
+          currentQuantity: inventoryQty,
+          quantityUnit: inventoryUnit,
+          costPerUnit: inventoryCostPerUnit,
+          totalCost: lineGross.toFixed(2),
           notes: item.notes,
           updatedAt: new Date(),
         })

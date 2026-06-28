@@ -18,7 +18,7 @@ import {
   crops,
   trees,
 } from '@/lib/db/schema'
-import { and, eq, isNull, gte, lte, sql, count, inArray } from 'drizzle-orm'
+import { and, or, eq, isNull, gte, lte, sql, count, inArray } from 'drizzle-orm'
 
 // Financial Report
 export async function getFinancialReport(startDate?: string, endDate?: string) {
@@ -173,6 +173,7 @@ export async function getInventoryReport() {
       eq(purchasedSeedlings.userId, session.user.id),
       isNull(purchasedSeedlings.deletedAt)
     ),
+    with: { crop: true },
   })
 
   // Calculate low stock items
@@ -408,6 +409,7 @@ export async function getCropLifecycleReport(startDate?: string, endDate?: strin
           .select({
             seedlingId: plantingLogs.selfProducedSeedlingId,
             total: sql<string>`COALESCE(SUM(${harvestLogs.quantityHarvested}), '0')`,
+            unit: sql<string>`MAX(${harvestLogs.quantityUnit})`,
           })
           .from(harvestLogs)
           .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
@@ -444,6 +446,7 @@ export async function getCropLifecycleReport(startDate?: string, endDate?: strin
       : []
 
   const selfHarvestedMap = new Map(selfHarvestedRows.map((r) => [r.seedlingId, Number(r.total)]))
+  const selfUnitMap = new Map(selfHarvestedRows.map((r) => [r.seedlingId, r.unit]))
   const selfSoldMap = new Map(selfSoldRows.map((r) => [r.seedlingId, Number(r.total)]))
 
   const selfRows = selfLogs.map((log) => {
@@ -461,6 +464,7 @@ export async function getCropLifecycleReport(startDate?: string, endDate?: strin
       transplanted,
       harvested: selfHarvestedMap.get(log.id) ?? 0,
       sold: selfSoldMap.get(log.id) ?? 0,
+      harvestUnit: selfUnitMap.get(log.id) ?? '',
       remaining,
     }
   })
@@ -483,6 +487,7 @@ export async function getCropLifecycleReport(startDate?: string, endDate?: strin
           .select({
             seedlingId: plantingLogs.purchasedSeedlingId,
             total: sql<string>`COALESCE(SUM(${harvestLogs.quantityHarvested}), '0')`,
+            unit: sql<string>`MAX(${harvestLogs.quantityUnit})`,
           })
           .from(harvestLogs)
           .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
@@ -519,6 +524,7 @@ export async function getCropLifecycleReport(startDate?: string, endDate?: strin
       : []
 
   const purchHarvestedMap = new Map(purchHarvestedRows.map((r) => [r.seedlingId, Number(r.total)]))
+  const purchUnitMap = new Map(purchHarvestedRows.map((r) => [r.seedlingId, r.unit]))
   const purchSoldMap = new Map(purchSoldRows.map((r) => [r.seedlingId, Number(r.total)]))
 
   const purchRows = purchLogs.map((log) => {
@@ -535,6 +541,7 @@ export async function getCropLifecycleReport(startDate?: string, endDate?: strin
       transplanted,
       harvested: purchHarvestedMap.get(log.id) ?? 0,
       sold: purchSoldMap.get(log.id) ?? 0,
+      harvestUnit: purchUnitMap.get(log.id) ?? '',
       remaining,
     }
   })
@@ -561,6 +568,7 @@ export async function getCropLifecycleReport(startDate?: string, endDate?: strin
           .select({
             plantingId: harvestLogs.plantingLogId,
             total: sql<string>`COALESCE(SUM(${harvestLogs.quantityHarvested}), '0')`,
+            unit: sql<string>`MAX(${harvestLogs.quantityUnit})`,
           })
           .from(harvestLogs)
           .where(and(inArray(harvestLogs.plantingLogId, directIds), isNull(harvestLogs.deletedAt)))
@@ -590,6 +598,7 @@ export async function getCropLifecycleReport(startDate?: string, endDate?: strin
   const directHarvestedMap = new Map(
     directHarvestedRows.map((r) => [r.plantingId, Number(r.total)])
   )
+  const directUnitMap = new Map(directHarvestedRows.map((r) => [r.plantingId, r.unit]))
   const directSoldMap = new Map(directSoldRows.map((r) => [r.plantingId, Number(r.total)]))
 
   const directRows = directLogs.map((log) => ({
@@ -602,6 +611,7 @@ export async function getCropLifecycleReport(startDate?: string, endDate?: strin
     transplanted: null as number | null,
     harvested: directHarvestedMap.get(log.id) ?? 0,
     sold: directSoldMap.get(log.id) ?? 0,
+    harvestUnit: directUnitMap.get(log.id) ?? '',
     remaining: null as number | null,
   }))
 
@@ -688,7 +698,7 @@ export async function getCultivationReport(startDate?: string, endDate?: string)
 }
 
 // Profitability Report — plantings and tree species ranked by profit
-export async function getProfitabilityReport() {
+export async function getProfitabilityReport(startDate?: string, endDate?: string) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) throw new Error('Unauthorized')
   const userId = session.user.id
@@ -699,8 +709,12 @@ export async function getProfitabilityReport() {
   }
 
   // ── Plantings ─────────────────────────────────────────────────────────────
+  const plantingConditions = [eq(plantingLogs.userId, userId), isNull(plantingLogs.deletedAt)]
+  if (startDate) plantingConditions.push(gte(plantingLogs.plantingDate, startDate))
+  if (endDate) plantingConditions.push(lte(plantingLogs.plantingDate, endDate))
+
   const plantingData = await db.query.plantingLogs.findMany({
-    where: and(eq(plantingLogs.userId, userId), isNull(plantingLogs.deletedAt)),
+    where: and(...plantingConditions),
     with: {
       crop: true,
       plot: true,
@@ -794,8 +808,18 @@ export async function getProfitabilityReport() {
     .sort((a, b) => b.profit - a.profit)
 
   // ── Trees (grouped by species + variety) ──────────────────────────────────
+  const treeConditions = [eq(trees.userId, userId), isNull(trees.deletedAt)]
+  // Trees often have no recorded planting date — keep those so the report
+  // doesn't silently drop established trees when a date range is applied.
+  if (startDate || endDate) {
+    const rangeParts = []
+    if (startDate) rangeParts.push(gte(trees.plantingDate, startDate))
+    if (endDate) rangeParts.push(lte(trees.plantingDate, endDate))
+    treeConditions.push(or(and(...rangeParts), isNull(trees.plantingDate))!)
+  }
+
   const treeData = await db.query.trees.findMany({
-    where: and(eq(trees.userId, userId), isNull(trees.deletedAt)),
+    where: and(...treeConditions),
     with: {
       harvestLogs: {
         where: isNull(harvestLogs.deletedAt),

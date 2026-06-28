@@ -52,6 +52,24 @@ interface InputInventoryItem {
   currentQuantity: string | null
   quantityUnit: string | null
   costPerUnit: string | null
+  totalCost: string | null
+  initialQuantity: string | null
+  purchaseDate: string | null
+}
+
+// Some items have only a total cost (no per-unit cost). Derive the per-unit cost
+// from total ÷ initial quantity in that case.
+function effectiveCostPerUnit(inv: {
+  costPerUnit: string | null
+  totalCost: string | null
+  initialQuantity: string | null
+}): number {
+  const cpu = parseFloat(inv.costPerUnit || '0')
+  if (cpu > 0) return cpu
+  const total = parseFloat(inv.totalCost || '0')
+  const initial = parseFloat(inv.initialQuantity || '0')
+  if (total > 0 && initial > 0) return total / initial
+  return 0
 }
 
 interface CultivationFormProps {
@@ -91,16 +109,32 @@ export function CultivationForm({
   })
 
   const watchedInputs = useWatch({ control: form.control, name: 'inputs' })
+  const activityDate = useWatch({ control: form.control, name: 'activityDate' })
+
+  // A material can only be used on or after it was purchased. Hide inputs whose
+  // purchase date is after the activity date. Items with no recorded purchase
+  // date are kept (unknown), and a currently-selected item stays visible so an
+  // existing selection never silently disappears.
+  const availableInputs = (selectedId?: string) =>
+    inputInventory
+      .filter((inv) => {
+        if (selectedId && inv.id === selectedId) return true
+        if (!inv.purchaseDate || !activityDate) return true
+        return inv.purchaseDate <= activityDate
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
 
   // Auto-calculate cost for each input row when qty or selected input changes
   useEffect(() => {
     watchedInputs?.forEach((item, index) => {
       if (!item.inputInventoryId) return
       const inv = inputInventory.find((i) => i.id === item.inputInventoryId)
-      if (!inv?.costPerUnit) return
+      if (!inv) return
+      const unitCost = effectiveCostPerUnit(inv)
+      if (unitCost <= 0) return
       const qty = parseFloat(item.quantityUsed || '0')
       if (qty > 0) {
-        const calculated = (qty * parseFloat(inv.costPerUnit)).toFixed(2)
+        const calculated = (qty * unitCost).toFixed(2)
         form.setValue(`inputs.${index}.cost`, calculated)
       }
     })
@@ -154,7 +188,11 @@ export function CultivationForm({
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="watering">💧 Watering</SelectItem>
-                  <SelectItem value="fertilizing">🌱 Fertilizing</SelectItem>
+                  <SelectItem value="fertilizing_foliar">🌿 Foliar Fertilizing (spray)</SelectItem>
+                  <SelectItem value="fertilizing_soil">🌱 Soil Fertilizing</SelectItem>
+                  {defaultValues?.activityType === 'fertilizing' && (
+                    <SelectItem value="fertilizing">🌱 Fertilizing (legacy)</SelectItem>
+                  )}
                   <SelectItem value="pest_control">🐛 Pest Control</SelectItem>
                   <SelectItem value="weeding">🌿 Weeding</SelectItem>
                   <SelectItem value="pruning">✂️ Pruning</SelectItem>
@@ -327,15 +365,26 @@ export function CultivationForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {inputInventory.map((inv) => (
-                              <SelectItem key={inv.id} value={inv.id}>
-                                {inv.name} ({inv.currentQuantity || 0} {inv.quantityUnit || ''})
-                                {inv.costPerUnit &&
-                                  ` · €${Number(inv.costPerUnit).toFixed(2)}/unit`}
-                              </SelectItem>
-                            ))}
+                            {availableInputs(field.value).length === 0 ? (
+                              <div className="text-muted-foreground px-2 py-1.5 text-sm">
+                                No materials purchased on or before this date
+                              </div>
+                            ) : (
+                              availableInputs(field.value).map((inv) => {
+                                const unitCost = effectiveCostPerUnit(inv)
+                                return (
+                                  <SelectItem key={inv.id} value={inv.id}>
+                                    {inv.name} ({inv.currentQuantity || 0} {inv.quantityUnit || ''})
+                                    {unitCost > 0 && ` · €${unitCost.toFixed(2)}/unit`}
+                                  </SelectItem>
+                                )
+                              })
+                            )}
                           </SelectContent>
                         </Select>
+                        <FormDescription>
+                          Only materials purchased on or before the activity date are shown.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -391,9 +440,9 @@ export function CultivationForm({
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
-                          {selectedInv?.costPerUnit && (
+                          {selectedInv && effectiveCostPerUnit(selectedInv) > 0 && (
                             <p className="text-muted-foreground text-xs">
-                              Auto: €{Number(selectedInv.costPerUnit).toFixed(2)}/unit
+                              Auto: €{effectiveCostPerUnit(selectedInv).toFixed(2)}/unit
                             </p>
                           )}
                           <FormMessage />

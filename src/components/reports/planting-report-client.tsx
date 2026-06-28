@@ -123,6 +123,8 @@ export default function PlantingReportClient({
           onExport={handleExportCSV}
           onExportPDF={handleExportPDF}
           onFilterChange={handleFilterChange}
+          initialStartDate={initialStartDate}
+          initialEndDate={initialEndDate}
         />
       </div>
 

@@ -22,7 +22,19 @@
       "Bash(npm run *)",
       "Bash(git commit -m ' *)",
       "Bash(cat drizzle.config.ts)",
-      "Bash(cat drizzle.config.js)"
+      "Bash(cat drizzle.config.js)",
+      "Bash(npx tsx -e ' *)",
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "Bash(npx drizzle-kit *)",
+      "Bash(git commit *)",
+      "Bash(git *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm run *)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 40)",
+      "PowerShell(npx eslint src/components/reports/broiler-report-client.tsx src/components/reports/profitability-report-client.tsx src/components/reports/report-filters.tsx src/app/actions/reports.ts src/app/actions/broiler-processing.ts 2>&1 | Select-Object -First 40)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 20)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 30)",
+      "Bash(npx tsx *)"
     ]
   }
 }

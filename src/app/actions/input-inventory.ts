@@ -8,6 +8,20 @@ import { and, eq, isNull, desc, or, ilike, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { inputInventorySchema, type InputInventoryFormData } from '@/lib/validations/inventory'
 
+// When cost per unit is left blank, derive it from total cost ÷ initial quantity
+// so every item has a usable per-unit cost.
+function resolveCostPerUnit(
+  costPerUnit?: string | null,
+  totalCost?: string | null,
+  initialQuantity?: string | null
+): string | null {
+  if (costPerUnit) return costPerUnit
+  const total = parseFloat(totalCost || '')
+  const initial = parseFloat(initialQuantity || '')
+  if (total > 0 && initial > 0) return (total / initial).toFixed(6)
+  return null
+}
+
 export async function getInputInventory(search?: string) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -84,7 +98,11 @@ export async function createInputItem(data: InputInventoryFormData) {
       supplierId: validated.supplierId || null,
       purchaseDate: validated.purchaseDate || null,
       initialQuantity: validated.initialQuantity || null,
-      costPerUnit: validated.costPerUnit || null,
+      costPerUnit: resolveCostPerUnit(
+        validated.costPerUnit,
+        validated.totalCost,
+        validated.initialQuantity
+      ),
       totalCost: validated.totalCost || null,
       minimumStockLevel: validated.minimumStockLevel || null,
       userId: session.user.id,
@@ -126,7 +144,11 @@ export async function updateInputItem(id: string, data: InputInventoryFormData) 
       supplierId: validated.supplierId || null,
       purchaseDate: validated.purchaseDate || null,
       initialQuantity: validated.initialQuantity || null,
-      costPerUnit: validated.costPerUnit || null,
+      costPerUnit: resolveCostPerUnit(
+        validated.costPerUnit,
+        validated.totalCost,
+        validated.initialQuantity
+      ),
       totalCost: validated.totalCost || null,
       minimumStockLevel: validated.minimumStockLevel || null,
       updatedAt: new Date(),

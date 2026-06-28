@@ -29,3 +29,40 @@ export const harvestLogSchema = z
   )
 
 export type HarvestLogFormData = z.infer<typeof harvestLogSchema>
+
+// One line in a multi-item harvest (shares the batch's date + notes)
+export const harvestItemSchema = z
+  .object({
+    sourceType: z.enum(['planting', 'tree']).default('planting'),
+    plantingLogId: z.string().optional().or(z.literal('')),
+    treeId: z.string().optional().or(z.literal('')),
+    quantityHarvested: z.string().min(1, 'Quantity is required'),
+    quantityUnit: z.string().min(1, 'Unit is required'),
+    qualityGrade: z
+      .string()
+      .max(50, 'Quality grade must be less than 50 characters')
+      .optional()
+      .or(z.literal('')),
+  })
+  .refine(
+    (item) => {
+      if (item.sourceType === 'planting') return !!item.plantingLogId && item.plantingLogId !== ''
+      return !!item.treeId && item.treeId !== ''
+    },
+    { message: 'Please select a planting or tree', path: ['plantingLogId'] }
+  )
+
+export type HarvestItemFormData = z.infer<typeof harvestItemSchema>
+
+// Record several harvests at once (e.g. oranges, tomatoes, cucumbers the same day)
+export const harvestBatchSchema = z.object({
+  harvestDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+  notes: z
+    .string()
+    .max(1000, 'Notes must be less than 1000 characters')
+    .optional()
+    .or(z.literal('')),
+  items: z.array(harvestItemSchema).min(1, 'Add at least one item to harvest'),
+})
+
+export type HarvestBatchFormData = z.infer<typeof harvestBatchSchema>

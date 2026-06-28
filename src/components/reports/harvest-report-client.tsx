@@ -8,6 +8,7 @@ import { ArrowLeft, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { ReportFilters } from '@/components/reports/report-filters'
 import { exportToCSV, exportHarvestReportPDF } from '@/lib/pdf-export'
+import { getHarvestReport } from '@/app/actions/reports'
 
 interface HarvestReportProps {
   initialData: {
@@ -23,10 +24,25 @@ interface HarvestReportProps {
     totalYield: number
     harvestCount: number
   }
+  initialStartDate: string
+  initialEndDate: string
 }
 
-export default function HarvestReportClient({ initialData }: HarvestReportProps) {
-  const [data] = useState(initialData)
+export default function HarvestReportClient({
+  initialData,
+  initialStartDate,
+  initialEndDate,
+}: HarvestReportProps) {
+  const [data, setData] = useState(initialData)
+  const [startDate, setStartDate] = useState(initialStartDate)
+  const [endDate, setEndDate] = useState(initialEndDate)
+
+  const handleFilterChange = async (newStart: string, newEnd: string) => {
+    setStartDate(newStart)
+    setEndDate(newEnd)
+    const updated = await getHarvestReport(newStart, newEnd)
+    setData(updated)
+  }
 
   const handleExportCSV = () => {
     const csvData = data.harvests.map((h) => ({
@@ -41,8 +57,6 @@ export default function HarvestReportClient({ initialData }: HarvestReportProps)
 
   const handleExportPDF = async () => {
     try {
-      const endDate = new Date().toISOString().slice(0, 10)
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
       await exportHarvestReportPDF(data, startDate, endDate)
     } catch (err: any) {
       console.error('PDF export failed:', err)
@@ -65,7 +79,13 @@ export default function HarvestReportClient({ initialData }: HarvestReportProps)
 
       {/* Filters */}
       <div className="print:hidden">
-        <ReportFilters onExport={handleExportCSV} onExportPDF={handleExportPDF} />
+        <ReportFilters
+          onExport={handleExportCSV}
+          onExportPDF={handleExportPDF}
+          onFilterChange={handleFilterChange}
+          initialStartDate={initialStartDate}
+          initialEndDate={initialEndDate}
+        />
       </div>
 
       {/* Summary Cards */}
@@ -77,7 +97,7 @@ export default function HarvestReportClient({ initialData }: HarvestReportProps)
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{data.totalYield.toFixed(2)} kg</div>
-            <p className="text-muted-foreground text-xs">Last 30 days</p>
+            <p className="text-muted-foreground text-xs">In selected period</p>
           </CardContent>
         </Card>
 

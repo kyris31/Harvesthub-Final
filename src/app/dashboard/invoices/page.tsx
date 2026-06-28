@@ -12,6 +12,7 @@ import {
 import { Plus, Edit, Eye, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { DeleteInvoiceButton } from '@/components/invoices/delete-invoice-button'
 
 export default async function SupplierInvoicesPage() {
   const invoices = await getSupplierInvoices()
@@ -124,6 +125,11 @@ export default async function SupplierInvoicesPage() {
                           <Edit className="h-4 w-4" />
                         </Link>
                       </Button>
+                      <DeleteInvoiceButton
+                        id={invoice.id}
+                        invoiceNumber={invoice.invoiceNumber}
+                        isProcessed={invoice.status === 'processed'}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

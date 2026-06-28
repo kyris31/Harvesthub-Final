@@ -179,32 +179,50 @@ export async function exportHarvestReportPDF(data: any, startDate: string, endDa
   downloadPDF(doc, fileName)
 }
 
-export async function exportInventoryReportPDF(data: any) {
+export async function exportInventoryReportPDF(data: any, category?: string) {
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
   await setupNotoSans(doc)
   const logo = await loadLogoDataUrl()
   const today = new Date().toISOString().slice(0, 10)
+
+  // Strict per-category export: each selection includes only that category.
+  const cat = category ?? 'all'
+  const showSeeds = cat === 'all' || cat === 'seeds'
+  const showInputs = cat === 'all' || cat === 'inputs'
+  const showSeedlings = cat === 'all' || cat === 'seedlings'
+
   const startY = addCompanyHeader(doc, logo, 'Inventory Report')
 
-  // Summary table
+  // Summary table — only the selected category's figures (everything when 'all').
+  const summaryBody: string[][] =
+    cat === 'all'
+      ? [
+          ['Total Inventory Value', `€${data.totalValue.toFixed(2)}`],
+          ['Low Stock Items', data.lowStockCount.toString()],
+          ['Seeds Value', `€${data.seeds.totalValue.toFixed(2)}`],
+          ['Inputs Value', `€${data.inputs.totalValue.toFixed(2)}`],
+          ['Seedlings Value', `€${data.seedlings.totalValue.toFixed(2)}`],
+        ]
+      : []
+  if (showSeeds && cat !== 'all')
+    summaryBody.push(['Seeds Value', `€${data.seeds.totalValue.toFixed(2)}`])
+  if (showInputs && cat !== 'all')
+    summaryBody.push(['Inputs Value', `€${data.inputs.totalValue.toFixed(2)}`])
+  if (showSeedlings && cat !== 'all')
+    summaryBody.push(['Seedlings Value', `€${data.seedlings.totalValue.toFixed(2)}`])
+
   // @ts-ignore
   doc.autoTable({
     startY,
     head: [['Metric', 'Value']],
-    body: [
-      ['Total Inventory Value', `€${data.totalValue.toFixed(2)}`],
-      ['Low Stock Items', data.lowStockCount.toString()],
-      ['Seeds Value', `€${data.seeds.totalValue.toFixed(2)}`],
-      ['Inputs Value', `€${data.inputs.totalValue.toFixed(2)}`],
-      ['Seedlings Value', `€${data.seedlings.totalValue.toFixed(2)}`],
-    ],
+    body: summaryBody,
     styles: { font: 'NotoSans', fontSize: 9 },
     headStyles: { fillColor: [34, 139, 34] },
   })
 
-  if (data.seeds.items.length > 0) {
+  if (showSeeds && data.seeds.items.length > 0) {
     const sourceLabel = (sourceType: string | null) => {
       if (sourceType === 'self_produced') return 'Self-Produced'
       if (sourceType === 'purchased') return 'Purchased'
@@ -233,7 +251,7 @@ export async function exportInventoryReportPDF(data: any) {
     })
   }
 
-  if (data.inputs.items.length > 0) {
+  if (showInputs && data.inputs.items.length > 0) {
     const inputsData = data.inputs.items.map((i: any) => [
       i.name,
       i.type,
@@ -254,7 +272,30 @@ export async function exportInventoryReportPDF(data: any) {
     })
   }
 
-  const fileName = `Inventory_Report_${today}.pdf`
+  if (showSeedlings && data.seedlings.items.length > 0) {
+    const seedlingsData = data.seedlings.items.map((s: any) => [
+      s.crop?.name ?? 'Seedling',
+      s.crop?.variety ?? '—',
+      Number(s.quantityPurchased || 0).toString(),
+      Number(s.currentQuantity || 0).toString(),
+      `€${(Number(s.currentQuantity || 0) * Number(s.costPerSeedling || 0)).toFixed(2)}`,
+    ])
+
+    doc.addPage()
+    const seedlingPageY = addCompanyHeader(doc, logo, 'Seedlings Inventory Report')
+
+    // @ts-ignore
+    doc.autoTable({
+      startY: seedlingPageY,
+      head: [['Crop Name', 'Variety', 'Purchased', 'Current Qty', 'Value']],
+      body: seedlingsData,
+      styles: { font: 'NotoSans', fontSize: 9 },
+      headStyles: { fillColor: [34, 139, 34] },
+    })
+  }
+
+  const catSuffix = cat === 'all' ? '' : `_${cat}`
+  const fileName = `Inventory_Report${catSuffix}_${today}.pdf`
   downloadPDF(doc, fileName)
 }
 
@@ -337,12 +378,52 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     const inputs = a.activityInputs && a.activityInputs.length > 0 ? a.activityInputs : []
     const inputNames =
       inputs.length > 0 ? inputs.map((ai: any) => ai.inputInventory?.name ?? '—').join('\n') : '—'
-    const inputQtys =
-      inputs.length > 0 ? inputs.map((ai: any) => ai.quantityUsed ?? '—').join('\n') : '—'
+    // "Current" is the stock BEFORE this activity = live stock + the amount used
+    // here. "Remaining" is what's left after = the live stock value.
+    const inputUsed =
+      inputs.length > 0
+        ? inputs
+            .map((ai: any) => (ai.quantityUsed != null ? Number(ai.quantityUsed).toFixed(2) : '—'))
+            .join('\n')
+        : '—'
+    const inputRemaining =
+      inputs.length > 0
+        ? inputs
+            .map((ai: any) =>
+              ai.inputInventory?.currentQuantity != null
+                ? Number(ai.inputInventory.currentQuantity).toFixed(2)
+                : '—'
+            )
+            .join('\n')
+        : '—'
+    const inputCurrent =
+      inputs.length > 0
+        ? inputs
+            .map((ai: any) => {
+              const remaining =
+                ai.inputInventory?.currentQuantity != null
+                  ? Number(ai.inputInventory.currentQuantity)
+                  : null
+              const used = ai.quantityUsed != null ? Number(ai.quantityUsed) : null
+              if (remaining == null) return '—'
+              return (remaining + (used ?? 0)).toFixed(2)
+            })
+            .join('\n')
+        : '—'
     const inputUnits =
       inputs.length > 0 ? inputs.map((ai: any) => ai.quantityUnit ?? '—').join('\n') : '—'
 
-    tableRows.push([date, activityLabel, inputNames, inputQtys, inputUnits, crops, plots])
+    tableRows.push([
+      date,
+      activityLabel,
+      inputNames,
+      inputCurrent,
+      inputUsed,
+      inputRemaining,
+      inputUnits,
+      crops,
+      plots,
+    ])
   }
 
   if (tableRows.length > 0) {
@@ -352,19 +433,33 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
     // @ts-ignore
     doc.autoTable({
       startY: inputPageY,
-      head: [['Date', 'Activity', 'Input Item', 'Qty', 'Unit', 'Crop', 'Plot']],
+      head: [
+        [
+          'Date',
+          'Activity',
+          'Input Item',
+          'Current Qty',
+          'Used',
+          'Remaining',
+          'Unit',
+          'Crop',
+          'Plot',
+        ],
+      ],
       body: tableRows,
-      styles: { font: 'NotoSans', fontSize: 9, fillColor: [220, 245, 220] },
+      styles: { font: 'NotoSans', fontSize: 8, fillColor: [220, 245, 220] },
       headStyles: { fillColor: [34, 139, 34] },
       bodyStyles: { fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: 22, fontStyle: 'bold' },
-        1: { cellWidth: 22, fontStyle: 'bold' },
-        2: { cellWidth: 42, fontStyle: 'normal' },
-        3: { cellWidth: 14, fontStyle: 'normal' },
-        4: { cellWidth: 10, fontStyle: 'normal' },
-        5: { cellWidth: 45, fontStyle: 'normal' },
-        6: { cellWidth: 35, fontStyle: 'normal' },
+        0: { cellWidth: 16, fontStyle: 'bold' },
+        1: { cellWidth: 18, fontStyle: 'bold' },
+        2: { cellWidth: 32, fontStyle: 'normal' },
+        3: { cellWidth: 15, fontStyle: 'normal' },
+        4: { cellWidth: 13, fontStyle: 'normal' },
+        5: { cellWidth: 15, fontStyle: 'normal' },
+        6: { cellWidth: 8, fontStyle: 'normal' },
+        7: { cellWidth: 36, fontStyle: 'normal' },
+        8: { cellWidth: 29, fontStyle: 'normal' },
       },
     })
   }
@@ -501,8 +596,12 @@ export async function exportSeedlingLifecyclePDF(data: any[], startDate: string,
           r.sownQty,
           r.produced.toString(),
           Number(r.transplanted).toFixed(0),
-          Number(r.harvested).toFixed(2),
-          Number(r.sold).toFixed(2),
+          r.harvestUnit
+            ? `${Number(r.harvested).toFixed(2)} ${r.harvestUnit}`
+            : Number(r.harvested).toFixed(2),
+          r.harvestUnit
+            ? `${Number(r.sold).toFixed(2)} ${r.harvestUnit}`
+            : Number(r.sold).toFixed(2),
           r.remaining.toString(),
         ])
       : [['No data', '', '', '', '', '', '', '', '']]
@@ -554,8 +653,12 @@ export async function exportCropLifecyclePDF(data: any[], startDate: string, end
           r.transplanted !== null && r.transplanted !== undefined
             ? Number(r.transplanted).toFixed(0)
             : '—',
-          Number(r.harvested).toFixed(2),
-          Number(r.sold).toFixed(2),
+          r.harvestUnit
+            ? `${Number(r.harvested).toFixed(2)} ${r.harvestUnit}`
+            : Number(r.harvested).toFixed(2),
+          r.harvestUnit
+            ? `${Number(r.sold).toFixed(2)} ${r.harvestUnit}`
+            : Number(r.sold).toFixed(2),
           r.remaining !== null && r.remaining !== undefined ? r.remaining.toString() : '—',
         ])
       : [['No data', '', '', '', '', '', '', '', '']]

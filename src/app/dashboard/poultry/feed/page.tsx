@@ -67,7 +67,7 @@ export default async function FeedManagementPage() {
             <TrendingDown className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">€{totalValue.toFixed(2)}</div>
             <p className="text-muted-foreground text-xs">Current inventory value</p>
           </CardContent>
         </Card>
@@ -164,9 +164,9 @@ export default async function FeedManagementPage() {
                           {item.initialQuantity} {item.quantityUnit}
                         </td>
                         <td className="p-3 text-right">
-                          ${parseFloat(item.costPerUnit || '0').toFixed(2)}
+                          €{parseFloat(item.costPerUnit || '0').toFixed(2)}
                         </td>
-                        <td className="p-3 text-right font-medium">${totalValue.toFixed(2)}</td>
+                        <td className="p-3 text-right font-medium">€{totalValue.toFixed(2)}</td>
                         <td className="p-3 text-center">
                           {stockPercentage < 20 ? (
                             <span className="bg-destructive/10 text-destructive inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">

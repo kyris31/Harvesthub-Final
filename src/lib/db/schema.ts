@@ -22,6 +22,9 @@ export const users = pgTable('users', {
   image: text('image'), // For Better-Auth
   farmName: text('farm_name'),
   farmLogoUrl: text('farm_logo_url'),
+  // When false (default), the business can't reclaim VAT, so material costs are
+  // stored VAT-inclusive. When true (VAT-registered), costs are stored net.
+  vatRegistered: boolean('vat_registered').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -650,6 +653,9 @@ export const saleItems = pgTable(
       .notNull()
       .references(() => sales.id, { onDelete: 'cascade' }),
     harvestLogId: uuid('harvest_log_id').references(() => harvestLogs.id, { onDelete: 'set null' }),
+    eggProductionId: uuid('egg_production_id').references(() => eggProduction.id, {
+      onDelete: 'set null',
+    }),
     productName: text('product_name').notNull(),
     productDescription: text('product_description'),
     quantity: decimal('quantity', { precision: 10, scale: 2 }).notNull(),
@@ -677,6 +683,10 @@ export const saleItemsRelations = relations(saleItems, ({ one }) => ({
   harvestLog: one(harvestLogs, {
     fields: [saleItems.harvestLogId],
     references: [harvestLogs.id],
+  }),
+  eggProduction: one(eggProduction, {
+    fields: [saleItems.eggProductionId],
+    references: [eggProduction.id],
   }),
 }))
 
@@ -937,6 +947,10 @@ export const supplierInvoiceItems = pgTable('supplier_invoice_items', {
   discountType: text('discount_type'), // 'percentage' or 'amount'
   discountValue: decimal('discount_value', { precision: 10, scale: 2 }),
   discountAmount: decimal('discount_amount', { precision: 10, scale: 2 }).default('0'),
+
+  // Per-line VAT/tax (falls back to the invoice's tax rate when not set)
+  taxRate: decimal('tax_rate', { precision: 5, scale: 2 }),
+  taxAmount: decimal('tax_amount', { precision: 10, scale: 2 }).default('0'),
 
   itemQtyPerPackage: decimal('item_qty_per_package', { precision: 10, scale: 4 }),
   itemUnit: text('item_unit'),

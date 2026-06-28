@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { createSaleWithItems } from '@/app/actions/sales'
+import { createSaleWithItems, updateSaleWithItems } from '@/app/actions/sales'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Loader2, Plus, Trash2 } from 'lucide-react'
@@ -32,7 +32,12 @@ import { Card, CardContent } from '@/components/ui/card'
 const saleItemSchema = z.object({
   harvestLogId: z.string().min(1, 'Please select a product'),
   quantity: z.string().min(1, 'Quantity is required'),
-  pricePerUnit: z.string().min(1, 'Price is required'),
+  pricePerUnit: z
+    .string()
+    .refine(
+      (v) => v === '' || (!isNaN(Number(v)) && Number(v) >= 0),
+      'Enter a valid price (0 or more, leave empty for free)'
+    ),
 })
 
 const enhancedSaleSchema = z.object({
@@ -60,16 +65,25 @@ interface SaleFormEnhancedProps {
     harvestDate: string
     qualityGrade: string | null
   }>
+  mode?: 'create' | 'edit'
+  saleId?: string
+  initialValues?: EnhancedSaleFormData
 }
 
-export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhancedProps) {
+export function SaleFormEnhanced({
+  customers,
+  availableHarvests,
+  mode = 'create',
+  saleId,
+  initialValues,
+}: SaleFormEnhancedProps) {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<EnhancedSaleFormData>({
     resolver: formResolver<EnhancedSaleFormData>(enhancedSaleSchema),
-    defaultValues: {
+    defaultValues: initialValues || {
       customerId: '',
       saleDate: new Date().toISOString().slice(0, 10),
       items: [{ harvestLogId: '', quantity: '', pricePerUnit: '' }],
@@ -95,9 +109,23 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
   }
 
   async function onSubmit(data: EnhancedSaleFormData) {
+    // A product can't be sold before it was harvested (same day is allowed).
+    let hasDateError = false
+    data.items.forEach((item, index) => {
+      const harvest = availableHarvests.find((h) => h.id === item.harvestLogId)
+      if (harvest?.harvestDate && harvest.harvestDate > data.saleDate) {
+        form.setError(`items.${index}.harvestLogId`, {
+          type: 'manual',
+          message: `Harvested ${new Date(harvest.harvestDate).toLocaleDateString('en-GB')}, after the sale date`,
+        })
+        hasDateError = true
+      }
+    })
+    if (hasDateError) return
+
     setIsLoading(true)
     try {
-      await createSaleWithItems({
+      const payload = {
         customerId: data.customerId || undefined,
         saleDate: data.saleDate,
         paymentStatus: data.paymentStatus,
@@ -107,11 +135,17 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
         items: data.items.map((item) => ({
           harvestLogId: item.harvestLogId,
           quantity: item.quantity,
-          pricePerUnit: item.pricePerUnit,
+          pricePerUnit: item.pricePerUnit || '0',
         })),
-      })
+      }
 
-      toast({ title: 'Sale recorded successfully!' })
+      if (mode === 'edit' && saleId) {
+        await updateSaleWithItems(saleId, payload)
+        toast({ title: 'Sale updated successfully!' })
+      } else {
+        await createSaleWithItems(payload)
+        toast({ title: 'Sale recorded successfully!' })
+      }
       router.push('/dashboard/sales')
       router.refresh()
     } catch (error) {
@@ -202,6 +236,22 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
               const selectedHarvestId = form.watch(`items.${index}.harvestLogId`)
               const selectedHarvest = availableHarvests.find((h) => h.id === selectedHarvestId)
 
+              // Hide harvests already chosen in other rows so the same product
+              // can't be sold twice in one sale.
+              const takenIds = new Set(
+                form
+                  .watch('items')
+                  .map((item, i) => (i === index ? '' : item.harvestLogId))
+                  .filter(Boolean)
+              )
+              const selectableHarvests = availableHarvests.filter((h) => !takenIds.has(h.id))
+
+              // A product can't be sold before it was harvested (same day is fine).
+              const saleDate = form.watch('saleDate')
+              const harvestedAfterSale = Boolean(
+                selectedHarvest?.harvestDate && saleDate && selectedHarvest.harvestDate > saleDate
+              )
+
               return (
                 <Card key={field.id}>
                   <CardContent className="pt-6">
@@ -221,12 +271,14 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    {availableHarvests.map((harvest) => (
+                                    {selectableHarvests.map((harvest) => (
                                       <SelectItem key={harvest.id} value={harvest.id}>
                                         {harvest.productName}
                                         {harvest.qualityGrade && ` (${harvest.qualityGrade})`}
                                         {' — '}
                                         {harvest.currentStock} {harvest.unit} available
+                                        {harvest.harvestDate &&
+                                          ` · harvested ${new Date(harvest.harvestDate).toLocaleDateString('en-GB')}`}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -248,6 +300,14 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
                           </Button>
                         )}
                       </div>
+
+                      {harvestedAfterSale && selectedHarvest && (
+                        <p className="text-destructive text-sm">
+                          This product was harvested on{' '}
+                          {new Date(selectedHarvest.harvestDate).toLocaleDateString('en-GB')}, after
+                          the sale date — it can&apos;t be sold before it was harvested.
+                        </p>
+                      )}
 
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
@@ -274,10 +334,19 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
                           name={`items.${index}.pricePerUnit`}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Price/Unit *</FormLabel>
+                              <FormLabel>Price/Unit</FormLabel>
                               <FormControl>
-                                <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  {...field}
+                                />
                               </FormControl>
+                              <FormDescription className="text-xs">
+                                Leave empty or 0 for a free product
+                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -411,7 +480,7 @@ export function SaleFormEnhanced({ customers, availableHarvests }: SaleFormEnhan
         <div className="flex items-center gap-4">
           <Button type="submit" disabled={isLoading || availableHarvests.length === 0}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Record Sale
+            {mode === 'edit' ? 'Update Sale' : 'Record Sale'}
           </Button>
           <Button
             type="button"

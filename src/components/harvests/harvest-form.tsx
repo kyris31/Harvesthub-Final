@@ -77,8 +77,18 @@ export function HarvestForm({ plantings, trees, defaultValues, mode }: HarvestFo
         groups.get(key)!.count++
       }
     }
-    return Array.from(groups.values())
+    return Array.from(groups.values()).sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { sensitivity: 'base' })
+    )
   }, [trees])
+
+  const sortedPlantings = useMemo(
+    () =>
+      [...plantings].sort((a, b) =>
+        a.crop.name.localeCompare(b.crop.name, undefined, { sensitivity: 'base' })
+      ),
+    [plantings]
+  )
 
   async function onSubmit(data: HarvestLogFormData) {
     setIsLoading(true)
@@ -157,12 +167,12 @@ export function HarvestForm({ plantings, trees, defaultValues, mode }: HarvestFo
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {plantings.length === 0 ? (
+                    {sortedPlantings.length === 0 ? (
                       <SelectItem value="__none__" disabled>
                         No active plantings
                       </SelectItem>
                     ) : (
-                      plantings.map((p) => (
+                      sortedPlantings.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.crop.name}
                           {p.crop.variety && ` (${p.crop.variety})`} — Planted{' '}
@@ -263,6 +273,7 @@ export function HarvestForm({ plantings, trees, defaultValues, mode }: HarvestFo
                     <SelectItem value="g">Grams (g)</SelectItem>
                     <SelectItem value="lbs">Pounds (lbs)</SelectItem>
                     <SelectItem value="pieces">Pieces</SelectItem>
+                    <SelectItem value="bunches">Bunches</SelectItem>
                     <SelectItem value="boxes">Boxes</SelectItem>
                     <SelectItem value="crates">Crates</SelectItem>
                   </SelectContent>

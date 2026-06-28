@@ -34,27 +34,41 @@ interface InventoryReportProps {
 export default function InventoryReportClient({ initialData }: InventoryReportProps) {
   const [data] = useState(initialData)
 
-  const handleExportCSV = () => {
-    const csvData = [
-      ...data.seeds.items.map((s: any) => ({
-        category: 'Seeds',
-        item: s.batchCode,
-        quantity: `${s.currentQuantity} ${s.quantityUnit}`,
-        value: `€${(s.currentQuantity * Number(s.costPerUnit || 0)).toFixed(2)}`,
-      })),
-      ...data.inputs.items.map((i: any) => ({
-        category: 'Inputs',
-        item: i.name,
-        quantity: `${i.currentQuantity || 0} ${i.quantityUnit || ''}`,
-        value: `€${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
-      })),
-    ]
-    exportToCSV(csvData, 'inventory-report')
+  const handleExportCSV = (category?: string) => {
+    const cat = category ?? 'all'
+    const seedRows =
+      cat === 'all' || cat === 'seeds'
+        ? data.seeds.items.map((s: any) => ({
+            category: 'Seeds',
+            item: s.crop?.name ?? s.batchCode,
+            quantity: `${s.currentQuantity} ${s.quantityUnit}`,
+            value: `€${(s.currentQuantity * Number(s.costPerUnit || 0)).toFixed(2)}`,
+          }))
+        : []
+    const inputRows =
+      cat === 'all' || cat === 'inputs'
+        ? data.inputs.items.map((i: any) => ({
+            category: 'Inputs',
+            item: i.name,
+            quantity: `${i.currentQuantity || 0} ${i.quantityUnit || ''}`,
+            value: `€${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
+          }))
+        : []
+    const seedlingRows =
+      cat === 'all' || cat === 'seedlings'
+        ? data.seedlings.items.map((s: any) => ({
+            category: 'Seedlings',
+            item: s.crop?.name ?? 'Seedling',
+            quantity: `${s.currentQuantity || 0} seedlings`,
+            value: `€${(Number(s.currentQuantity || 0) * Number(s.costPerSeedling || 0)).toFixed(2)}`,
+          }))
+        : []
+    exportToCSV([...seedRows, ...inputRows, ...seedlingRows], 'inventory-report')
   }
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (category?: string) => {
     try {
-      await exportInventoryReportPDF(data)
+      await exportInventoryReportPDF(data, category)
     } catch (err: any) {
       console.error('PDF export failed:', err)
       toast.error(err?.message ?? 'PDF export failed. Please try again.')
@@ -92,7 +106,7 @@ export default function InventoryReportClient({ initialData }: InventoryReportPr
             <Package className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${data.totalValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-green-600">€{data.totalValue.toFixed(2)}</div>
             <p className="text-muted-foreground text-xs">All inventory</p>
           </CardContent>
         </Card>
@@ -105,7 +119,7 @@ export default function InventoryReportClient({ initialData }: InventoryReportPr
           <CardContent>
             <div className="text-2xl font-bold">{data.seeds.items.length}</div>
             <p className="text-muted-foreground text-xs">
-              ${data.seeds.totalValue.toFixed(2)} value
+              €{data.seeds.totalValue.toFixed(2)} value
             </p>
           </CardContent>
         </Card>
@@ -118,7 +132,7 @@ export default function InventoryReportClient({ initialData }: InventoryReportPr
           <CardContent>
             <div className="text-2xl font-bold">{data.inputs.items.length}</div>
             <p className="text-muted-foreground text-xs">
-              ${data.inputs.totalValue.toFixed(2)} value
+              €{data.inputs.totalValue.toFixed(2)} value
             </p>
           </CardContent>
         </Card>
@@ -179,24 +193,24 @@ export default function InventoryReportClient({ initialData }: InventoryReportPr
             <div className="flex items-center justify-between border-b pb-2">
               <span className="text-sm font-medium">Seeds Value</span>
               <span className="text-sm font-semibold text-green-600">
-                ${data.seeds.totalValue.toFixed(2)}
+                €{data.seeds.totalValue.toFixed(2)}
               </span>
             </div>
             <div className="flex items-center justify-between border-b pb-2">
               <span className="text-sm font-medium">Inputs Value</span>
               <span className="text-sm font-semibold text-green-600">
-                ${data.inputs.totalValue.toFixed(2)}
+                €{data.inputs.totalValue.toFixed(2)}
               </span>
             </div>
             <div className="flex items-center justify-between border-b pb-2">
               <span className="text-sm font-medium">Seedlings Value</span>
               <span className="text-sm font-semibold text-green-600">
-                ${data.seedlings.totalValue.toFixed(2)}
+                €{data.seedlings.totalValue.toFixed(2)}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Total Value</span>
-              <Badge>${data.totalValue.toFixed(2)}</Badge>
+              <Badge>€{data.totalValue.toFixed(2)}</Badge>
             </div>
           </div>
         </CardContent>

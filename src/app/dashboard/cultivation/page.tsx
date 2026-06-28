@@ -24,6 +24,8 @@ export default async function CultivationPage() {
   const activityTypeIcons: Record<string, React.ReactNode> = {
     watering: <Droplets className="h-4 w-4" />,
     fertilizing: <Sprout className="h-4 w-4" />,
+    fertilizing_foliar: <Leaf className="h-4 w-4" />,
+    fertilizing_soil: <Sprout className="h-4 w-4" />,
     pest_control: <Bug className="h-4 w-4" />,
     weeding: <Leaf className="h-4 w-4" />,
     pruning: <Scissors className="h-4 w-4" />,
@@ -33,6 +35,8 @@ export default async function CultivationPage() {
   const activityTypeColors: Record<string, string> = {
     watering: 'bg-blue-500',
     fertilizing: 'bg-green-500',
+    fertilizing_foliar: 'bg-emerald-500',
+    fertilizing_soil: 'bg-green-600',
     pest_control: 'bg-red-500',
     weeding: 'bg-yellow-500',
     pruning: 'bg-purple-500',
@@ -42,6 +46,8 @@ export default async function CultivationPage() {
   const activityTypeLabels: Record<string, string> = {
     watering: 'Watering',
     fertilizing: 'Fertilizing',
+    fertilizing_foliar: 'Foliar Fertilizing',
+    fertilizing_soil: 'Soil Fertilizing',
     pest_control: 'Pest Control',
     weeding: 'Weeding',
     pruning: 'Pruning',

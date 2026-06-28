@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createSupplierInvoice, updateSupplierInvoice } from '@/app/actions/supplier-invoices'
+import { computeInvoice } from '@/lib/invoice-cost'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Loader2, Plus, Trash2 } from 'lucide-react'
@@ -77,6 +78,7 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
           category: '',
           discountType: '',
           discountValue: '',
+          taxRate: '',
           notes: '',
         },
       ],
@@ -88,48 +90,6 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
     control: form.control,
     name: 'items',
   })
-
-  // Helper to calculate line discount
-  const calculateLineDiscount = (
-    lineSubtotal: number,
-    discountType?: string,
-    discountValue?: number
-  ) => {
-    if (!discountType || !discountValue) return 0
-    return discountType === 'percentage' ? lineSubtotal * (discountValue / 100) : discountValue
-  }
-
-  // Calculate invoice totals with all new fields
-  const calculateTotals = () => {
-    const items = form.watch('items')
-    const taxRate = parseFloat(form.watch('taxRate') || '0')
-    const shippingCost = parseFloat(form.watch('shippingCost') || '0')
-    const invoiceDiscount = parseFloat(form.watch('discountAmount') || '0')
-
-    // Calculate subtotal (after line-item discounts)
-    const subtotal = items.reduce((total, item) => {
-      const quantity = parseFloat(item.quantity || '0')
-      const price = parseFloat(item.pricePerUnit || '0')
-      const lineSubtotal = quantity * price
-      const lineDiscount = calculateLineDiscount(
-        lineSubtotal,
-        item.discountType,
-        parseFloat(item.discountValue || '0')
-      )
-      return total + (lineSubtotal - lineDiscount)
-    }, 0)
-
-    // Apply invoice-level discount
-    const afterDiscount = subtotal - invoiceDiscount
-
-    // Calculate tax
-    const taxAmount = afterDiscount * (taxRate / 100)
-
-    // Calculate total
-    const total = afterDiscount + taxAmount + shippingCost
-
-    return { subtotal, invoiceDiscount, afterDiscount, taxAmount, shippingCost, total }
-  }
 
   async function onSubmit(data: SupplierInvoiceFormData) {
     setIsLoading(true)
@@ -154,7 +114,11 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
     }
   }
 
-  const totals = calculateTotals()
+  const totals = computeInvoice(form.watch('items'), {
+    defaultTaxRate: form.watch('taxRate'),
+    shippingCost: form.watch('shippingCost'),
+    invoiceDiscount: form.watch('discountAmount'),
+  })
 
   return (
     <Form {...form}>
@@ -243,11 +207,11 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
                 name="taxRate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tax Rate (%)</FormLabel>
+                    <FormLabel>Default Tax Rate (%)</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" placeholder="19.00" {...field} />
                     </FormControl>
-                    <FormDescription>VAT/Tax percentage</FormDescription>
+                    <FormDescription>Applied to items without their own rate</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -305,6 +269,7 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
                   category: '',
                   discountType: '',
                   discountValue: '',
+                  taxRate: '',
                   notes: '',
                 })
               }
@@ -415,7 +380,7 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name={`items.${index}.pricePerUnit`}
@@ -425,6 +390,26 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
                             <FormControl>
                               <Input type="number" step="0.01" placeholder="20.00" {...field} />
                             </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.taxRate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>VAT Rate (%)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder={form.watch('taxRate') || '19.00'}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>Blank = default</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -508,35 +493,22 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
                     </div>
 
                     {form.watch(`items.${index}.quantity`) &&
-                      form.watch(`items.${index}.pricePerUnit`) && (
+                      form.watch(`items.${index}.pricePerUnit`) &&
+                      totals.lines[index] && (
                         <div className="text-muted-foreground space-y-1 text-sm">
-                          {(() => {
-                            const qty = parseFloat(form.watch(`items.${index}.quantity`) || '0')
-                            const price = parseFloat(
-                              form.watch(`items.${index}.pricePerUnit`) || '0'
-                            )
-                            const lineSubtotal = qty * price
-                            const discountType = form.watch(`items.${index}.discountType`)
-                            const discountValue = parseFloat(
-                              form.watch(`items.${index}.discountValue`) || '0'
-                            )
-                            const discount = calculateLineDiscount(
-                              lineSubtotal,
-                              discountType,
-                              discountValue
-                            )
-                            const lineTotal = lineSubtotal - discount
-
-                            return (
-                              <>
-                                <div>Subtotal: €{lineSubtotal.toFixed(2)}</div>
-                                {discount > 0 && <div>Discount: -€{discount.toFixed(2)}</div>}
-                                <div className="text-foreground font-semibold">
-                                  Line Total: €{lineTotal.toFixed(2)}
-                                </div>
-                              </>
-                            )
-                          })()}
+                          <div>Subtotal: €{totals.lines[index].lineSubtotal.toFixed(2)}</div>
+                          {totals.lines[index].lineDiscount > 0 && (
+                            <div>Discount: -€{totals.lines[index].lineDiscount.toFixed(2)}</div>
+                          )}
+                          <div className="text-foreground font-semibold">
+                            Line Total: €{totals.lines[index].lineTotal.toFixed(2)}
+                          </div>
+                          {totals.lines[index].lineTax > 0 && (
+                            <div>
+                              VAT ({totals.lines[index].taxRate}%): €
+                              {totals.lines[index].lineTax.toFixed(2)}
+                            </div>
+                          )}
                         </div>
                       )}
                   </div>
@@ -573,18 +545,16 @@ export function SupplierInvoiceForm({ suppliers, defaultValues, mode }: Supplier
                   <span className="font-medium">€{totals.afterDiscount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Tax ({form.watch('taxRate') || 0}%):
-                  </span>
+                  <span className="text-muted-foreground">VAT:</span>
                   <span className="font-medium">€{totals.taxAmount.toFixed(2)}</span>
                 </div>
               </>
             )}
 
-            {totals.shippingCost > 0 && (
+            {totals.shipping > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping:</span>
-                <span className="font-medium">€{totals.shippingCost.toFixed(2)}</span>
+                <span className="font-medium">€{totals.shipping.toFixed(2)}</span>
               </div>
             )}
 

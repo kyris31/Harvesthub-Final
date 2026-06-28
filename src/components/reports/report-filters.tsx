@@ -8,10 +8,12 @@ import { Label } from '@/components/ui/label'
 import { Download, Filter } from 'lucide-react'
 
 interface ReportFiltersProps {
-  onExport?: () => void
-  onExportPDF?: () => void
+  onExport?: (category?: string) => void
+  onExportPDF?: (category?: string) => void
   onFilterChange?: (startDate: string, endDate: string) => void
   showCategoryFilter?: boolean
+  initialStartDate?: string
+  initialEndDate?: string
 }
 
 export function ReportFilters({
@@ -19,15 +21,19 @@ export function ReportFilters({
   onExportPDF,
   onFilterChange,
   showCategoryFilter,
+  initialStartDate,
+  initialEndDate,
 }: ReportFiltersProps) {
   const [startDate, setStartDate] = useState(() => {
+    if (initialStartDate) return initialStartDate
     const date = new Date()
     date.setDate(date.getDate() - 30)
     return date.toISOString().slice(0, 10)
   })
   const [endDate, setEndDate] = useState(() => {
-    return new Date().toISOString().slice(0, 10)
+    return initialEndDate ?? new Date().toISOString().slice(0, 10)
   })
+  const [category, setCategory] = useState('all')
 
   const handleApplyFilters = () => {
     if (onFilterChange) {
@@ -72,6 +78,8 @@ export function ReportFilters({
               <Label htmlFor="category">Inventory Category</Label>
               <select
                 id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
                 className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
               >
                 <option value="all">All Inventory Categories</option>
@@ -90,24 +98,36 @@ export function ReportFilters({
           </Button>
         </div>
 
-        <div className="border-t pt-4">
-          <CardTitle className="mb-3 text-sm">Download Data Exports</CardTitle>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={onExportPDF} variant="destructive" size="sm" disabled={!onExportPDF}>
-              <Download className="mr-2 h-4 w-4" />
-              Export Report (PDF)
-            </Button>
-            {onExport && (
-              <Button onClick={onExport} variant="outline" size="sm">
-                <Download className="mr-2 h-4 w-4" />
-                Export Data (CSV)
-              </Button>
-            )}
+        {(onExportPDF || onExport) && (
+          <div className="border-t pt-4">
+            <CardTitle className="mb-3 text-sm">Download Data Exports</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              {onExportPDF && (
+                <Button
+                  onClick={() => onExportPDF(showCategoryFilter ? category : undefined)}
+                  variant="destructive"
+                  size="sm"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Report (PDF)
+                </Button>
+              )}
+              {onExport && (
+                <Button
+                  onClick={() => onExport(showCategoryFilter ? category : undefined)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Data (CSV)
+                </Button>
+              )}
+            </div>
+            <p className="text-muted-foreground mt-2 text-xs">
+              PDF files will be saved to your Downloads folder
+            </p>
           </div>
-          <p className="text-muted-foreground mt-2 text-xs">
-            PDF files will be saved to your Downloads folder
-          </p>
-        </div>
+        )}
       </CardContent>
     </Card>
   )

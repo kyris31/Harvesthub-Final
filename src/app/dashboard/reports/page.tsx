@@ -21,9 +21,9 @@ import {
 import Link from 'next/link'
 
 export default async function ReportsPage() {
-  // Get last 30 days data
+  // Default to the last 12 months so older data isn't hidden (matches the detailed reports)
   const endDate = new Date().toISOString().slice(0, 10)
-  const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
   const [financial, harvest, inventory, cultivation, planting, cropPerf, seedlingLC] =
     await Promise.all([
@@ -159,7 +159,7 @@ export default async function ReportsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit (30d)</CardTitle>
+            <CardTitle className="text-sm font-medium">Net Profit (12mo)</CardTitle>
             {financial.profit.total >= 0 ? (
               <ArrowUpRight className="h-4 w-4 text-green-600" />
             ) : (
@@ -176,7 +176,7 @@ export default async function ReportsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Yield (30d)</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Yield (12mo)</CardTitle>
             <TrendingUp className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
@@ -200,7 +200,7 @@ export default async function ReportsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Activities (30d)</CardTitle>
+            <CardTitle className="text-sm font-medium">Activities (12mo)</CardTitle>
             <Activity className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>

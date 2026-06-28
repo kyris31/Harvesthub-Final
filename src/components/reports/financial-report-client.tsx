@@ -8,6 +8,7 @@ import { ArrowLeft, DollarSign, TrendingUp, TrendingDown } from 'lucide-react'
 import Link from 'next/link'
 import { ReportFilters } from '@/components/reports/report-filters'
 import { exportToCSV, exportFinancialReportPDF } from '@/lib/pdf-export'
+import { getFinancialReport } from '@/app/actions/reports'
 
 interface FinancialData {
   revenue: { total: number; count: number }
@@ -17,10 +18,25 @@ interface FinancialData {
 
 interface FinancialReportClientProps {
   initialData: FinancialData
+  initialStartDate: string
+  initialEndDate: string
 }
 
-export default function FinancialReportClient({ initialData }: FinancialReportClientProps) {
-  const [data] = useState(initialData)
+export default function FinancialReportClient({
+  initialData,
+  initialStartDate,
+  initialEndDate,
+}: FinancialReportClientProps) {
+  const [data, setData] = useState(initialData)
+  const [startDate, setStartDate] = useState(initialStartDate)
+  const [endDate, setEndDate] = useState(initialEndDate)
+
+  const handleFilterChange = async (newStart: string, newEnd: string) => {
+    setStartDate(newStart)
+    setEndDate(newEnd)
+    const updated = await getFinancialReport(newStart, newEnd)
+    setData(updated)
+  }
 
   const handleExportCSV = () => {
     const csvData = [
@@ -33,8 +49,6 @@ export default function FinancialReportClient({ initialData }: FinancialReportCl
 
   const handleExportPDF = async () => {
     try {
-      const endDate = new Date().toISOString().slice(0, 10)
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
       await exportFinancialReportPDF(data, startDate, endDate)
     } catch (err: any) {
       console.error('PDF export failed:', err)
@@ -57,7 +71,13 @@ export default function FinancialReportClient({ initialData }: FinancialReportCl
 
       {/* Filters */}
       <div className="print:hidden">
-        <ReportFilters onExport={handleExportCSV} onExportPDF={handleExportPDF} />
+        <ReportFilters
+          onExport={handleExportCSV}
+          onExportPDF={handleExportPDF}
+          onFilterChange={handleFilterChange}
+          initialStartDate={initialStartDate}
+          initialEndDate={initialEndDate}
+        />
       </div>
 
       {/* Summary Cards */}

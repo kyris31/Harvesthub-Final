@@ -143,9 +143,11 @@ export default function HarvestPage() {
               {harvests.map((harvest) => (
                 <TableRow key={harvest.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">
-                    {harvest.cropName}
-                    {harvest.cropVariety && (
-                      <span className="text-muted-foreground ml-1">- {harvest.cropVariety}</span>
+                    {harvest.cropName || harvest.treeSpecies || '—'}
+                    {(harvest.cropVariety || harvest.treeVariety) && (
+                      <span className="text-muted-foreground ml-1">
+                        - {harvest.cropVariety || harvest.treeVariety}
+                      </span>
                     )}
                   </TableCell>
                   <TableCell className="text-sm">

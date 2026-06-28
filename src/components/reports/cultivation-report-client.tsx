@@ -17,11 +17,15 @@ interface CultivationReportProps {
     activityByType: Record<string, { count: number; totalCost: number }>
     activities: Array<any>
   }
+  initialStartDate: string
+  initialEndDate: string
 }
 
 const activityIcons: Record<string, any> = {
   watering: Droplets,
   fertilizing: Sprout,
+  fertilizing_foliar: Leaf,
+  fertilizing_soil: Sprout,
   pest_control: Bug,
   weeding: Leaf,
   pruning: Scissors,
@@ -31,18 +35,24 @@ const activityIcons: Record<string, any> = {
 const activityColors: Record<string, string> = {
   watering: 'bg-blue-100 text-blue-800',
   fertilizing: 'bg-green-100 text-green-800',
+  fertilizing_foliar: 'bg-emerald-100 text-emerald-800',
+  fertilizing_soil: 'bg-green-100 text-green-800',
   pest_control: 'bg-red-100 text-red-800',
   weeding: 'bg-yellow-100 text-yellow-800',
   pruning: 'bg-purple-100 text-purple-800',
   other: 'bg-gray-100 text-gray-800',
 }
 
-export default function CultivationReportClient({ initialData }: CultivationReportProps) {
+export default function CultivationReportClient({
+  initialData,
+  initialStartDate,
+  initialEndDate,
+}: CultivationReportProps) {
   const [data, setData] = useState(initialData)
   const [isLoading, setIsLoading] = useState(false)
   const [range, setRange] = useState<{ startDate: string; endDate: string }>(() => ({
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    endDate: new Date().toISOString().slice(0, 10),
+    startDate: initialStartDate,
+    endDate: initialEndDate,
   }))
 
   const handleFilterChange = async (startDate: string, endDate: string) => {
@@ -97,6 +107,8 @@ export default function CultivationReportClient({ initialData }: CultivationRepo
           onExport={handleExportCSV}
           onExportPDF={handleExportPDF}
           onFilterChange={handleFilterChange}
+          initialStartDate={initialStartDate}
+          initialEndDate={initialEndDate}
         />
         {isLoading && <p className="text-muted-foreground mt-2 text-sm">Loading…</p>}
       </div>

@@ -27,6 +27,9 @@ export default async function EditInvoicePage({ params }: { params: { id: string
           invoiceNumber: invoice.invoiceNumber,
           invoiceDate: invoice.invoiceDate,
           dueDate: invoice.dueDate || '',
+          taxRate: invoice.taxRate || '',
+          shippingCost: invoice.shippingCost || '',
+          discountAmount: invoice.discountAmount || '',
           items: invoice.items.map((item) => ({
             description: item.description,
             quantity: item.quantity,
@@ -44,6 +47,7 @@ export default async function EditInvoicePage({ params }: { params: { id: string
               | undefined,
             discountType: (item.discountType as 'percentage' | 'amount' | '' | undefined) || '',
             discountValue: item.discountValue || '',
+            taxRate: item.taxRate || '',
             notes: item.notes || '',
           })),
           notes: invoice.notes || '',

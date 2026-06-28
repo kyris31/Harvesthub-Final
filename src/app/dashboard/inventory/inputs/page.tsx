@@ -13,13 +13,7 @@ import { Plus, Edit, Wrench } from 'lucide-react'
 import Link from 'next/link'
 import { InputInventoryDeleteButton } from '@/components/inventory/input-inventory-delete-button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { InputCategoryFilter } from '@/components/inventory/input-category-filter'
 
 export default async function InputsInventoryPage({
   searchParams,
@@ -29,9 +23,12 @@ export default async function InputsInventoryPage({
   const { category } = await searchParams
   const allInputs = await getInputInventory()
 
-  // Filter by category if selected
-  const inputs =
+  // Filter by category if selected, then sort alphabetically by name
+  const inputs = (
     category && category !== 'all' ? allInputs.filter((item) => item.type === category) : allInputs
+  )
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
 
   // Calculate low stock items
   const lowStockCount = inputs.filter((item) => {
@@ -121,58 +118,7 @@ export default async function InputsInventoryPage({
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Select defaultValue={category || 'all'}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    <Link href="/dashboard/inventory/inputs" className="block w-full">
-                      All Categories
-                    </Link>
-                  </SelectItem>
-                  <SelectItem value="seeds">
-                    <Link
-                      href="/dashboard/inventory/inputs?category=seeds"
-                      className="block w-full"
-                    >
-                      Seeds
-                    </Link>
-                  </SelectItem>
-                  <SelectItem value="fertilizer">
-                    <Link
-                      href="/dashboard/inventory/inputs?category=fertilizer"
-                      className="block w-full"
-                    >
-                      Fertilizer
-                    </Link>
-                  </SelectItem>
-                  <SelectItem value="pesticide">
-                    <Link
-                      href="/dashboard/inventory/inputs?category=pesticide"
-                      className="block w-full"
-                    >
-                      Pesticide
-                    </Link>
-                  </SelectItem>
-                  <SelectItem value="equipment">
-                    <Link
-                      href="/dashboard/inventory/inputs?category=equipment"
-                      className="block w-full"
-                    >
-                      Equipment
-                    </Link>
-                  </SelectItem>
-                  <SelectItem value="other">
-                    <Link
-                      href="/dashboard/inventory/inputs?category=other"
-                      className="block w-full"
-                    >
-                      Other
-                    </Link>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <InputCategoryFilter category={category} />
             </div>
           </div>
         </CardHeader>

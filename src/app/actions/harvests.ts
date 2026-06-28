@@ -6,7 +6,12 @@ import { db } from '@/lib/db'
 import { harvestLogs } from '@/lib/db/schema'
 import { and, eq, isNull, desc, gte, lte } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { harvestLogSchema, type HarvestLogFormData } from '@/lib/validations/harvest'
+import {
+  harvestLogSchema,
+  harvestBatchSchema,
+  type HarvestLogFormData,
+  type HarvestBatchFormData,
+} from '@/lib/validations/harvest'
 
 export async function getHarvestLogs(filters?: {
   plantingLogId?: string
@@ -94,6 +99,32 @@ export async function createHarvestLog(data: HarvestLogFormData) {
   revalidatePath('/dashboard/harvest')
   revalidatePath('/dashboard/planting')
   return harvest
+}
+
+export async function createHarvestLogsBatch(data: HarvestBatchFormData) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
+
+  const validated = harvestBatchSchema.parse(data)
+
+  const rows = validated.items.map((item) => ({
+    userId: session.user.id,
+    plantingLogId: item.sourceType === 'planting' ? item.plantingLogId || null : null,
+    treeId: item.sourceType === 'tree' ? item.treeId || null : null,
+    harvestDate: validated.harvestDate,
+    quantityHarvested: item.quantityHarvested,
+    quantityUnit: item.quantityUnit,
+    currentStock: item.quantityHarvested,
+    qualityGrade: item.qualityGrade || null,
+    notes: validated.notes || null,
+  }))
+
+  const created = await db.insert(harvestLogs).values(rows).returning()
+
+  revalidatePath('/dashboard/harvests')
+  revalidatePath('/dashboard/harvest')
+  revalidatePath('/dashboard/planting')
+  return created
 }
 
 export async function updateHarvestLog(id: string, data: HarvestLogFormData) {

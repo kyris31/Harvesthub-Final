@@ -21,6 +21,7 @@ type LifecycleRow = {
   transplanted: number | null
   harvested: number
   sold: number
+  harvestUnit: string
   remaining: number | null
 }
 
@@ -75,8 +76,8 @@ export default function CropLifecycleClient({
         'Qty In': r.sownQty,
         Produced: r.produced ?? '—',
         Transplanted: r.transplanted ?? '—',
-        Harvested: r.harvested,
-        Sold: r.sold,
+        Harvested: r.harvestUnit ? `${r.harvested} ${r.harvestUnit}` : r.harvested,
+        Sold: r.harvestUnit ? `${r.sold} ${r.harvestUnit}` : r.sold,
         'Remaining Seedlings': r.remaining ?? '—',
       })),
       'crop-lifecycle-report'
@@ -243,11 +244,13 @@ export default function CropLifecycleClient({
                         className={Number(row.harvested) > 0 ? 'font-medium text-green-600' : ''}
                       >
                         {Number(row.harvested).toFixed(2)}
+                        {row.harvestUnit ? ` ${row.harvestUnit}` : ''}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span className={Number(row.sold) > 0 ? 'font-medium text-blue-600' : ''}>
                         {Number(row.sold).toFixed(2)}
+                        {row.harvestUnit ? ` ${row.harvestUnit}` : ''}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">

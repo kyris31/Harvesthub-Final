@@ -14,6 +14,7 @@ export const invoiceItemSchema = z.object({
   itemUnit: z.string().optional().or(z.literal('')),
   discountType: z.enum(['percentage', 'amount']).optional().or(z.literal('')),
   discountValue: z.string().optional().or(z.literal('')),
+  taxRate: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
 })
 

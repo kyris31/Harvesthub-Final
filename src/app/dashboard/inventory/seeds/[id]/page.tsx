@@ -140,13 +140,13 @@ export default async function SeedBatchDetailPage({ params }: SeedBatchDetailPag
             {batch.costPerUnit && (
               <div>
                 <p className="text-muted-foreground text-sm font-medium">Cost Per Unit</p>
-                <p className="text-base">${batch.costPerUnit}</p>
+                <p className="text-base">€{batch.costPerUnit}</p>
               </div>
             )}
             {batch.totalCost && (
               <div>
                 <p className="text-muted-foreground text-sm font-medium">Total Cost</p>
-                <p className="text-base">${batch.totalCost}</p>
+                <p className="text-base">€{batch.totalCost}</p>
               </div>
             )}
           </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
 import { db } from '@/lib/db'
-import { harvestLogs, plantingLogs, crops } from '@/lib/db/schema'
+import { harvestLogs, plantingLogs, crops, trees } from '@/lib/db/schema'
 import { harvestLogSchema } from '@/lib/schemas/planting-schema'
 import { eq, and, isNull, desc } from 'drizzle-orm'
 import { z } from 'zod'
@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
         plantingLogId: harvestLogs.plantingLogId,
         cropName: crops.name,
         cropVariety: crops.variety,
+        treeSpecies: trees.species,
+        treeVariety: trees.variety,
         harvestDate: harvestLogs.harvestDate,
         quantityHarvested: harvestLogs.quantityHarvested,
         quantityUnit: harvestLogs.quantityUnit,
@@ -35,6 +37,7 @@ export async function GET(request: NextRequest) {
       .from(harvestLogs)
       .leftJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
       .leftJoin(crops, eq(plantingLogs.cropId, crops.id))
+      .leftJoin(trees, eq(harvestLogs.treeId, trees.id))
       .where(and(eq(harvestLogs.userId, session.user.id), isNull(harvestLogs.deletedAt)))
       .orderBy(desc(harvestLogs.harvestDate))
 
