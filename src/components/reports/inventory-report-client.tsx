@@ -57,8 +57,9 @@ export default function InventoryReportClient({ initialData }: InventoryReportPr
     const seedlingRows =
       cat === 'all' || cat === 'seedlings'
         ? data.seedlings.items.map((s: any) => ({
-            category: 'Seedlings',
-            item: s.crop?.name ?? 'Seedling',
+            category:
+              s.source === 'self_produced' ? 'Seedlings (Self-Produced)' : 'Seedlings (Purchased)',
+            item: s.crop?.name ?? s.name ?? 'Seedling',
             quantity: `${s.currentQuantity || 0} seedlings`,
             value: `€${(Number(s.currentQuantity || 0) * Number(s.costPerSeedling || 0)).toFixed(2)}`,
           }))

@@ -24,6 +24,125 @@ function downloadPDF(doc: any, fileName: string) {
   setTimeout(() => URL.revokeObjectURL(url), 2000)
 }
 
+// ── Save-to-folder support (File System Access API) ─────────────────────────
+// Browsers can't be told an absolute path, but Chrome's File System Access API
+// lets the user pick a folder once; we persist the handle in IndexedDB and reuse
+// it so subsequent exports write straight there with no dialog.
+
+function idbDirStore(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('report-fs', 1)
+    req.onupgradeneeded = () => req.result.createObjectStore('handles')
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+}
+
+async function getSavedDirHandle(key: string): Promise<any | null> {
+  try {
+    const db = await idbDirStore()
+    return await new Promise((resolve) => {
+      const getReq = db.transaction('handles', 'readonly').objectStore('handles').get(key)
+      getReq.onsuccess = () => resolve(getReq.result ?? null)
+      getReq.onerror = () => resolve(null)
+    })
+  } catch {
+    return null
+  }
+}
+
+async function saveDirHandle(key: string, handle: any): Promise<void> {
+  try {
+    const db = await idbDirStore()
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction('handles', 'readwrite')
+      tx.objectStore('handles').put(handle, key)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => resolve()
+    })
+  } catch {
+    /* ignore — falls back to a normal download */
+  }
+}
+
+/**
+ * Resolve a writable handle to a report's target folder, given the path segments
+ * under the chosen "Reports" folder — e.g. ("Harvest") → Reports/Harvest, or
+ * ("Inventory", "Seeds") → Reports/Inventory/Seeds. Each path remembers its own
+ * handle. The user picks a folder once; we then normalise:
+ *   - if they picked the folder already named after the first segment, use it;
+ *   - otherwise treat their pick as the parent and create the first segment under it,
+ * then create any deeper segments. This is self-correcting whether the user selects
+ * `Reports` or `Reports\Harvest`, and never double-nests. The resolved target is
+ * stored, so later exports save straight there. Returns null when the API is
+ * unavailable or the user cancels, signalling a fall back to a normal download.
+ * Call this BEFORE building the PDF so the picker runs inside the click's
+ * user-activation window.
+ */
+async function resolveReportDir(...segments: string[]): Promise<any | null> {
+  // @ts-ignore - File System Access API is Chromium-only
+  if (typeof window.showDirectoryPicker !== 'function') return null
+  // Versioned key — bump the prefix to discard handles saved by older, buggier logic.
+  const key = `reportdir3:${segments.join('/')}`
+  try {
+    let dir = await getSavedDirHandle(key)
+    if (dir) {
+      const opts = { mode: 'readwrite' as const }
+      let perm = (await dir.queryPermission?.(opts)) ?? 'prompt'
+      if (perm !== 'granted') perm = (await dir.requestPermission?.(opts)) ?? 'denied'
+      if (perm !== 'granted') dir = null
+    }
+    if (dir) {
+      // Cached handle already points at the final target folder.
+      return dir
+    }
+    // @ts-ignore
+    const picked = await window.showDirectoryPicker({
+      id: 'reports',
+      mode: 'readwrite',
+      startIn: 'documents',
+    })
+    // The picked folder may be the Reports root, or any folder along the target
+    // path (e.g. the user drilled into Inventory or Inventory/Seeds). Match its
+    // name against the path segments and only create what's still missing, so we
+    // never re-nest an already-correct path.
+    let startIdx = segments.length // default: nothing of the path is satisfied
+    for (let i = segments.length - 1; i >= 0; i--) {
+      if (segments[i] === picked.name) {
+        startIdx = i + 1
+        break
+      }
+    }
+    let target = picked
+    for (let i = startIdx; i < segments.length; i++) {
+      target = await target.getDirectoryHandle(segments[i], { create: true })
+    }
+    await saveDirHandle(key, target)
+    return target
+  } catch {
+    return null // user cancelled or denied
+  }
+}
+
+/**
+ * Write the PDF into `dirHandle` if provided, otherwise trigger a normal download.
+ */
+async function savePDF(doc: any, fileName: string, dirHandle: any | null) {
+  if (!dirHandle) {
+    downloadPDF(doc, fileName)
+    return
+  }
+  try {
+    const blob: Blob = doc.output('blob')
+    const fileHandle = await dirHandle.getFileHandle(fileName, { create: true })
+    const writable = await fileHandle.createWritable()
+    await writable.write(blob)
+    await writable.close()
+  } catch {
+    downloadPDF(doc, fileName) // any write failure → fall back
+  }
+}
+
 async function loadLogoDataUrl(): Promise<string | null> {
   return new Promise((resolve) => {
     const img = new window.Image()
@@ -107,6 +226,9 @@ function addCompanyHeader(doc: any, logoData: string | null, title: string): num
 }
 
 export async function exportFinancialReportPDF(data: any, startDate: string, endDate: string) {
+  // Resolve the target folder first, while the button click's activation is live.
+  const dirHandle = await resolveReportDir('Financial')
+
   // @ts-ignore - jsPDF loaded from CDN
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
@@ -132,10 +254,80 @@ export async function exportFinancialReportPDF(data: any, startDate: string, end
   })
 
   const fileName = `Financial_Report_${startDate}_to_${endDate}.pdf`
-  downloadPDF(doc, fileName)
+  await savePDF(doc, fileName, dirHandle)
+}
+
+export async function exportSalesReportPDF(data: any, startDate: string, endDate: string) {
+  // Ask for the target folder first, while we still have the button click's
+  // user-activation (the picker only appears the first time / if access is lost).
+  const dirHandle = await resolveReportDir('Sales')
+
+  // @ts-ignore - jsPDF loaded from CDN
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+  await setupNotoSans(doc)
+  const logo = await loadLogoDataUrl()
+  const startY = addCompanyHeader(doc, logo, 'Sales Report')
+
+  doc.setFontSize(10)
+  doc.text(`Period: ${startDate} to ${endDate}`, 14, startY)
+
+  // Summary
+  // @ts-ignore
+  doc.autoTable({
+    startY: startY + 8,
+    head: [['Metric', 'Value']],
+    body: [
+      ['Total Sales', `${data.summary.saleCount}`],
+      ['Total Revenue', `€${data.summary.totalRevenue.toFixed(2)}`],
+      ['Total Collected', `€${data.summary.totalPaid.toFixed(2)}`],
+      ['Outstanding', `€${data.summary.totalOutstanding.toFixed(2)}`],
+      ['Average Sale', `€${data.summary.averageSale.toFixed(2)}`],
+    ],
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
+  })
+
+  // Top products
+  const productRows = data.topProducts.map((p: any) => [
+    p.name,
+    `${p.quantity.toFixed(2)} ${p.unit}`,
+    `€${p.revenue.toFixed(2)}`,
+  ])
+  // @ts-ignore
+  doc.autoTable({
+    // @ts-ignore
+    startY: doc.lastAutoTable.finalY + 10,
+    head: [['Product', 'Quantity Sold', 'Revenue']],
+    body: productRows.length > 0 ? productRows : [['No sales data', '', '']],
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
+  })
+
+  // Top customers
+  const customerRows = data.topCustomers.map((c: any) => [
+    c.name,
+    `${c.orders}`,
+    `€${c.revenue.toFixed(2)}`,
+  ])
+  // @ts-ignore
+  doc.autoTable({
+    // @ts-ignore
+    startY: doc.lastAutoTable.finalY + 10,
+    head: [['Customer', 'Orders', 'Revenue']],
+    body: customerRows.length > 0 ? customerRows : [['No sales data', '', '']],
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
+  })
+
+  const fileName = `Sales_Report_${startDate}_to_${endDate}.pdf`
+  await savePDF(doc, fileName, dirHandle)
 }
 
 export async function exportHarvestReportPDF(data: any, startDate: string, endDate: string) {
+  // Resolve the target folder first, while the button click's activation is live.
+  const dirHandle = await resolveReportDir('Harvest')
+
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
@@ -176,10 +368,22 @@ export async function exportHarvestReportPDF(data: any, startDate: string, endDa
   })
 
   const fileName = `Summarized_Harvest_Report_${startDate}_to_${endDate}.pdf`
-  downloadPDF(doc, fileName)
+  await savePDF(doc, fileName, dirHandle)
 }
 
 export async function exportInventoryReportPDF(data: any, category?: string) {
+  // Strict per-category export: each selection includes only that category.
+  const cat = category ?? 'all'
+
+  // Save into Inventory/<Category>, one subfolder per filter option.
+  const categoryFolders: Record<string, string> = {
+    all: 'All Categories',
+    seeds: 'Seeds',
+    inputs: 'Inputs',
+    seedlings: 'Seedlings',
+  }
+  const dirHandle = await resolveReportDir('Inventory', categoryFolders[cat] ?? 'All Categories')
+
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
@@ -187,8 +391,6 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
   const logo = await loadLogoDataUrl()
   const today = new Date().toISOString().slice(0, 10)
 
-  // Strict per-category export: each selection includes only that category.
-  const cat = category ?? 'all'
   const showSeeds = cat === 'all' || cat === 'seeds'
   const showInputs = cat === 'all' || cat === 'inputs'
   const showSeedlings = cat === 'all' || cat === 'seedlings'
@@ -274,9 +476,10 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
 
   if (showSeedlings && data.seedlings.items.length > 0) {
     const seedlingsData = data.seedlings.items.map((s: any) => [
-      s.crop?.name ?? 'Seedling',
+      s.crop?.name ?? s.name ?? 'Seedling',
       s.crop?.variety ?? '—',
-      Number(s.quantityPurchased || 0).toString(),
+      s.source === 'self_produced' ? 'Self-Produced' : 'Purchased',
+      Number(s.initialQuantity ?? s.quantityPurchased ?? 0).toString(),
       Number(s.currentQuantity || 0).toString(),
       `€${(Number(s.currentQuantity || 0) * Number(s.costPerSeedling || 0)).toFixed(2)}`,
     ])
@@ -287,7 +490,7 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
     // @ts-ignore
     doc.autoTable({
       startY: seedlingPageY,
-      head: [['Crop Name', 'Variety', 'Purchased', 'Current Qty', 'Value']],
+      head: [['Crop Name', 'Variety', 'Source', 'Produced/Purchased', 'Current Qty', 'Value']],
       body: seedlingsData,
       styles: { font: 'NotoSans', fontSize: 9 },
       headStyles: { fillColor: [34, 139, 34] },
@@ -296,7 +499,7 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
 
   const catSuffix = cat === 'all' ? '' : `_${cat}`
   const fileName = `Inventory_Report${catSuffix}_${today}.pdf`
-  downloadPDF(doc, fileName)
+  await savePDF(doc, fileName, dirHandle)
 }
 
 export async function exportCultivationReportPDF(data: any, startDate: string, endDate: string) {
@@ -525,6 +728,9 @@ export async function exportPlantingReportPDF(data: any, startDate: string, endD
 }
 
 export async function exportCropPerformancePDF(data: any[], startDate: string, endDate: string) {
+  // Resolve the target folder first, while the button click's activation is live.
+  const dirHandle = await resolveReportDir('Crop Performance')
+
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
@@ -539,11 +745,11 @@ export async function exportCropPerformancePDF(data: any[], startDate: string, e
     data.length > 0
       ? data.map((r: any) => [
           r.cropName,
-          r.totalPlanted.toFixed(2),
+          r.totalPlantedDisplay ?? r.totalPlanted.toFixed(2),
           r.plantsProduced.toString(),
-          r.totalProduced.toFixed(2),
-          r.totalSales.toFixed(2),
-          r.difference.toFixed(2),
+          r.totalProducedDisplay ?? r.totalProduced.toFixed(2),
+          r.totalSalesDisplay ?? r.totalSales.toFixed(2),
+          r.differenceDisplay ?? r.difference.toFixed(2),
         ])
       : [['No data', '', '', '', '', '']]
 
@@ -573,7 +779,7 @@ export async function exportCropPerformancePDF(data: any[], startDate: string, e
   })
 
   const fileName = `Crop_Performance_Report_${startDate}_to_${endDate}.pdf`
-  downloadPDF(doc, fileName)
+  await savePDF(doc, fileName, dirHandle)
 }
 
 export async function exportSeedlingLifecyclePDF(data: any[], startDate: string, endDate: string) {

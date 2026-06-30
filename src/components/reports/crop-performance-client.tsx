@@ -14,10 +14,14 @@ type CropRow = {
   cropId: string
   cropName: string
   totalPlanted: number
+  totalPlantedDisplay: string
   plantsProduced: number
   totalProduced: number
+  totalProducedDisplay: string
   totalSales: number
+  totalSalesDisplay: string
   difference: number
+  differenceDisplay: string
 }
 
 export default function CropPerformanceClient({
@@ -48,11 +52,11 @@ export default function CropPerformanceClient({
     exportToCSV(
       data.map((r) => ({
         'Crop Name': r.cropName,
-        'Total Planted': r.totalPlanted,
+        'Total Planted': r.totalPlantedDisplay,
         'Plants Prod.': r.plantsProduced,
-        'Total Prod.': r.totalProduced,
-        'Total Sales': r.totalSales,
-        'Difference (Prod - Sales)': r.difference,
+        'Total Prod.': r.totalProducedDisplay,
+        'Total Sales': r.totalSalesDisplay,
+        'Difference (Prod - Sales)': r.differenceDisplay,
       })),
       'crop-performance-report'
     )
@@ -158,16 +162,16 @@ export default function CropPerformanceClient({
                 data.map((row) => (
                   <tr key={row.cropId} className="hover:bg-muted/30 border-b last:border-0">
                     <td className="px-4 py-3 font-medium">{row.cropName}</td>
-                    <td className="px-4 py-3 text-right">{row.totalPlanted.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-right">{row.totalPlantedDisplay}</td>
                     <td className="px-4 py-3 text-right">{row.plantsProduced}</td>
-                    <td className="px-4 py-3 text-right">{row.totalProduced.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-right">{row.totalSales.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-right">{row.totalProducedDisplay}</td>
+                    <td className="px-4 py-3 text-right">{row.totalSalesDisplay}</td>
                     <td
                       className={`px-4 py-3 text-right font-medium ${
                         row.difference < 0 ? 'text-destructive' : 'text-green-600'
                       }`}
                     >
-                      {row.difference.toFixed(2)}
+                      {row.differenceDisplay}
                     </td>
                   </tr>
                 ))

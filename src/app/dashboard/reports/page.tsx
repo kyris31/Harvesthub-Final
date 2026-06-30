@@ -6,6 +6,7 @@ import {
   getPlantingReport,
   getCropPerformanceReport,
   getCropLifecycleReport,
+  getSalesReport,
 } from '@/app/actions/reports'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Sprout,
+  ShoppingCart,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -25,7 +27,7 @@ export default async function ReportsPage() {
   const endDate = new Date().toISOString().slice(0, 10)
   const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
-  const [financial, harvest, inventory, cultivation, planting, cropPerf, seedlingLC] =
+  const [financial, harvest, inventory, cultivation, planting, cropPerf, seedlingLC, salesReport] =
     await Promise.all([
       getFinancialReport(startDate, endDate),
       getHarvestReport(startDate, endDate),
@@ -34,6 +36,7 @@ export default async function ReportsPage() {
       getPlantingReport(startDate, endDate),
       getCropPerformanceReport(startDate, endDate),
       getCropLifecycleReport(startDate, endDate),
+      getSalesReport(startDate, endDate),
     ])
 
   const reports = [
@@ -49,6 +52,21 @@ export default async function ReportsPage() {
           label: 'Net Profit',
           value: `€${financial.profit.total.toFixed(2)}`,
           trend: financial.profit.total >= 0 ? 'up' : 'down',
+        },
+      ],
+    },
+    {
+      title: 'Sales Report',
+      description: 'Sales volume, revenue, outstanding payments, top products & customers',
+      icon: ShoppingCart,
+      href: '/dashboard/reports/sales',
+      stats: [
+        { label: 'Total Sales', value: salesReport.summary.saleCount.toString() },
+        { label: 'Revenue', value: `€${salesReport.summary.totalRevenue.toFixed(2)}` },
+        {
+          label: 'Outstanding',
+          value: `€${salesReport.summary.totalOutstanding.toFixed(2)}`,
+          trend: salesReport.summary.totalOutstanding > 0 ? 'down' : 'neutral',
         },
       ],
     },

@@ -168,13 +168,45 @@ export async function getInventoryReport() {
   })
 
   // Get purchased seedlings
-  const seedlings = await db.query.purchasedSeedlings.findMany({
+  const purchasedSeedlingRows = await db.query.purchasedSeedlings.findMany({
     where: and(
       eq(purchasedSeedlings.userId, session.user.id),
       isNull(purchasedSeedlings.deletedAt)
     ),
     with: { crop: true },
   })
+
+  // Get self-produced seedlings (nursery production logs)
+  const selfSeedlingRows = await db.query.seedlingProductionLogs.findMany({
+    where: and(
+      eq(seedlingProductionLogs.userId, session.user.id),
+      isNull(seedlingProductionLogs.deletedAt)
+    ),
+    with: { crop: true },
+  })
+
+  // Normalise both seedling sources into one list so the report shows purchased
+  // AND self-produced. Self-produced seedlings carry no per-seedling cost.
+  const seedlingItems = [
+    ...purchasedSeedlingRows.map((s) => ({
+      id: s.id,
+      crop: s.crop,
+      name: s.crop?.name ?? 'Seedling',
+      source: 'purchased' as const,
+      initialQuantity: Number(s.quantityPurchased || 0),
+      currentQuantity: Number(s.currentQuantity || 0),
+      costPerSeedling: Number(s.costPerSeedling || 0),
+    })),
+    ...selfSeedlingRows.map((s) => ({
+      id: s.id,
+      crop: s.crop,
+      name: s.crop?.name ?? 'Seedling',
+      source: 'self_produced' as const,
+      initialQuantity: Number(s.actualSeedlingsProduced || 0),
+      currentQuantity: Number(s.currentSeedlingsAvailable || 0),
+      costPerSeedling: 0,
+    })),
+  ]
 
   // Calculate low stock items
   const lowStockInputs = inputs.filter((i) => {
@@ -183,10 +215,7 @@ export async function getInventoryReport() {
     return current <= min
   })
 
-  const lowStockSeedlings = seedlings.filter((s) => {
-    const current = Number(s.currentQuantity || 0)
-    return current <= 10 // threshold of 10 units
-  })
+  const lowStockSeedlings = seedlingItems.filter((s) => s.currentQuantity <= 10) // threshold of 10 units
 
   // Calculate total inventory value.
   // Prefer costPerUnit * currentQuantity; fall back to totalCost * (current/initial) when
@@ -222,8 +251,8 @@ export async function getInventoryReport() {
     )
   }, 0)
 
-  const seedlingValue = seedlings.reduce(
-    (sum, s) => sum + Number(s.currentQuantity || 0) * Number(s.costPerSeedling || 0),
+  const seedlingValue = seedlingItems.reduce(
+    (sum, s) => sum + s.currentQuantity * s.costPerSeedling,
     0
   )
 
@@ -238,7 +267,7 @@ export async function getInventoryReport() {
       totalValue: inputValue,
     },
     seedlings: {
-      items: seedlings,
+      items: seedlingItems,
       lowStock: lowStockSeedlings,
       totalValue: seedlingValue,
     },
@@ -299,11 +328,12 @@ export async function getCropPerformanceReport(startDate?: string, endDate?: str
   const plantedRows = await db
     .select({
       cropId: plantingLogs.cropId,
+      unit: plantingLogs.quantityUnit,
       total: sql<string>`COALESCE(SUM(${plantingLogs.quantityPlanted}), '0')`,
     })
     .from(plantingLogs)
     .where(and(...plantedConds))
-    .groupBy(plantingLogs.cropId)
+    .groupBy(plantingLogs.cropId, plantingLogs.quantityUnit)
 
   // Seedlings produced per crop (filtered by sowingDate)
   const seedlingConds = [
@@ -329,12 +359,13 @@ export async function getCropPerformanceReport(startDate?: string, endDate?: str
   const harvestedRows = await db
     .select({
       cropId: plantingLogs.cropId,
+      unit: harvestLogs.quantityUnit,
       total: sql<string>`COALESCE(SUM(${harvestLogs.quantityHarvested}), '0')`,
     })
     .from(harvestLogs)
     .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
     .where(and(...harvestConds))
-    .groupBy(plantingLogs.cropId)
+    .groupBy(plantingLogs.cropId, harvestLogs.quantityUnit)
 
   // Total sold per crop (via saleItems -> harvestLogs -> plantingLogs, filtered by saleDate)
   const saleConds = [
@@ -347,6 +378,7 @@ export async function getCropPerformanceReport(startDate?: string, endDate?: str
   const soldRows = await db
     .select({
       cropId: plantingLogs.cropId,
+      unit: saleItems.unit,
       total: sql<string>`COALESCE(SUM(${saleItems.quantity}), '0')`,
     })
     .from(saleItems)
@@ -354,12 +386,50 @@ export async function getCropPerformanceReport(startDate?: string, endDate?: str
     .innerJoin(plantingLogs, eq(harvestLogs.plantingLogId, plantingLogs.id))
     .innerJoin(sales, eq(saleItems.saleId, sales.id))
     .where(and(...saleConds))
-    .groupBy(plantingLogs.cropId)
+    .groupBy(plantingLogs.cropId, saleItems.unit)
 
-  const plantedMap = new Map(plantedRows.map((r) => [r.cropId, Number(r.total)]))
+  // Planted total per crop, plus a per-unit breakdown so the display can keep the
+  // unit (e.g. "5.00 gr" for direct-sown seed vs "50.00 plants" for transplants).
+  const plantedMap = new Map<string, number>()
+  const plantedUnitsMap = new Map<string, Map<string, number>>()
+  for (const r of plantedRows) {
+    const qty = Number(r.total)
+    plantedMap.set(r.cropId, (plantedMap.get(r.cropId) ?? 0) + qty)
+    if (!plantedUnitsMap.has(r.cropId)) plantedUnitsMap.set(r.cropId, new Map())
+    const byUnit = plantedUnitsMap.get(r.cropId)!
+    byUnit.set(r.unit, (byUnit.get(r.unit) ?? 0) + qty)
+  }
   const producedMap = new Map(producedRows.map((r) => [r.cropId, Number(r.total)]))
-  const harvestedMap = new Map(harvestedRows.map((r) => [r.cropId, Number(r.total)]))
-  const soldMap = new Map(soldRows.map((r) => [r.cropId, Number(r.total)]))
+
+  // Harvested (Total Prod.) and sold (Total Sales) totals plus per-unit breakdowns,
+  // so each keeps its unit (kg / boxes / bunches …).
+  const harvestedMap = new Map<string, number>()
+  const harvestedUnitsMap = new Map<string, Map<string, number>>()
+  for (const r of harvestedRows) {
+    const qty = Number(r.total)
+    harvestedMap.set(r.cropId, (harvestedMap.get(r.cropId) ?? 0) + qty)
+    if (!harvestedUnitsMap.has(r.cropId)) harvestedUnitsMap.set(r.cropId, new Map())
+    const byUnit = harvestedUnitsMap.get(r.cropId)!
+    byUnit.set(r.unit, (byUnit.get(r.unit) ?? 0) + qty)
+  }
+
+  const soldMap = new Map<string, number>()
+  const soldUnitsMap = new Map<string, Map<string, number>>()
+  for (const r of soldRows) {
+    const qty = Number(r.total)
+    soldMap.set(r.cropId, (soldMap.get(r.cropId) ?? 0) + qty)
+    if (!soldUnitsMap.has(r.cropId)) soldUnitsMap.set(r.cropId, new Map())
+    const byUnit = soldUnitsMap.get(r.cropId)!
+    byUnit.set(r.unit, (byUnit.get(r.unit) ?? 0) + qty)
+  }
+
+  // Render a per-unit map as "12.00 kg" or, for mixed units, "12.00 kg + 3.00 boxes".
+  const formatByUnit = (byUnit: Map<string, number> | undefined, fallback: number) =>
+    byUnit && byUnit.size > 0
+      ? Array.from(byUnit.entries())
+          .map(([unit, qty]) => `${qty.toFixed(2)} ${unit}`)
+          .join(' + ')
+      : fallback.toFixed(2)
 
   return userCrops
     .map((crop) => {
@@ -367,14 +437,39 @@ export async function getCropPerformanceReport(startDate?: string, endDate?: str
       const plantsProduced = producedMap.get(crop.id) ?? 0
       const totalProduced = harvestedMap.get(crop.id) ?? 0
       const totalSales = soldMap.get(crop.id) ?? 0
+      // Keep the unit on each quantity. Mixed units (e.g. grams of seed + plants,
+      // or kg + boxes) are shown side by side so nothing is silently summed.
+      const totalPlantedDisplay = formatByUnit(plantedUnitsMap.get(crop.id), totalPlanted)
+      const totalProducedDisplay = formatByUnit(harvestedUnitsMap.get(crop.id), totalProduced)
+      const totalSalesDisplay = formatByUnit(soldUnitsMap.get(crop.id), totalSales)
+
+      // Difference per unit: produced − sold for every unit seen in either column.
+      const producedUnits = harvestedUnitsMap.get(crop.id)
+      const soldUnits = soldUnitsMap.get(crop.id)
+      const diffUnits = new Map<string, number>()
+      for (const [unit, qty] of producedUnits ?? []) diffUnits.set(unit, qty)
+      for (const [unit, qty] of soldUnits ?? [])
+        diffUnits.set(unit, (diffUnits.get(unit) ?? 0) - qty)
+      const difference = totalProduced - totalSales
+      const differenceDisplay =
+        diffUnits.size > 0
+          ? Array.from(diffUnits.entries())
+              .map(([unit, qty]) => `${qty.toFixed(2)} ${unit}`)
+              .join(' + ')
+          : difference.toFixed(2)
+
       return {
         cropId: crop.id,
         cropName: crop.name + (crop.variety ? ` - ${crop.variety}` : ''),
         totalPlanted,
+        totalPlantedDisplay,
         plantsProduced,
         totalProduced,
+        totalProducedDisplay,
         totalSales,
-        difference: totalProduced - totalSales,
+        totalSalesDisplay,
+        difference,
+        differenceDisplay,
       }
     })
     .filter(
@@ -894,5 +989,88 @@ export async function getProfitabilityReport(startDate?: string, endDate?: strin
     plantings: plantingResults,
     trees: treeResults,
     totals: { revenue: allRevenue, cost: allCost, profit: allRevenue - allCost },
+  }
+}
+
+// Sales Report
+export async function getSalesReport(startDate?: string, endDate?: string) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Unauthorized')
+
+  const whereConditions = [eq(sales.userId, session.user.id), isNull(sales.deletedAt)]
+  if (startDate) whereConditions.push(gte(sales.saleDate, startDate))
+  if (endDate) whereConditions.push(lte(sales.saleDate, endDate))
+
+  const salesData = await db.query.sales.findMany({
+    where: and(...whereConditions),
+    orderBy: (sales, { desc }) => [desc(sales.saleDate)],
+    with: { customer: true, saleItems: true },
+  })
+
+  let totalRevenue = 0
+  let totalPaid = 0
+  const statusMap: Record<string, { count: number; amount: number }> = {}
+  const productMap: Record<
+    string,
+    { name: string; quantity: number; unit: string; revenue: number }
+  > = {}
+  const customerMap: Record<string, { name: string; orders: number; revenue: number }> = {}
+
+  for (const sale of salesData) {
+    const total = parseFloat(sale.totalAmount)
+    const paid = parseFloat(sale.amountPaid ?? '0')
+    totalRevenue += total
+    totalPaid += paid
+
+    const status = sale.paymentStatus ?? 'pending'
+    if (!statusMap[status]) statusMap[status] = { count: 0, amount: 0 }
+    statusMap[status].count += 1
+    statusMap[status].amount += total
+
+    const customerName = sale.customer?.name ?? 'Walk-in / No customer'
+    const customerKey = sale.customerId ?? 'none'
+    if (!customerMap[customerKey])
+      customerMap[customerKey] = { name: customerName, orders: 0, revenue: 0 }
+    customerMap[customerKey].orders += 1
+    customerMap[customerKey].revenue += total
+
+    for (const item of sale.saleItems) {
+      const key = `${item.productName}||${item.unit}`
+      if (!productMap[key])
+        productMap[key] = { name: item.productName, quantity: 0, unit: item.unit, revenue: 0 }
+      productMap[key].quantity += parseFloat(item.quantity)
+      productMap[key].revenue += parseFloat(item.subtotal)
+    }
+  }
+
+  const totalOutstanding = totalRevenue - totalPaid
+  const saleCount = salesData.length
+  const averageSale = saleCount > 0 ? totalRevenue / saleCount : 0
+
+  const topProducts = Object.values(productMap).sort((a, b) => b.revenue - a.revenue)
+  const topCustomers = Object.values(customerMap).sort((a, b) => b.revenue - a.revenue)
+  const statusBreakdown = Object.entries(statusMap).map(([status, v]) => ({ status, ...v }))
+
+  return {
+    summary: {
+      saleCount,
+      totalRevenue,
+      totalPaid,
+      totalOutstanding,
+      averageSale,
+    },
+    statusBreakdown,
+    topProducts,
+    topCustomers,
+    sales: salesData.map((s) => ({
+      id: s.id,
+      saleDate: s.saleDate,
+      customerName: s.customer?.name ?? 'Walk-in / No customer',
+      totalAmount: parseFloat(s.totalAmount),
+      amountPaid: parseFloat(s.amountPaid ?? '0'),
+      paymentStatus: s.paymentStatus ?? 'pending',
+      paymentMethod: s.paymentMethod,
+      itemCount: s.saleItems.length,
+    })),
   }
 }
