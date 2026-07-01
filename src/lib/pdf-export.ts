@@ -672,6 +672,9 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
 }
 
 export async function exportPlantingReportPDF(data: any, startDate: string, endDate: string) {
+  // Resolve the target folder first, while the button click's activation is live.
+  const dirHandle = await resolveReportDir('Planting')
+
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
@@ -724,7 +727,7 @@ export async function exportPlantingReportPDF(data: any, startDate: string, endD
   })
 
   const fileName = `Planting_Report_${startDate}_to_${endDate}.pdf`
-  downloadPDF(doc, fileName)
+  await savePDF(doc, fileName, dirHandle)
 }
 
 export async function exportCropPerformancePDF(data: any[], startDate: string, endDate: string) {
