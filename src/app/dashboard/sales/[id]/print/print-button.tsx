@@ -1,13 +1,22 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Printer } from 'lucide-react'
+import { Download } from 'lucide-react'
+import { exportSaleReceiptPDF } from '@/lib/pdf-export'
 
-export function PrintButton() {
+export function PrintButton({ sale }: { sale: any }) {
+  const handleSave = async () => {
+    try {
+      await exportSaleReceiptPDF(sale)
+    } catch (err) {
+      console.error('Receipt PDF export failed:', err)
+    }
+  }
+
   return (
-    <Button onClick={() => window.print()} size="sm">
-      <Printer className="mr-2 h-4 w-4" />
-      Print / Save as PDF
+    <Button onClick={handleSave} size="sm">
+      <Download className="mr-2 h-4 w-4" />
+      Save as PDF
     </Button>
   )
 }

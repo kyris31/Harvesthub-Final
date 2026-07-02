@@ -358,7 +358,7 @@ export function SaleFormEnhanced({
                       form.watch(`items.${index}.quantity`) &&
                       form.watch(`items.${index}.pricePerUnit`) && (
                         <div className="text-muted-foreground mt-2 text-sm">
-                          Subtotal: $
+                          Subtotal: €
                           {(
                             parseFloat(form.watch(`items.${index}.quantity`) || '0') *
                             parseFloat(form.watch(`items.${index}.pricePerUnit`) || '0')

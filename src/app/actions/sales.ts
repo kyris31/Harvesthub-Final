@@ -19,7 +19,7 @@ export async function getSales(filters?: { startDate?: string; endDate?: string 
   return await db.query.sales.findMany({
     where: and(...whereConditions),
     orderBy: [desc(sales.saleDate)],
-    with: { customer: true },
+    with: { customer: true, saleItems: true },
   })
 }
 

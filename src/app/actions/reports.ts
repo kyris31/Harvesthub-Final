@@ -134,7 +134,7 @@ export async function getHarvestReport(startDate?: string, endDate?: string) {
   const harvests = await db.query.harvestLogs.findMany({
     where: and(...whereConditions),
     orderBy: (harvestLogs, { desc }) => [desc(harvestLogs.harvestDate)],
-    with: { plantingLog: { with: { crop: true } } },
+    with: { plantingLog: { with: { crop: true } }, tree: true },
   })
 
   const totalYield = harvests.reduce((sum, h) => sum + Number(h.quantityHarvested || 0), 0)

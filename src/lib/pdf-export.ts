@@ -289,11 +289,9 @@ export async function exportSalesReportPDF(data: any, startDate: string, endDate
   })
 
   // Top products
-  const productRows = data.topProducts.map((p: any) => [
-    p.name,
-    `${p.quantity.toFixed(2)} ${p.unit}`,
-    `€${p.revenue.toFixed(2)}`,
-  ])
+  const productRows = [...data.topProducts]
+    .sort((a: any, b: any) => a.name.localeCompare(b.name))
+    .map((p: any) => [p.name, `${p.quantity.toFixed(2)} ${p.unit}`, `€${p.revenue.toFixed(2)}`])
   // @ts-ignore
   doc.autoTable({
     // @ts-ignore
@@ -305,11 +303,9 @@ export async function exportSalesReportPDF(data: any, startDate: string, endDate
   })
 
   // Top customers
-  const customerRows = data.topCustomers.map((c: any) => [
-    c.name,
-    `${c.orders}`,
-    `€${c.revenue.toFixed(2)}`,
-  ])
+  const customerRows = [...data.topCustomers]
+    .sort((a: any, b: any) => a.name.localeCompare(b.name))
+    .map((c: any) => [c.name, `${c.orders}`, `€${c.revenue.toFixed(2)}`])
   // @ts-ignore
   doc.autoTable({
     // @ts-ignore
@@ -321,6 +317,113 @@ export async function exportSalesReportPDF(data: any, startDate: string, endDate
   })
 
   const fileName = `Sales_Report_${startDate}_to_${endDate}.pdf`
+  await savePDF(doc, fileName, dirHandle)
+}
+
+// Fixed identifier stamped on every sales receipt.
+const RECEIPT_CODE = 'CY - BIO - 001'
+
+export async function exportSaleReceiptPDF(sale: any) {
+  // Resolve the target folder first, while the button click's activation is live.
+  const dirHandle = await resolveReportDir('Sales Reciept')
+
+  // @ts-ignore - jsPDF loaded from CDN
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+  await setupNotoSans(doc)
+  const logo = await loadLogoDataUrl()
+  const startY = addCompanyHeader(doc, logo, 'Sales Receipt')
+
+  const total = parseFloat(sale.totalAmount)
+  const paid = parseFloat(sale.amountPaid ?? '0')
+  const balance = total - paid
+  const customerName = sale.customer?.name ?? 'Walk-in Customer'
+  const saleDate = new Date(sale.saleDate).toLocaleDateString('en-GB')
+
+  const statusLabels: Record<string, string> = {
+    paid: 'Paid',
+    pending: 'Pending',
+    partial: 'Partial',
+    overdue: 'Overdue',
+  }
+  const methodLabels: Record<string, string> = {
+    cash: 'Cash',
+    bank_transfer: 'Bank Transfer',
+    check: 'Check',
+    card: 'Card',
+    other: 'Other',
+  }
+
+  // Receipt code (replaces the old "Printed:" timestamp) + core details.
+  doc.setFontSize(10)
+  doc.setFont('NotoSans', 'bold')
+  doc.text(RECEIPT_CODE, 14, startY)
+  doc.setFont('NotoSans', 'normal')
+  doc.text(`Date: ${saleDate}`, 14, startY + 6)
+  doc.text(`Customer: ${customerName}`, 14, startY + 12)
+
+  // Items table
+  const items = sale.saleItems ?? []
+  const itemRows =
+    items.length > 0
+      ? items.map((item: any) => [
+          item.productName,
+          parseFloat(item.quantity).toFixed(2),
+          item.unit,
+          `€${parseFloat(item.unitPrice).toFixed(2)}`,
+          `€${parseFloat(item.subtotal).toFixed(2)}`,
+        ])
+      : [['No item details recorded.', '', '', '', '']]
+
+  // @ts-ignore
+  doc.autoTable({
+    startY: startY + 20,
+    head: [['Product', 'Qty', 'Unit', 'Price/Unit', 'Subtotal']],
+    body: itemRows,
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
+    columnStyles: {
+      1: { halign: 'right' },
+      3: { halign: 'right' },
+      4: { halign: 'right' },
+    },
+  })
+
+  // Payment summary
+  const summaryRows: string[][] = [
+    ['Total', `€${total.toFixed(2)}`],
+    ['Amount Paid', `€${paid.toFixed(2)}`],
+  ]
+  if (balance > 0) summaryRows.push(['Balance Due', `€${balance.toFixed(2)}`])
+  summaryRows.push(['Status', statusLabels[sale.paymentStatus ?? ''] ?? sale.paymentStatus ?? '—'])
+  if (sale.paymentMethod)
+    summaryRows.push(['Payment Method', methodLabels[sale.paymentMethod] ?? sale.paymentMethod])
+
+  // @ts-ignore
+  doc.autoTable({
+    // @ts-ignore
+    startY: doc.lastAutoTable.finalY + 10,
+    body: summaryRows,
+    theme: 'plain',
+    styles: { font: 'NotoSans', fontSize: 10 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 40 },
+      1: { halign: 'right' },
+    },
+    margin: { left: 116 },
+  })
+
+  if (sale.notes) {
+    doc.setFontSize(9)
+    doc.setFont('NotoSans', 'bold')
+    // @ts-ignore
+    doc.text('Notes', 14, doc.lastAutoTable.finalY + 10)
+    doc.setFont('NotoSans', 'normal')
+    // @ts-ignore
+    doc.text(doc.splitTextToSize(sale.notes, 180), 14, doc.lastAutoTable.finalY + 16)
+  }
+
+  const fileName = `Receipt_${RECEIPT_CODE.replace(/\s/g, '')}_${customerName.replace(/[^\w]/g, '_')}_${saleDate.replace(/\//g, '-')}.pdf`
   await savePDF(doc, fileName, dirHandle)
 }
 
@@ -344,8 +447,9 @@ export async function exportHarvestReportPDF(data: any, startDate: string, endDa
     { cropName: string; variety: string; totalQty: number; unit: string }
   > = {}
   for (const h of data.harvests) {
-    const cropName = h.plantingLog?.crop?.name ?? 'Unknown'
-    const variety = h.plantingLog?.crop?.variety ?? ''
+    // Harvests come from either a planting log (crops) or a tree.
+    const cropName = h.plantingLog?.crop?.name ?? h.tree?.species ?? 'Unknown'
+    const variety = h.plantingLog?.crop?.variety ?? h.tree?.variety ?? ''
     const unit = h.quantityUnit
     const key = `${cropName}||${variety}||${unit}`
     if (!summaryMap[key]) {
@@ -431,14 +535,18 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
       return '—'
     }
 
-    const seedsData = data.seeds.items.map((s: any) => [
-      s.crop?.name ?? s.batchCode,
-      s.crop?.variety ?? '—',
-      Number(s.initialQuantity).toFixed(2),
-      Number(s.currentQuantity).toFixed(2),
-      s.quantityUnit,
-      sourceLabel(s.sourceType),
-    ])
+    const seedsData = [...data.seeds.items]
+      .sort((a: any, b: any) =>
+        (a.crop?.name ?? a.batchCode).localeCompare(b.crop?.name ?? b.batchCode)
+      )
+      .map((s: any) => [
+        s.crop?.name ?? s.batchCode,
+        s.crop?.variety ?? '—',
+        Number(s.initialQuantity).toFixed(2),
+        Number(s.currentQuantity).toFixed(2),
+        s.quantityUnit,
+        sourceLabel(s.sourceType),
+      ])
 
     doc.addPage()
     const seedPageY = addCompanyHeader(doc, logo, 'Seed Batches Report')
@@ -454,12 +562,14 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
   }
 
   if (showInputs && data.inputs.items.length > 0) {
-    const inputsData = data.inputs.items.map((i: any) => [
-      i.name,
-      i.type,
-      `${Number(i.currentQuantity || 0).toFixed(2)} ${i.quantityUnit || ''}`,
-      `€${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
-    ])
+    const inputsData = [...data.inputs.items]
+      .sort((a: any, b: any) => a.name.localeCompare(b.name))
+      .map((i: any) => [
+        i.name,
+        i.type,
+        `${Number(i.currentQuantity || 0).toFixed(2)} ${i.quantityUnit || ''}`,
+        `€${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
+      ])
 
     doc.addPage()
     const inputPageY = addCompanyHeader(doc, logo, 'Inputs Inventory Report')
@@ -475,14 +585,24 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
   }
 
   if (showSeedlings && data.seedlings.items.length > 0) {
-    const seedlingsData = data.seedlings.items.map((s: any) => [
-      s.crop?.name ?? s.name ?? 'Seedling',
-      s.crop?.variety ?? '—',
-      s.source === 'self_produced' ? 'Self-Produced' : 'Purchased',
-      Number(s.initialQuantity ?? s.quantityPurchased ?? 0).toString(),
-      Number(s.currentQuantity || 0).toString(),
-      `€${(Number(s.currentQuantity || 0) * Number(s.costPerSeedling || 0)).toFixed(2)}`,
-    ])
+    const seedlingsData = [...data.seedlings.items]
+      .sort((a: any, b: any) => {
+        // Purchased first, then self-produced; alphabetical by crop within each group.
+        const rank = (x: any) => (x.source === 'self_produced' ? 1 : 0)
+        const groupDiff = rank(a) - rank(b)
+        if (groupDiff !== 0) return groupDiff
+        const an = a.crop?.name ?? a.name ?? 'Seedling'
+        const bn = b.crop?.name ?? b.name ?? 'Seedling'
+        return an.localeCompare(bn)
+      })
+      .map((s: any) => [
+        s.crop?.name ?? s.name ?? 'Seedling',
+        s.crop?.variety ?? '—',
+        s.source === 'self_produced' ? 'Self-Produced' : 'Purchased',
+        Number(s.initialQuantity ?? s.quantityPurchased ?? 0).toString(),
+        Number(s.currentQuantity || 0).toString(),
+        `€${(Number(s.currentQuantity || 0) * Number(s.costPerSeedling || 0)).toFixed(2)}`,
+      ])
 
     doc.addPage()
     const seedlingPageY = addCompanyHeader(doc, logo, 'Seedlings Inventory Report')
@@ -503,6 +623,9 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
 }
 
 export async function exportCultivationReportPDF(data: any, startDate: string, endDate: string) {
+  // Resolve the target folder first, while the button click's activation is live.
+  const dirHandle = await resolveReportDir('Cultivation')
+
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
@@ -668,7 +791,7 @@ export async function exportCultivationReportPDF(data: any, startDate: string, e
   }
 
   const fileName = `Cultivation_Report_${startDate}_to_${endDate}.pdf`
-  downloadPDF(doc, fileName)
+  await savePDF(doc, fileName, dirHandle)
 }
 
 export async function exportPlantingReportPDF(data: any, startDate: string, endDate: string) {
@@ -706,15 +829,17 @@ export async function exportPlantingReportPDF(data: any, startDate: string, endD
     return '—'
   }
 
-  const rows = data.logs.map((l: any) => [
-    `${l.crop?.name ?? '—'}${l.crop?.variety ? ` - ${l.crop.variety}` : ''}`,
-    l.plot?.name ?? '—',
-    l.plantingDate ? new Date(l.plantingDate).toLocaleDateString('en-GB') : '—',
-    `${l.quantityPlanted ?? '—'} ${l.quantityUnit ?? ''}`.trim(),
-    l.expectedHarvestDate ? new Date(l.expectedHarvestDate).toLocaleDateString('en-GB') : '—',
-    l.status ?? '—',
-    sourceLabelPDF(l.plantingSource),
-  ])
+  const rows = [...data.logs]
+    .sort((a: any, b: any) => (a.crop?.name ?? '').localeCompare(b.crop?.name ?? ''))
+    .map((l: any) => [
+      `${l.crop?.name ?? '—'}${l.crop?.variety ? ` - ${l.crop.variety}` : ''}`,
+      l.plot?.name ?? '—',
+      l.plantingDate ? new Date(l.plantingDate).toLocaleDateString('en-GB') : '—',
+      `${l.quantityPlanted ?? '—'} ${l.quantityUnit ?? ''}`.trim(),
+      l.expectedHarvestDate ? new Date(l.expectedHarvestDate).toLocaleDateString('en-GB') : '—',
+      l.status ?? '—',
+      sourceLabelPDF(l.plantingSource),
+    ])
 
   // @ts-ignore
   doc.autoTable({
@@ -746,14 +871,16 @@ export async function exportCropPerformancePDF(data: any[], startDate: string, e
 
   const rows =
     data.length > 0
-      ? data.map((r: any) => [
-          r.cropName,
-          r.totalPlantedDisplay ?? r.totalPlanted.toFixed(2),
-          r.plantsProduced.toString(),
-          r.totalProducedDisplay ?? r.totalProduced.toFixed(2),
-          r.totalSalesDisplay ?? r.totalSales.toFixed(2),
-          r.differenceDisplay ?? r.difference.toFixed(2),
-        ])
+      ? [...data]
+          .sort((a: any, b: any) => a.cropName.localeCompare(b.cropName))
+          .map((r: any) => [
+            r.cropName,
+            r.totalPlantedDisplay ?? r.totalPlanted.toFixed(2),
+            r.plantsProduced.toString(),
+            r.totalProducedDisplay ?? r.totalProduced.toFixed(2),
+            r.totalSalesDisplay ?? r.totalSales.toFixed(2),
+            r.differenceDisplay ?? r.difference.toFixed(2),
+          ])
       : [['No data', '', '', '', '', '']]
 
   // @ts-ignore

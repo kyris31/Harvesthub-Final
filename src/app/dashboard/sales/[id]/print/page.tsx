@@ -66,7 +66,7 @@ export default async function PrintSalePage({ params }: Props) {
           >
             ← Back to Sales
           </a>
-          <PrintButton />
+          <PrintButton sale={sale} />
         </div>
       </div>
 
@@ -82,8 +82,8 @@ export default async function PrintSalePage({ params }: Props) {
             <p className="mt-0.5 text-sm text-gray-600">
               Customer: <span className="font-semibold">{customerName}</span>
             </p>
-            <p className="mt-0.5 text-xs text-gray-400">
-              Printed: {format(new Date(), 'dd/MM/yyyy HH:mm')}
+            <p className="mt-0.5 text-xs font-semibold tracking-wide text-gray-600">
+              CY - BIO - 001
             </p>
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}

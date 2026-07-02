@@ -1,17 +1,9 @@
 import { getSales } from '@/app/actions/sales'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Plus, Edit, DollarSign, Printer } from 'lucide-react'
+import { Plus, DollarSign } from 'lucide-react'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
+import { SalesList } from '@/components/business/sales-list'
 
 export default async function SalesPage() {
   const salesData = await getSales()
@@ -71,50 +63,7 @@ export default async function SalesPage() {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {salesData.map((sale) => (
-                  <TableRow key={sale.id}>
-                    <TableCell>{new Date(sale.saleDate).toLocaleDateString('en-GB')}</TableCell>
-                    <TableCell>{sale.customer?.name || 'Walk-in'}</TableCell>
-                    <TableCell className="font-medium">
-                      €{parseFloat(sale.totalAmount).toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={sale.paymentStatus === 'paid' ? 'default' : 'secondary'}
-                        className="capitalize"
-                      >
-                        {sale.paymentStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/dashboard/sales/${sale.id}/print`} target="_blank">
-                            <Printer className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/dashboard/sales/${sale.id}/edit`}>
-                            <Edit className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <SalesList salesData={salesData} />
           )}
         </CardContent>
       </Card>
