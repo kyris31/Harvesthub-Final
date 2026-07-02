@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Edit, Printer, Search, X, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { exportSaleInvoicePDF } from '@/lib/pdf-export'
 
 type Sale = {
@@ -153,9 +154,14 @@ export function SalesList({ salesData }: { salesData: Sale[] }) {
                       size="sm"
                       title="Issue invoice (PDF)"
                       onClick={() =>
-                        exportSaleInvoicePDF(sale).catch((err) =>
-                          console.error('Invoice PDF export failed:', err)
-                        )
+                        exportSaleInvoicePDF(sale)
+                          .then(() =>
+                            toast.success('Invoice PDF saved (Reports/Sales Invoice or Downloads)')
+                          )
+                          .catch((err) => {
+                            console.error('Invoice PDF export failed:', err)
+                            toast.error(`Could not create invoice: ${err?.message ?? err}`)
+                          })
                       }
                     >
                       <FileText className="h-4 w-4" />
