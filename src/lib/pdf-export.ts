@@ -427,6 +427,125 @@ export async function exportSaleReceiptPDF(sale: any) {
   await savePDF(doc, fileName, dirHandle)
 }
 
+export async function exportSaleInvoicePDF(sale: any) {
+  // Resolve the target folder first, while the button click's activation is live.
+  const dirHandle = await resolveReportDir('Sales Invoice')
+
+  // @ts-ignore - jsPDF loaded from CDN
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+  await setupNotoSans(doc)
+  const logo = await loadLogoDataUrl()
+
+  const total = parseFloat(sale.totalAmount)
+  const paid = parseFloat(sale.amountPaid ?? '0')
+  const balance = total - paid
+  const customerName = sale.customer?.name ?? 'Walk-in Customer'
+  const saleDate = new Date(sale.saleDate).toLocaleDateString('en-GB')
+  const issueDate = new Date().toLocaleDateString('en-GB')
+
+  // Fully paid → cash invoice; otherwise it is still owed → unpaid.
+  const isPaid = (sale.paymentStatus ?? '') === 'paid' || balance <= 0
+  const invoiceType = isPaid ? 'CASH INVOICE' : 'UNPAID INVOICE'
+
+  const startY = addCompanyHeader(doc, logo, 'Invoice')
+
+  const statusLabels: Record<string, string> = {
+    paid: 'Paid',
+    pending: 'Pending',
+    partial: 'Partial',
+    overdue: 'Overdue',
+  }
+  const methodLabels: Record<string, string> = {
+    cash: 'Cash',
+    bank_transfer: 'Bank Transfer',
+    check: 'Check',
+    card: 'Card',
+    other: 'Other',
+  }
+
+  // Invoice type badge (Cash / Unpaid) at the top-right of the details block.
+  doc.setFontSize(12)
+  doc.setFont('NotoSans', 'bold')
+  doc.setTextColor(isPaid ? 34 : 200, isPaid ? 139 : 30, isPaid ? 34 : 30)
+  doc.text(invoiceType, 196, startY, { align: 'right' })
+  doc.setTextColor(0, 0, 0)
+
+  // Code + core details.
+  doc.setFontSize(10)
+  doc.setFont('NotoSans', 'bold')
+  doc.text(RECEIPT_CODE, 14, startY)
+  doc.setFont('NotoSans', 'normal')
+  doc.text(`Date Issued: ${issueDate}`, 14, startY + 6)
+  doc.text(`Sale Date: ${saleDate}`, 14, startY + 12)
+  doc.text(`Customer: ${customerName}`, 14, startY + 18)
+
+  // Items table
+  const items = sale.saleItems ?? []
+  const itemRows =
+    items.length > 0
+      ? items.map((item: any) => [
+          item.productName,
+          parseFloat(item.quantity).toFixed(2),
+          item.unit,
+          `€${parseFloat(item.unitPrice).toFixed(2)}`,
+          `€${parseFloat(item.subtotal).toFixed(2)}`,
+        ])
+      : [['No item details recorded.', '', '', '', '']]
+
+  // @ts-ignore
+  doc.autoTable({
+    startY: startY + 26,
+    head: [['Product', 'Qty', 'Unit', 'Price/Unit', 'Subtotal']],
+    body: itemRows,
+    styles: { font: 'NotoSans', fontSize: 9 },
+    headStyles: { fillColor: [34, 139, 34] },
+    columnStyles: {
+      1: { halign: 'right' },
+      3: { halign: 'right' },
+      4: { halign: 'right' },
+    },
+  })
+
+  // Payment summary
+  const summaryRows: string[][] = [
+    ['Total', `€${total.toFixed(2)}`],
+    ['Amount Paid', `€${paid.toFixed(2)}`],
+  ]
+  if (balance > 0) summaryRows.push(['Balance Due', `€${balance.toFixed(2)}`])
+  summaryRows.push(['Status', statusLabels[sale.paymentStatus ?? ''] ?? sale.paymentStatus ?? '—'])
+  if (sale.paymentMethod)
+    summaryRows.push(['Payment Method', methodLabels[sale.paymentMethod] ?? sale.paymentMethod])
+
+  // @ts-ignore
+  doc.autoTable({
+    // @ts-ignore
+    startY: doc.lastAutoTable.finalY + 10,
+    body: summaryRows,
+    theme: 'plain',
+    styles: { font: 'NotoSans', fontSize: 10 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 40 },
+      1: { halign: 'right' },
+    },
+    margin: { left: 116 },
+  })
+
+  if (sale.notes) {
+    doc.setFontSize(9)
+    doc.setFont('NotoSans', 'bold')
+    // @ts-ignore
+    doc.text('Notes', 14, doc.lastAutoTable.finalY + 10)
+    doc.setFont('NotoSans', 'normal')
+    // @ts-ignore
+    doc.text(doc.splitTextToSize(sale.notes, 180), 14, doc.lastAutoTable.finalY + 16)
+  }
+
+  const typeSlug = isPaid ? 'Cash' : 'Unpaid'
+  const fileName = `Invoice_${typeSlug}_${RECEIPT_CODE.replace(/\s/g, '')}_${customerName.replace(/[^\w]/g, '_')}_${saleDate.replace(/\//g, '-')}.pdf`
+  await savePDF(doc, fileName, dirHandle)
+}
+
 export async function exportHarvestReportPDF(data: any, startDate: string, endDate: string) {
   // Resolve the target folder first, while the button click's activation is live.
   const dirHandle = await resolveReportDir('Harvest')

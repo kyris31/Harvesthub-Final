@@ -13,8 +13,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Edit, Printer, Search, X } from 'lucide-react'
+import { Edit, Printer, Search, X, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { exportSaleInvoicePDF } from '@/lib/pdf-export'
 
 type Sale = {
   id: string
@@ -147,7 +148,19 @@ export function SalesList({ salesData }: { salesData: Sale[] }) {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="sm" asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Issue invoice (PDF)"
+                      onClick={() =>
+                        exportSaleInvoicePDF(sale).catch((err) =>
+                          console.error('Invoice PDF export failed:', err)
+                        )
+                      }
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild title="Print receipt">
                       <Link href={`/dashboard/sales/${sale.id}/print`} target="_blank">
                         <Printer className="h-4 w-4" />
                       </Link>
