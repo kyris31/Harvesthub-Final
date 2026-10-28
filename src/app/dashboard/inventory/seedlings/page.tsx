@@ -1,7 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2, ArrowUpDown, Trash2 } from 'lucide-react'
+import { Loader2, ArrowUpDown, Trash2, ChevronDown } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Table,
   TableBody,
@@ -65,6 +71,57 @@ interface ProductionLog {
   notes: string | null
 }
 
+type Availability = 'available' | 'unavailable'
+
+const AVAILABILITY_OPTIONS: { value: Availability; label: string }[] = [
+  { value: 'available', label: 'Available' },
+  { value: 'unavailable', label: 'Not available' },
+]
+
+// Nothing ticked is treated the same as everything ticked
+const matchesAvailability = (selected: Availability[], isAvailable: boolean) =>
+  selected.length === 0 || selected.includes(isAvailable ? 'available' : 'unavailable')
+
+function AvailabilityFilter({
+  value,
+  onChange,
+}: {
+  value: Availability[]
+  onChange: (value: Availability[]) => void
+}) {
+  const label =
+    value.length === 0 || value.length === AVAILABILITY_OPTIONS.length
+      ? 'All'
+      : AVAILABILITY_OPTIONS.find((o) => o.value === value[0])!.label
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-[170px] justify-between">
+          <span className="truncate">{label}</span>
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-[170px]">
+        {AVAILABILITY_OPTIONS.map((o) => (
+          <DropdownMenuCheckboxItem
+            key={o.value}
+            checked={value.includes(o.value)}
+            onCheckedChange={() =>
+              onChange(
+                value.includes(o.value) ? value.filter((v) => v !== o.value) : [...value, o.value]
+              )
+            }
+            onSelect={(e) => e.preventDefault()}
+          >
+            {o.label}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 export default function SeedlingsPage() {
   const [purchased, setPurchased] = useState<PurchasedSeedling[]>([])
   const [production, setProduction] = useState<ProductionLog[]>([])
@@ -76,11 +133,13 @@ export default function SeedlingsPage() {
   const [searchP, setSearchP] = useState('')
   const [sortByP, setSortByP] = useState('cropName')
   const [sortOrderP, setSortOrderP] = useState<'asc' | 'desc'>('asc')
+  const [availabilityP, setAvailabilityP] = useState<Availability[]>(['available'])
 
   // Filter/sort state — self-produced
   const [searchS, setSearchS] = useState('')
   const [sortByS, setSortByS] = useState('cropName')
   const [sortOrderS, setSortOrderS] = useState<'asc' | 'desc'>('asc')
+  const [availabilityS, setAvailabilityS] = useState<Availability[]>(['available'])
 
   const fetchPurchased = async () => {
     try {
@@ -155,8 +214,19 @@ export default function SeedlingsPage() {
       })
   }
 
+  // Sowings still waiting for their seedling count (produced = 0) are not used up, so they count as available
+  const visiblePurchased = purchased.filter((s) =>
+    matchesAvailability(availabilityP, parseFloat(s.currentQuantity) > 0)
+  )
+  const visibleProduction = production.filter((p) =>
+    matchesAvailability(
+      availabilityS,
+      p.actualSeedlingsProduced === 0 || p.currentSeedlingsAvailable > 0
+    )
+  )
+
   const filteredPurchased = sortAndFilter(
-    purchased,
+    visiblePurchased,
     searchP,
     sortByP,
     sortOrderP,
@@ -166,7 +236,7 @@ export default function SeedlingsPage() {
   )
 
   const filteredProduction = sortAndFilter(
-    production,
+    visibleProduction,
     searchS,
     sortByS,
     sortOrderS,
@@ -225,7 +295,7 @@ export default function SeedlingsPage() {
         <TabsContent value="purchased" className="space-y-4 pt-4">
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
-              {purchased.length} purchase{purchased.length !== 1 ? 's' : ''}
+              {visiblePurchased.length} purchase{visiblePurchased.length !== 1 ? 's' : ''}
             </p>
             <SeedlingPurchaseFormDialog onSuccess={fetchPurchased} />
           </div>
@@ -238,6 +308,7 @@ export default function SeedlingsPage() {
               className="max-w-sm"
             />
             <div className="flex flex-wrap items-center gap-3">
+              <AvailabilityFilter value={availabilityP} onChange={setAvailabilityP} />
               <Select value={sortByP} onValueChange={setSortByP}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue />
@@ -307,7 +378,7 @@ export default function SeedlingsPage() {
                         colSpan={7}
                         className="text-muted-foreground py-10 text-center text-sm"
                       >
-                        No seedlings match your search.
+                        No seedlings match your filters.
                       </TableCell>
                     </TableRow>
                   ) : null}
@@ -357,7 +428,7 @@ export default function SeedlingsPage() {
         <TabsContent value="self-produced" className="space-y-4 pt-4">
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
-              {production.length} sowing record{production.length !== 1 ? 's' : ''}
+              {visibleProduction.length} sowing record{visibleProduction.length !== 1 ? 's' : ''}
             </p>
             <SeedlingProductionFormDialog onSuccess={fetchProduction} />
           </div>
@@ -370,6 +441,7 @@ export default function SeedlingsPage() {
               className="max-w-sm"
             />
             <div className="flex flex-wrap items-center gap-3">
+              <AvailabilityFilter value={availabilityS} onChange={setAvailabilityS} />
               <Select value={sortByS} onValueChange={setSortByS}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue />
@@ -443,7 +515,7 @@ export default function SeedlingsPage() {
                         colSpan={9}
                         className="text-muted-foreground py-10 text-center text-sm"
                       >
-                        No records match your search.
+                        No records match your filters.
                       </TableCell>
                     </TableRow>
                   ) : null}
