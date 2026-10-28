@@ -2,18 +2,17 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Edit, Search } from 'lucide-react'
+import { ChevronDown, Edit, Search } from 'lucide-react'
 import type { getPlantingLogs } from '@/app/actions/planting'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Table,
   TableBody,
@@ -26,18 +25,31 @@ import { DeletePlantingButton } from '@/components/planting/delete-planting-butt
 
 type Planting = Awaited<ReturnType<typeof getPlantingLogs>>[number]
 
-const STATUS_OPTIONS = ['all', 'active', 'harvested', 'failed', 'completed'] as const
+const STATUS_OPTIONS = ['active', 'harvested', 'failed', 'completed'] as const
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 export function PlantingLogsClient({ plantings }: { plantings: Planting[] }) {
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  // Empty array means "all statuses"
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
+
+  const toggleStatus = (s: string) =>
+    setStatusFilter((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]))
+
+  const statusLabel =
+    statusFilter.length === 0
+      ? 'All Statuses'
+      : statusFilter.length <= 2
+        ? statusFilter.map(capitalize).join(', ')
+        : `${statusFilter.length} statuses`
 
   const filtered = useMemo(() => {
     return plantings
       .filter((p) => {
         const label = `${p.crop.name}${p.crop.variety ? ` (${p.crop.variety})` : ''}`.toLowerCase()
         const matchesSearch = label.includes(search.toLowerCase().trim())
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter
+        const matchesStatus = statusFilter.length === 0 || statusFilter.includes(p.status ?? '')
         return matchesSearch && matchesStatus
       })
       .sort((a, b) => {
@@ -60,18 +72,33 @@ export function PlantingLogsClient({ plantings }: { plantings: Planting[] }) {
             className="pl-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full justify-between sm:w-[220px]">
+              <span className="truncate">{statusLabel}</span>
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[220px]">
+            <DropdownMenuCheckboxItem
+              checked={statusFilter.length === 0}
+              onCheckedChange={() => setStatusFilter([])}
+              onSelect={(e) => e.preventDefault()}
+            >
+              All Statuses
+            </DropdownMenuCheckboxItem>
             {STATUS_OPTIONS.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s === 'all' ? 'All Statuses' : s.charAt(0).toUpperCase() + s.slice(1)}
-              </SelectItem>
+              <DropdownMenuCheckboxItem
+                key={s}
+                checked={statusFilter.includes(s)}
+                onCheckedChange={() => toggleStatus(s)}
+                onSelect={(e) => e.preventDefault()}
+              >
+                {capitalize(s)}
+              </DropdownMenuCheckboxItem>
             ))}
-          </SelectContent>
-        </Select>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Result count */}
@@ -82,14 +109,14 @@ export function PlantingLogsClient({ plantings }: { plantings: Planting[] }) {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-muted-foreground">No plantings match your filters.</p>
-          {(search || statusFilter !== 'all') && (
+          {(search || statusFilter.length > 0) && (
             <Button
               variant="ghost"
               size="sm"
               className="mt-2"
               onClick={() => {
                 setSearch('')
-                setStatusFilter('all')
+                setStatusFilter([])
               }}
             >
               Clear filters

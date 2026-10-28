@@ -25,7 +25,9 @@ export const plantingLogSchema = z
   })
   .superRefine((data, ctx) => {
     // The seedling batch link is required so reports can attribute harvests/sales
-    // back to the source (see Crop Lifecycle Report).
+    // back to the source (see Crop Lifecycle Report). Finished plantings (completed,
+    // harvested, failed) may be closed without it, e.g. when the batch is long gone.
+    if (data.status !== 'active') return
     if (data.plantingSource === 'self_produced' && !data.selfProducedSeedlingId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

@@ -134,6 +134,8 @@ export default function SeedBatchesPage() {
 
   const filtered = batches
     .filter((b) => {
+      // Depleted batches stay in the database but are hidden from the list
+      if (!(parseFloat(b.currentQuantity) > 0)) return false
       if (!search) return true
       const q = search.toLowerCase()
       return (
@@ -156,11 +158,46 @@ export default function SeedBatchesPage() {
       return sortOrder === 'desc' ? -cmp : cmp
     })
 
+  // Group batches of the same crop/variety/unit, keeping the sorted order
+  const groupMap = new Map<
+    string,
+    {
+      key: string
+      cropName: string
+      cropVariety: string | null
+      unit: string
+      initial: number
+      current: number
+      batches: SeedBatch[]
+    }
+  >()
+  for (const b of filtered) {
+    const key = `${b.cropName}|${b.cropVariety ?? ''}|${b.quantityUnit}`
+    let g = groupMap.get(key)
+    if (!g) {
+      g = {
+        key,
+        cropName: b.cropName,
+        cropVariety: b.cropVariety,
+        unit: b.quantityUnit,
+        initial: 0,
+        current: 0,
+        batches: [],
+      }
+      groupMap.set(key, g)
+    }
+    g.initial += parseFloat(b.initialQuantity) || 0
+    g.current += parseFloat(b.currentQuantity) || 0
+    g.batches.push(b)
+  }
+  const groups = Array.from(groupMap.values())
+  const formatQty = (n: number) => n.toFixed(2)
+
   const isDefault = sortBy === 'cropName' && sortOrder === 'asc'
   const sortOrderLabel = sortOrder === 'asc' ? 'A → Z' : 'Z → A'
 
-  const totalBatches = batches.length
-  const depletedBatches = batches.filter((b) => parseFloat(b.currentQuantity) === 0).length
+  const depletedBatches = batches.filter((b) => !(parseFloat(b.currentQuantity) > 0)).length
+  const totalBatches = batches.length - depletedBatches
   const lowStockBatches = batches.filter((b) => {
     const current = parseFloat(b.currentQuantity)
     const initial = parseFloat(b.initialQuantity)
@@ -179,7 +216,7 @@ export default function SeedBatchesPage() {
               <span className="font-medium">
                 ({totalBatches} batches
                 {lowStockBatches > 0 && `, ${lowStockBatches} low stock`}
-                {depletedBatches > 0 && `, ${depletedBatches} depleted`})
+                {depletedBatches > 0 && `, ${depletedBatches} depleted hidden`})
               </span>
             )}
           </p>
@@ -287,47 +324,84 @@ export default function SeedBatchesPage() {
                   </TableCell>
                 </TableRow>
               ) : null}
-              {filtered.map((batch) => {
-                const stockStatus = getStockStatus(batch.currentQuantity, batch.initialQuantity)
-                return (
-                  <TableRow key={batch.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-mono text-sm font-medium">
-                      {batch.batchCode}
-                    </TableCell>
-                    <TableCell>
-                      {batch.cropName}
-                      {batch.cropVariety && (
-                        <span className="text-muted-foreground ml-1">- {batch.cropVariety}</span>
+              {groups.map((group) => {
+                const groupStatus = getStockStatus(String(group.current), String(group.initial))
+                return [
+                  <TableRow key={`group-${group.key}`} className="bg-muted/40 hover:bg-muted/40">
+                    <TableCell colSpan={3} className="font-semibold">
+                      {group.cropName}
+                      {group.cropVariety && (
+                        <span className="text-muted-foreground ml-1 font-normal">
+                          - {group.cropVariety}
+                        </span>
                       )}
+                      <span className="text-muted-foreground ml-2 text-xs font-normal">
+                        ({group.batches.length} batch{group.batches.length !== 1 ? 'es' : ''}) ·
+                        Total
+                      </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {batch.supplierName || '-'}
+                    <TableCell className="text-muted-foreground text-right font-semibold">
+                      {formatQty(group.initial)}
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-right">
-                      {batch.initialQuantity}
+                    <TableCell className="text-right font-bold">
+                      {formatQty(group.current)}
                     </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {batch.currentQuantity}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{batch.quantityUnit}</TableCell>
+                    <TableCell className="text-muted-foreground">{group.unit}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={stockStatus.color}>
-                        <span className="mr-1">{stockStatus.icon}</span>
-                        {stockStatus.label}
+                      <Badge variant="secondary" className={groupStatus.color}>
+                        <span className="mr-1">{groupStatus.icon}</span>
+                        {groupStatus.label}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {batch.organicCertified && batch.organicCertified !== 'conventional' && (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          🌱 Organic
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <SeedBatchRowActions batch={batch} onSuccess={fetchBatches} />
-                    </TableCell>
-                  </TableRow>
-                )
+                    <TableCell colSpan={2} />
+                  </TableRow>,
+                  ...group.batches.map((batch) => {
+                    const stockStatus = getStockStatus(batch.currentQuantity, batch.initialQuantity)
+                    return (
+                      <TableRow key={batch.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell className="font-mono text-sm font-medium">
+                          {batch.batchCode}
+                        </TableCell>
+                        <TableCell>
+                          {batch.cropName}
+                          {batch.cropVariety && (
+                            <span className="text-muted-foreground ml-1">
+                              - {batch.cropVariety}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {batch.supplierName || '-'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-right">
+                          {batch.initialQuantity}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {batch.currentQuantity}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {batch.quantityUnit}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={stockStatus.color}>
+                            <span className="mr-1">{stockStatus.icon}</span>
+                            {stockStatus.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {batch.organicCertified && batch.organicCertified !== 'conventional' && (
+                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                              🌱 Organic
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <SeedBatchRowActions batch={batch} onSuccess={fetchBatches} />
+                        </TableCell>
+                      </TableRow>
+                    )
+                  }),
+                ]
               })}
             </TableBody>
           </Table>
