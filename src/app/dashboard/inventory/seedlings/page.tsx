@@ -225,6 +225,11 @@ export default function SeedlingsPage() {
     )
   )
 
+  const availablePurchasedCount = purchased.filter((s) => parseFloat(s.currentQuantity) > 0).length
+  const availableProductionCount = production.filter(
+    (p) => p.actualSeedlingsProduced === 0 || p.currentSeedlingsAvailable > 0
+  ).length
+
   const filteredPurchased = sortAndFilter(
     visiblePurchased,
     searchP,
@@ -275,17 +280,17 @@ export default function SeedlingsPage() {
         <TabsList>
           <TabsTrigger value="purchased">
             Purchased
-            {purchased.length > 0 && (
+            {availablePurchasedCount > 0 && (
               <span className="bg-muted ml-1.5 rounded-full px-1.5 py-0.5 text-xs">
-                {purchased.length}
+                {availablePurchasedCount}
               </span>
             )}
           </TabsTrigger>
           <TabsTrigger value="self-produced">
             Self-Produced
-            {production.length > 0 && (
+            {availableProductionCount > 0 && (
               <span className="bg-muted ml-1.5 rounded-full px-1.5 py-0.5 text-xs">
-                {production.length}
+                {availableProductionCount}
               </span>
             )}
           </TabsTrigger>
