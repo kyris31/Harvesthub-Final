@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ChevronDown, Edit, Search } from 'lucide-react'
 import type { getPlantingLogs } from '@/app/actions/planting'
@@ -27,12 +27,34 @@ type Planting = Awaited<ReturnType<typeof getPlantingLogs>>[number]
 
 const STATUS_OPTIONS = ['active', 'harvested', 'failed', 'completed'] as const
 
+const FILTER_KEY = 'planting-logs-filters'
+
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 export function PlantingLogsClient({ plantings }: { plantings: Planting[] }) {
   const [search, setSearch] = useState('')
   // Empty array means "all statuses"
   const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [restored, setRestored] = useState(false)
+
+  // Restore the filters after navigating away (e.g. adding a planting) and back
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? 'null')
+      if (saved) {
+        if (Array.isArray(saved.statusFilter)) setStatusFilter(saved.statusFilter)
+        if (typeof saved.search === 'string') setSearch(saved.search)
+      }
+    } catch {}
+    setRestored(true)
+  }, [])
+
+  useEffect(() => {
+    if (!restored) return
+    try {
+      sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search, statusFilter }))
+    } catch {}
+  }, [restored, search, statusFilter])
 
   const toggleStatus = (s: string) =>
     setStatusFilter((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]))
