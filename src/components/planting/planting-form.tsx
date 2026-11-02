@@ -86,6 +86,7 @@ export function PlantingForm({
       quantityUnit: 'plants',
       expectedHarvestDate: '',
       status: 'active',
+      statusChangedDate: '',
       notes: '',
     },
   })
@@ -446,7 +447,18 @@ export function PlantingForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select
+                onValueChange={(value) => {
+                  field.onChange(value)
+                  // Leaving 'active' stamps the change date (editable below); returning clears it.
+                  if (value === 'active') {
+                    form.setValue('statusChangedDate', '')
+                  } else if (!form.getValues('statusChangedDate')) {
+                    form.setValue('statusChangedDate', new Date().toISOString().slice(0, 10))
+                  }
+                }}
+                defaultValue={field.value}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue />
@@ -463,6 +475,26 @@ export function PlantingForm({
             </FormItem>
           )}
         />
+
+        {form.watch('status') !== 'active' && (
+          <FormField
+            control={form.control}
+            name="statusChangedDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status Change Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormDescription>
+                  The date this planting became {form.watch('status')}. It stops appearing in new
+                  cultivation activities after this date.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}

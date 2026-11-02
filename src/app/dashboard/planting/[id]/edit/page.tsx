@@ -40,6 +40,7 @@ export default async function EditPlantingPage({ params }: EditPlantingPageProps
           quantityUnit: planting.quantityUnit,
           expectedHarvestDate: planting.expectedHarvestDate || '',
           status: planting.status as 'active' | 'harvested' | 'failed' | 'completed',
+          statusChangedDate: planting.statusChangedDate || '',
           notes: planting.notes || '',
         }}
       />

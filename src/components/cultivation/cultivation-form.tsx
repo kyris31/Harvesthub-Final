@@ -37,6 +37,18 @@ interface PlantingLog {
   id: string
   crop: { name: string; variety: string | null }
   plot: { name: string } | null
+  plantingDate: string
+  status: string | null
+  statusChangedDate: string | null
+  updatedAt: Date | string
+}
+
+// Day a completed/failed planting stopped being active: the date its status was changed.
+// Harvested plantings can keep being worked after a harvest, so they have no end date, and
+// neither do active ones.
+function plantingEndDate(log: PlantingLog): string | null {
+  if (log.status !== 'completed' && log.status !== 'failed') return null
+  return log.statusChangedDate ?? new Date(log.updatedAt).toISOString().slice(0, 10)
 }
 
 interface TreeItem {
@@ -123,6 +135,34 @@ export function CultivationForm({
         return inv.purchaseDate <= activityDate
       })
       .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+
+  // Only offer plantings that were active on the activity date: already planted, and not yet
+  // completed/failed on that date (harvested ones stay, see plantingEndDate). Plantings already linked to this activity stay
+  // visible so an existing selection never silently disappears.
+  const selectedPlantingIds = useWatch({ control: form.control, name: 'plantingLogIds' })
+  const availablePlantings = plantingLogs.filter((log) => {
+    if (selectedPlantingIds?.includes(log.id)) return true
+    if (!activityDate) return true
+    if (log.plantingDate > activityDate) return false
+    const end = plantingEndDate(log)
+    return !end || end >= activityDate
+  })
+  // Alphabetical by the label shown: crop, variety, then plot (numbers compare naturally,
+  // so "Θερμοκήπιο 2" comes before "Θερμοκήπιο 10").
+  const byLabel = (a: string, b: string) =>
+    a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true })
+  availablePlantings.sort(
+    (a, b) =>
+      byLabel(a.crop.name, b.crop.name) ||
+      byLabel(a.crop.variety ?? '', b.crop.variety ?? '') ||
+      byLabel(a.plot?.name ?? '', b.plot?.name ?? '')
+  )
+  const sortedTrees = [...trees].sort(
+    (a, b) =>
+      byLabel(a.identifier, b.identifier) ||
+      byLabel(a.species, b.species) ||
+      byLabel(a.variety ?? '', b.variety ?? '')
+  )
 
   // Auto-calculate cost for each input row when qty or selected input changes
   useEffect(() => {
@@ -227,12 +267,17 @@ export function CultivationForm({
           render={() => (
             <FormItem>
               <FormLabel>Related Plantings (Optional)</FormLabel>
-              <FormDescription>Select all plantings this activity applies to</FormDescription>
-              {plantingLogs.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No active plantings found.</p>
+              <FormDescription>
+                Select all plantings this activity applies to. Only plantings active on the activity
+                date are shown.
+              </FormDescription>
+              {availablePlantings.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  No plantings were active on this date.
+                </p>
               ) : (
                 <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3">
-                  {plantingLogs.map((log) => (
+                  {availablePlantings.map((log) => (
                     <FormField
                       key={log.id}
                       control={form.control}
@@ -280,7 +325,7 @@ export function CultivationForm({
                 <p className="text-muted-foreground text-sm">No trees registered yet.</p>
               ) : (
                 <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3">
-                  {trees.map((tree) => (
+                  {sortedTrees.map((tree) => (
                     <FormField
                       key={tree.id}
                       control={form.control}

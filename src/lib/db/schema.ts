@@ -328,6 +328,7 @@ export const plantingLogs = pgTable(
     expectedHarvestDate: date('expected_harvest_date'),
     actualHarvestDate: date('actual_harvest_date'),
     status: text('status').default('active'), // active, harvested, failed, completed
+    statusChangedDate: date('status_changed_date'), // when status last moved away from 'active'
     notes: text('notes'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

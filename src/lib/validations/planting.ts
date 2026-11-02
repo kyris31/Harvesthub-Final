@@ -17,6 +17,11 @@ export const plantingLogSchema = z
       .optional()
       .or(z.literal('')),
     status: z.enum(['active', 'harvested', 'failed', 'completed']).default('active'),
+    statusChangedDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format')
+      .optional()
+      .or(z.literal('')),
     notes: z
       .string()
       .max(1000, 'Notes must be less than 1000 characters')

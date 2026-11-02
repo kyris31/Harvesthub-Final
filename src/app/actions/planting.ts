@@ -225,6 +225,20 @@ async function restoreInventoryStock(existing: {
   }
 }
 
+// The date a planting left 'active'. Active plantings have none; otherwise use the date the user
+// entered, keep the stored one if the status didn't change, and fall back to today.
+function resolveStatusChangedDate(
+  validated: PlantingLogFormData,
+  existing?: { status: string | null; statusChangedDate: string | null }
+): string | null {
+  if (validated.status === 'active') return null
+  if (validated.statusChangedDate) return validated.statusChangedDate
+  if (existing && existing.status === validated.status && existing.statusChangedDate) {
+    return existing.statusChangedDate
+  }
+  return new Date().toISOString().slice(0, 10)
+}
+
 function revalidateInventoryPaths() {
   revalidatePath('/dashboard/inventory/seed-batches')
   revalidatePath('/dashboard/inventory/seedlings')
@@ -256,6 +270,7 @@ export async function createPlantingLog(data: PlantingLogFormData) {
       selfProducedSeedlingId: validated.selfProducedSeedlingId || null,
       purchasedSeedlingId: validated.purchasedSeedlingId || null,
       expectedHarvestDate: validated.expectedHarvestDate || null,
+      statusChangedDate: resolveStatusChangedDate(validated),
       userId: session.user.id,
     })
     .returning()
@@ -322,6 +337,7 @@ export async function createPlantingLogs(items: PlantingLogFormData[]) {
         selfProducedSeedlingId: validated.selfProducedSeedlingId || null,
         purchasedSeedlingId: validated.purchasedSeedlingId || null,
         expectedHarvestDate: validated.expectedHarvestDate || null,
+        statusChangedDate: resolveStatusChangedDate(validated),
         userId: session.user.id,
       })
       .returning()
@@ -371,6 +387,7 @@ export async function updatePlantingLog(id: string, data: PlantingLogFormData) {
       selfProducedSeedlingId: validated.selfProducedSeedlingId || null,
       purchasedSeedlingId: validated.purchasedSeedlingId || null,
       expectedHarvestDate: validated.expectedHarvestDate || null,
+      statusChangedDate: resolveStatusChangedDate(validated, existing),
       updatedAt: new Date(),
     })
     .where(eq(plantingLogs.id, id))

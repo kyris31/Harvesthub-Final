@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
       .set({
         status: 'harvested',
         actualHarvestDate: validatedData.harvestDate,
+        statusChangedDate: validatedData.harvestDate,
         updatedAt: new Date(),
       })
       .where(eq(plantingLogs.id, validatedData.plantingLogId))
