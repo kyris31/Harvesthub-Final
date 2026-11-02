@@ -1,4 +1,4 @@
-import { PlantingForm } from '@/components/planting/planting-form'
+import { MultiPlantingForm } from '@/components/planting/multi-planting-form'
 import {
   getCropsForSelect,
   getPlotsForSelect,
@@ -23,8 +23,7 @@ export default async function NewPlantingPage() {
         <p className="text-muted-foreground">Record a new crop planting</p>
       </div>
 
-      <PlantingForm
-        mode="create"
+      <MultiPlantingForm
         crops={crops}
         plots={plots}
         seedBatches={seedBatches}

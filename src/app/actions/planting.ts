@@ -265,6 +265,74 @@ export async function createPlantingLog(data: PlantingLogFormData) {
   return planting
 }
 
+// Create several plantings at once (different crops and/or different batches of the same crop).
+// Stock is checked per source across all entries first, so two entries drawing on the same batch
+// can't jointly overdraw it.
+export async function createPlantingLogs(items: PlantingLogFormData[]) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (!session) {
+    throw new Error('Unauthorized')
+  }
+
+  if (items.length === 0) {
+    throw new Error('Add at least one planting')
+  }
+
+  const validatedItems = items.map((item) => plantingLogSchema.parse(item))
+  for (const validated of validatedItems) {
+    await validateSourceDate(validated)
+  }
+
+  const requested = new Map<string, number>()
+  for (const v of validatedItems) {
+    const key =
+      v.plantingSource === 'direct_sow'
+        ? `seed:${v.seedBatchId}`
+        : v.plantingSource === 'self_produced'
+          ? `self:${v.selfProducedSeedlingId}`
+          : `purchased:${v.purchasedSeedlingId}`
+    requested.set(key, (requested.get(key) ?? 0) + parseFloat(v.quantityPlanted))
+  }
+  for (const v of validatedItems) {
+    if (v.plantingSource === 'direct_sow' && v.seedBatchId) {
+      const batch = await db.query.seedBatches.findFirst({
+        where: eq(seedBatches.id, v.seedBatchId),
+      })
+      const total = requested.get(`seed:${v.seedBatchId}`) ?? 0
+      if (batch && parseFloat(batch.currentQuantity) < total) {
+        throw new Error(
+          `Insufficient stock in seed batch ${batch.batchCode}. Available: ${batch.currentQuantity} ${batch.quantityUnit}, requested: ${total}`
+        )
+      }
+    }
+  }
+
+  const created = []
+  for (const validated of validatedItems) {
+    await deductInventoryStock(validated)
+    const [planting] = await db
+      .insert(plantingLogs)
+      .values({
+        ...validated,
+        plotId: validated.plotId || null,
+        seedBatchId: validated.seedBatchId || null,
+        selfProducedSeedlingId: validated.selfProducedSeedlingId || null,
+        purchasedSeedlingId: validated.purchasedSeedlingId || null,
+        expectedHarvestDate: validated.expectedHarvestDate || null,
+        userId: session.user.id,
+      })
+      .returning()
+    created.push(planting)
+  }
+
+  revalidatePath('/dashboard/planting')
+  revalidateInventoryPaths()
+  return created
+}
+
 export async function updatePlantingLog(id: string, data: PlantingLogFormData) {
   const session = await auth.api.getSession({
     headers: await headers(),
