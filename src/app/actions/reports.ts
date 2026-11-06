@@ -159,7 +159,7 @@ export async function getInventoryReport() {
   // Get seed batches
   const seeds = await db.query.seedBatches.findMany({
     where: and(eq(seedBatches.userId, session.user.id), isNull(seedBatches.deletedAt)),
-    with: { crop: true },
+    with: { crop: true, supplier: true },
   })
 
   // Get input inventory

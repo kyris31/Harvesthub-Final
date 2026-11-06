@@ -40,15 +40,24 @@ interface PlantingLog {
   plantingDate: string
   status: string | null
   statusChangedDate: string | null
+  actualHarvestDate?: string | null
+  expectedHarvestDate?: string | null
   updatedAt: Date | string
 }
 
 // Day a completed/failed planting stopped being active: the date its status was changed.
-// Harvested plantings can keep being worked after a harvest, so they have no end date, and
-// neither do active ones.
+// Older rows have no stored status-change date, so fall back to the harvest dates (an edit
+// timestamp is the last resort since it reflects when the record was touched, not when the
+// planting ended). Harvested plantings can keep being worked after a harvest, so they have no
+// end date, and neither do active ones.
 function plantingEndDate(log: PlantingLog): string | null {
   if (log.status !== 'completed' && log.status !== 'failed') return null
-  return log.statusChangedDate ?? new Date(log.updatedAt).toISOString().slice(0, 10)
+  return (
+    log.statusChangedDate ??
+    log.actualHarvestDate ??
+    log.expectedHarvestDate ??
+    new Date(log.updatedAt).toISOString().slice(0, 10)
+  )
 }
 
 interface TreeItem {

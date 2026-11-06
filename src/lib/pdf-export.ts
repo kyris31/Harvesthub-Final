@@ -648,24 +648,83 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
   })
 
   if (showSeeds && data.seeds.items.length > 0) {
-    const sourceLabel = (sourceType: string | null) => {
-      if (sourceType === 'self_produced') return 'Self-Produced'
-      if (sourceType === 'purchased') return 'Purchased'
-      return '—'
+    // Layout follows the farm's paper seed-stock sheet (in English): a title, then per
+    // crop/variety a Crop/Variety line, a column header, one row per batch and a Total row.
+    const fmtDate = (d: any) => {
+      const s = d ? String(d).slice(0, 10) : ''
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : ''
+    }
+    const num = (n: number) => String(+n.toFixed(2))
+    const cropName = (s: any) => s.crop?.name ?? s.batchCode
+    const cropVariety = (s: any) => s.crop?.variety ?? ''
+
+    const sortedSeeds = [...data.seeds.items].sort(
+      (a: any, b: any) =>
+        cropName(a).localeCompare(cropName(b)) || cropVariety(a).localeCompare(cropVariety(b))
+    )
+
+    type Kind = 'title' | 'info' | 'header' | 'row' | 'total'
+    const seedsData: any[] = []
+    const rowKinds: Kind[] = []
+    const push = (kind: Kind, row: any[]) => {
+      rowKinds.push(kind)
+      seedsData.push(row)
     }
 
-    const seedsData = [...data.seeds.items]
-      .sort((a: any, b: any) =>
-        (a.crop?.name ?? a.batchCode).localeCompare(b.crop?.name ?? b.batchCode)
-      )
-      .map((s: any) => [
-        s.crop?.name ?? s.batchCode,
-        s.crop?.variety ?? '—',
-        Number(s.initialQuantity).toFixed(2),
-        Number(s.currentQuantity).toFixed(2),
-        s.quantityUnit,
-        sourceLabel(s.sourceType),
+    push('title', [{ content: 'SEED STOCK', colSpan: 7, styles: { halign: 'center' } }])
+
+    let i = 0
+    while (i < sortedSeeds.length) {
+      const first = sortedSeeds[i]
+      const group: any[] = []
+      while (
+        i < sortedSeeds.length &&
+        cropName(sortedSeeds[i]) === cropName(first) &&
+        cropVariety(sortedSeeds[i]) === cropVariety(first)
+      ) {
+        group.push(sortedSeeds[i++])
+      }
+
+      push('info', [
+        {
+          content: `CROP: ${cropName(first)}        VARIETY: ${cropVariety(first)}`,
+          colSpan: 7,
+        },
       ])
+      push('header', ['No.', 'Date', 'Initial Stock', 'Supplier', 'Usage', 'Production', 'Balance'])
+
+      const perUnit: Record<string, { initial: number; used: number; balance: number }> = {}
+      group.forEach((s, idx) => {
+        const unit = s.quantityUnit ?? ''
+        const initial = Number(s.initialQuantity) || 0
+        const balance = Number(s.currentQuantity) || 0
+        const used = Math.max(initial - balance, 0)
+        const t = (perUnit[unit] ??= { initial: 0, used: 0, balance: 0 })
+        t.initial += initial
+        t.used += used
+        t.balance += balance
+        push('row', [
+          String(idx + 1),
+          fmtDate(s.purchaseDate ?? s.createdAt),
+          `${num(initial)} ${unit}`,
+          s.supplier?.name ?? '',
+          used ? num(used) : '',
+          '',
+          `${num(balance)} ${unit}`,
+        ])
+      })
+      for (const [unit, t] of Object.entries(perUnit)) {
+        push('total', [
+          { content: 'TOTAL', colSpan: 2 },
+          '',
+          '',
+          t.used ? num(t.used) : '',
+          '',
+          `${num(t.balance)} ${unit}`,
+        ])
+      }
+    }
 
     doc.addPage()
     const seedPageY = addCompanyHeader(doc, logo, 'Seed Batches Report')
@@ -673,10 +732,31 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
     // @ts-ignore
     doc.autoTable({
       startY: seedPageY,
-      head: [['Crop Name', 'Variety', 'Initial Qty', 'Current Qty', 'Unit', 'Source']],
       body: seedsData,
-      styles: { font: 'NotoSans', fontSize: 9 },
-      headStyles: { fillColor: [34, 139, 34] },
+      theme: 'grid',
+      styles: {
+        font: 'NotoSans',
+        fontSize: 8,
+        lineColor: [0, 0, 0],
+        lineWidth: 0.2,
+        textColor: [0, 0, 0],
+      },
+      columnStyles: {
+        2: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' },
+        6: { halign: 'right' },
+      },
+      didParseCell: (hook: any) => {
+        if (hook.section !== 'body') return
+        const kind = rowKinds[hook.row.index]
+        if (kind === 'title' || kind === 'total') hook.cell.styles.fontStyle = 'bold'
+        if (kind === 'header') {
+          hook.cell.styles.fontStyle = 'bold'
+          hook.cell.styles.halign = 'left'
+        }
+        if (kind === 'total') hook.cell.styles.fillColor = [232, 245, 232]
+      },
     })
   }
 
