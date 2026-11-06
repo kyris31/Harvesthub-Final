@@ -48,9 +48,13 @@ export default function CropPerformanceClient({
     }
   }
 
-  const handleExportCSV = () => {
+  // Exports re-query with the dates currently in the fields, so the file never shows a
+  // different range than the filter even if "Generate" was not clicked.
+  const handleExportCSV = async () => {
+    const rows = await getCropPerformanceReport(startDate, endDate)
+    setData(rows)
     exportToCSV(
-      data.map((r) => ({
+      rows.map((r) => ({
         'Crop Name': r.cropName,
         'Total Planted': r.totalPlantedDisplay,
         'Plants Prod.': r.plantsProduced,
@@ -63,7 +67,9 @@ export default function CropPerformanceClient({
   }
 
   const handleExportPDF = async () => {
-    await exportCropPerformancePDF(data, startDate, endDate)
+    const rows = await getCropPerformanceReport(startDate, endDate)
+    setData(rows)
+    await exportCropPerformancePDF(rows, startDate, endDate)
   }
 
   return (

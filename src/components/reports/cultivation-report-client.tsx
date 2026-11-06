@@ -68,8 +68,22 @@ export default function CultivationReportClient({
     }
   }
 
-  const handleExportCSV = () => {
-    const csvData = data.activities.map((a: any) => ({
+  // Exports always use the dates currently shown in the filter, even if "Apply Filters"
+  // was not clicked, so the file can never show a different range than the filter.
+  const dataForRange = async (startDate?: string, endDate?: string) => {
+    if (!startDate || !endDate) return { data, startDate: range.startDate, endDate: range.endDate }
+    if (startDate === range.startDate && endDate === range.endDate) {
+      return { data, startDate, endDate }
+    }
+    const fresh = await getCultivationReport(startDate, endDate)
+    setData(fresh)
+    setRange({ startDate, endDate })
+    return { data: fresh, startDate, endDate }
+  }
+
+  const handleExportCSV = async (_category?: string, startDate?: string, endDate?: string) => {
+    const { data: d } = await dataForRange(startDate, endDate)
+    const csvData = d.activities.map((a: any) => ({
       type: a.activityType.replace('_', ' '),
       date: new Date(a.activityDate).toLocaleDateString('en-GB'),
       quantity: a.quantityUsed ? `${a.quantityUsed} ${a.quantityUnit}` : 'N/A',
@@ -79,9 +93,10 @@ export default function CultivationReportClient({
     exportToCSV(csvData, 'cultivation-report')
   }
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (_category?: string, startDate?: string, endDate?: string) => {
     try {
-      await exportCultivationReportPDF(data, range.startDate, range.endDate)
+      const r = await dataForRange(startDate, endDate)
+      await exportCultivationReportPDF(r.data, r.startDate, r.endDate)
     } catch (err: any) {
       console.error('PDF export failed:', err)
     }

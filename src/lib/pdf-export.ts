@@ -762,12 +762,15 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
 
   if (showInputs && data.inputs.items.length > 0) {
     const inputsData = [...data.inputs.items]
+      .filter((i: any) => Number(i.currentQuantity || 0) > 0)
       .sort((a: any, b: any) => a.name.localeCompare(b.name))
       .map((i: any) => [
         i.name,
         i.type,
         `${Number(i.currentQuantity || 0).toFixed(2)} ${i.quantityUnit || ''}`,
-        `€${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
+        `€${Number(i.value ?? Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(
+          2
+        )}`,
       ])
 
     doc.addPage()
@@ -784,35 +787,67 @@ export async function exportInventoryReportPDF(data: any, category?: string) {
   }
 
   if (showSeedlings && data.seedlings.items.length > 0) {
-    const seedlingsData = [...data.seedlings.items]
-      .sort((a: any, b: any) => {
-        // Purchased first, then self-produced; alphabetical by crop within each group.
-        const rank = (x: any) => (x.source === 'self_produced' ? 1 : 0)
-        const groupDiff = rank(a) - rank(b)
-        if (groupDiff !== 0) return groupDiff
-        const an = a.crop?.name ?? a.name ?? 'Seedling'
-        const bn = b.crop?.name ?? b.name ?? 'Seedling'
-        return an.localeCompare(bn)
-      })
-      .map((s: any) => [
+    // Layout follows the farm's paper sowing sheet (in English): a centered SOWING title,
+    // a column header row, then one row per sowing / purchase, in alphabetical order.
+    const fmtDate = (d: any) => {
+      const s = d ? String(d).slice(0, 10) : ''
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : ''
+    }
+    const num = (n: number) => String(+n.toFixed(2))
+
+    // Alphabetical by crop, then variety, then date (Greek-aware collation).
+    const sortedSeedlings = [...data.seedlings.items].sort((a: any, b: any) => {
+      const an = a.crop?.name ?? a.name ?? 'Seedling'
+      const bn = b.crop?.name ?? b.name ?? 'Seedling'
+      return (
+        an.localeCompare(bn, 'el') ||
+        (a.crop?.variety ?? '').localeCompare(b.crop?.variety ?? '', 'el') ||
+        String(a.date ?? '').localeCompare(String(b.date ?? ''))
+      )
+    })
+
+    const seedlingsData: any[] = [
+      [{ content: 'SOWING', colSpan: 7, styles: { halign: 'center', fontStyle: 'bold' } }],
+      [
+        'Sowing Date',
+        'Crop',
+        'Variety',
+        'Seed Used',
+        'Plants Produced',
+        'Transplant Date',
+        'Source',
+      ].map((content) => ({ content, styles: { fontStyle: 'bold', halign: 'left' } })),
+      ...sortedSeedlings.map((s: any) => [
+        fmtDate(s.date),
         s.crop?.name ?? s.name ?? 'Seedling',
-        s.crop?.variety ?? '—',
+        s.crop?.variety ?? '',
+        s.seedUsed != null ? `${num(s.seedUsed)} ${s.seedUnit ?? ''}`.trim() : '',
+        num(Number(s.initialQuantity ?? 0)),
+        fmtDate(s.transplantDate),
         s.source === 'self_produced' ? 'Self-Produced' : 'Purchased',
-        Number(s.initialQuantity ?? s.quantityPurchased ?? 0).toString(),
-        Number(s.currentQuantity || 0).toString(),
-        `€${(Number(s.currentQuantity || 0) * Number(s.costPerSeedling || 0)).toFixed(2)}`,
-      ])
+      ]),
+    ]
 
     doc.addPage()
-    const seedlingPageY = addCompanyHeader(doc, logo, 'Seedlings Inventory Report')
+    const seedlingPageY = addCompanyHeader(doc, logo, 'Seedlings Report')
 
     // @ts-ignore
     doc.autoTable({
       startY: seedlingPageY,
-      head: [['Crop Name', 'Variety', 'Source', 'Produced/Purchased', 'Current Qty', 'Value']],
       body: seedlingsData,
-      styles: { font: 'NotoSans', fontSize: 9 },
-      headStyles: { fillColor: [34, 139, 34] },
+      theme: 'grid',
+      styles: {
+        font: 'NotoSans',
+        fontSize: 8,
+        lineColor: [0, 0, 0],
+        lineWidth: 0.2,
+        textColor: [0, 0, 0],
+      },
+      columnStyles: {
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+      },
     })
   }
 
@@ -1167,6 +1202,9 @@ export async function exportSeedlingLifecyclePDF(data: any[], startDate: string,
 }
 
 export async function exportCropLifecyclePDF(data: any[], startDate: string, endDate: string) {
+  // Resolve the target folder first, while the button click's activation is live.
+  const dirHandle = await resolveReportDir('Crop Lifecycle Report')
+
   // @ts-ignore
   const { jsPDF } = window.jspdf
   const doc = new jsPDF({ orientation: 'landscape' })
@@ -1220,13 +1258,14 @@ export async function exportCropLifecyclePDF(data: any[], startDate: string, end
   })
 
   const fileName = `Crop_Lifecycle_Report_${startDate}_to_${endDate}.pdf`
-  downloadPDF(doc, fileName)
+  await savePDF(doc, fileName, dirHandle)
 }
 
 export function exportToCSV(data: any[], filename: string) {
   if (data.length === 0) return
 
-  const headers = Object.keys(data[0])
+  // Union of all keys (rows from different categories carry different columns).
+  const headers = Array.from(new Set(data.flatMap((row) => Object.keys(row))))
   const csv = [
     headers.join(','),
     ...data.map((row) =>

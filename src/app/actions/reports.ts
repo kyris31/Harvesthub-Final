@@ -163,9 +163,11 @@ export async function getInventoryReport() {
   })
 
   // Get input inventory
-  const inputs = await db.query.inputInventory.findMany({
+  const allInputs = await db.query.inputInventory.findMany({
     where: and(eq(inputInventory.userId, session.user.id), isNull(inputInventory.deletedAt)),
   })
+  // Out-of-stock inputs (quantity 0) are not part of the report.
+  const inputs = allInputs.filter((i) => Number(i.currentQuantity || 0) > 0)
 
   // Get purchased seedlings
   const purchasedSeedlingRows = await db.query.purchasedSeedlings.findMany({
@@ -185,6 +187,24 @@ export async function getInventoryReport() {
     with: { crop: true },
   })
 
+  // Actual transplant date = earliest planting log that used the seedling batch.
+  const linkedPlantings = await db.query.plantingLogs.findMany({
+    where: and(eq(plantingLogs.userId, session.user.id), isNull(plantingLogs.deletedAt)),
+    columns: {
+      plantingDate: true,
+      selfProducedSeedlingId: true,
+      purchasedSeedlingId: true,
+    },
+  })
+  const firstTransplant = new Map<string, string>()
+  for (const p of linkedPlantings) {
+    for (const id of [p.selfProducedSeedlingId, p.purchasedSeedlingId]) {
+      if (!id) continue
+      const prev = firstTransplant.get(id)
+      if (!prev || p.plantingDate < prev) firstTransplant.set(id, p.plantingDate)
+    }
+  }
+
   // Normalise both seedling sources into one list so the report shows purchased
   // AND self-produced. Self-produced seedlings carry no per-seedling cost.
   const seedlingItems = [
@@ -196,6 +216,11 @@ export async function getInventoryReport() {
       initialQuantity: Number(s.quantityPurchased || 0),
       currentQuantity: Number(s.currentQuantity || 0),
       costPerSeedling: Number(s.costPerSeedling || 0),
+      // Purchased seedlings have no sowing: the date shown is the purchase date.
+      date: s.purchaseDate as string | null,
+      seedUsed: null as number | null,
+      seedUnit: '',
+      transplantDate: (firstTransplant.get(s.id) ?? null) as string | null,
     })),
     ...selfSeedlingRows.map((s) => ({
       id: s.id,
@@ -205,6 +230,12 @@ export async function getInventoryReport() {
       initialQuantity: Number(s.actualSeedlingsProduced || 0),
       currentQuantity: Number(s.currentSeedlingsAvailable || 0),
       costPerSeedling: 0,
+      date: s.sowingDate as string | null,
+      seedUsed: Number(s.quantitySown || 0) as number | null,
+      seedUnit: s.sowingUnit ?? '',
+      transplantDate: (firstTransplant.get(s.id) ?? s.readyForTransplantDate ?? null) as
+        | string
+        | null,
     })),
   ]
 
@@ -239,17 +270,16 @@ export async function getInventoryReport() {
     )
   }, 0)
 
-  const inputValue = inputs.reduce((sum, i) => {
-    return (
-      sum +
-      itemValue(
-        Number(i.currentQuantity || 0),
-        Number(i.initialQuantity || 0),
-        Number(i.costPerUnit || 0),
-        Number(i.totalCost || 0)
-      )
-    )
-  }, 0)
+  const inputItems = inputs.map((i) => ({
+    ...i,
+    value: itemValue(
+      Number(i.currentQuantity || 0),
+      Number(i.initialQuantity || 0),
+      Number(i.costPerUnit || 0),
+      Number(i.totalCost || 0)
+    ),
+  }))
+  const inputValue = inputItems.reduce((sum, i) => sum + i.value, 0)
 
   const seedlingValue = seedlingItems.reduce(
     (sum, s) => sum + s.currentQuantity * s.costPerSeedling,
@@ -262,7 +292,7 @@ export async function getInventoryReport() {
       totalValue: seedValue,
     },
     inputs: {
-      items: inputs,
+      items: inputItems,
       lowStock: lowStockInputs,
       totalValue: inputValue,
     },
@@ -317,32 +347,96 @@ export async function getCropPerformanceReport(startDate?: string, endDate?: str
 
   const cropIds = userCrops.map((c) => c.id)
 
-  // Total planted per crop (filtered by plantingDate)
+  // Plantings that produced in-range harvests or sales. A crop planted before the
+  // range but harvested/sold inside it must still show what was planted and how many
+  // plants were produced, so these plantings are counted whatever their own date.
+  const hDateConds = [eq(harvestLogs.userId, userId), isNull(harvestLogs.deletedAt)]
+  if (startDate) hDateConds.push(gte(harvestLogs.harvestDate, startDate))
+  if (endDate) hDateConds.push(lte(harvestLogs.harvestDate, endDate))
+  const harvestPlantingRows = await db
+    .selectDistinct({ id: harvestLogs.plantingLogId })
+    .from(harvestLogs)
+    .where(and(...hDateConds))
+
+  const sDateConds = [
+    eq(harvestLogs.userId, userId),
+    isNull(harvestLogs.deletedAt),
+    isNull(sales.deletedAt),
+  ]
+  if (startDate) sDateConds.push(gte(sales.saleDate, startDate))
+  if (endDate) sDateConds.push(lte(sales.saleDate, endDate))
+  const salePlantingRows = await db
+    .selectDistinct({ id: harvestLogs.plantingLogId })
+    .from(saleItems)
+    .innerJoin(harvestLogs, eq(saleItems.harvestLogId, harvestLogs.id))
+    .innerJoin(sales, eq(saleItems.saleId, sales.id))
+    .where(and(...sDateConds))
+
+  const linkedPlantingIds = Array.from(
+    new Set([...harvestPlantingRows, ...salePlantingRows].map((r) => r.id).filter(Boolean))
+  ) as string[]
+
+  // Plantings: dated inside the range, OR behind an in-range harvest/sale. Deduplicated by id.
   const plantedConds = [
     eq(plantingLogs.userId, userId),
     isNull(plantingLogs.deletedAt),
     inArray(plantingLogs.cropId, cropIds),
   ]
-  if (startDate) plantedConds.push(gte(plantingLogs.plantingDate, startDate))
-  if (endDate) plantedConds.push(lte(plantingLogs.plantingDate, endDate))
-  const plantedRows = await db
+  const inRangeConds = []
+  if (startDate) inRangeConds.push(gte(plantingLogs.plantingDate, startDate))
+  if (endDate) inRangeConds.push(lte(plantingLogs.plantingDate, endDate))
+  const rangeClause = inRangeConds.length ? and(...inRangeConds) : undefined
+  const plantingScope =
+    rangeClause && linkedPlantingIds.length > 0
+      ? or(rangeClause, inArray(plantingLogs.id, linkedPlantingIds))
+      : rangeClause
+  if (plantingScope) plantedConds.push(plantingScope)
+  const plantingsInScope = await db
     .select({
+      id: plantingLogs.id,
       cropId: plantingLogs.cropId,
       unit: plantingLogs.quantityUnit,
-      total: sql<string>`COALESCE(SUM(${plantingLogs.quantityPlanted}), '0')`,
+      qty: plantingLogs.quantityPlanted,
+      seedlingId: plantingLogs.selfProducedSeedlingId,
     })
     .from(plantingLogs)
     .where(and(...plantedConds))
-    .groupBy(plantingLogs.cropId, plantingLogs.quantityUnit)
 
-  // Seedlings produced per crop (filtered by sowingDate)
+  const plantedAgg = new Map<string, number>()
+  const plantedRows: Array<{ cropId: string; unit: string; total: string }> = []
+  for (const p of plantingsInScope) {
+    const key = `${p.cropId} ${p.unit}`
+    plantedAgg.set(key, (plantedAgg.get(key) ?? 0) + Number(p.qty || 0))
+  }
+  for (const [key, total] of plantedAgg) {
+    const [cropId, unit] = key.split(' ') as [string, string]
+    plantedRows.push({ cropId, unit, total: String(total) })
+  }
+
+  // Seedlings produced per crop: sown inside the range, OR the batch behind an in-range
+  // harvest/sale planting. Deduplicated by seedling-log id.
+  const linkedSeedlingIds = Array.from(
+    new Set(
+      plantingsInScope
+        .filter((p) => linkedPlantingIds.includes(p.id))
+        .map((p) => p.seedlingId)
+        .filter(Boolean)
+    )
+  ) as string[]
   const seedlingConds = [
     eq(seedlingProductionLogs.userId, userId),
     isNull(seedlingProductionLogs.deletedAt),
     inArray(seedlingProductionLogs.cropId, cropIds),
   ]
-  if (startDate) seedlingConds.push(gte(seedlingProductionLogs.sowingDate, startDate))
-  if (endDate) seedlingConds.push(lte(seedlingProductionLogs.sowingDate, endDate))
+  const sowRange = []
+  if (startDate) sowRange.push(gte(seedlingProductionLogs.sowingDate, startDate))
+  if (endDate) sowRange.push(lte(seedlingProductionLogs.sowingDate, endDate))
+  const sowClause = sowRange.length ? and(...sowRange) : undefined
+  const seedlingScope =
+    sowClause && linkedSeedlingIds.length > 0
+      ? or(sowClause, inArray(seedlingProductionLogs.id, linkedSeedlingIds))
+      : sowClause
+  if (seedlingScope) seedlingConds.push(seedlingScope)
   const producedRows = await db
     .select({
       cropId: seedlingProductionLogs.cropId,
@@ -475,6 +569,7 @@ export async function getCropPerformanceReport(startDate?: string, endDate?: str
     .filter(
       (r) => r.totalPlanted > 0 || r.plantsProduced > 0 || r.totalProduced > 0 || r.totalSales > 0
     )
+    .sort((a, b) => a.cropName.localeCompare(b.cropName, 'el'))
 }
 
 // Crop Lifecycle Report — self-produced seedlings, purchased seedlings, and direct sow

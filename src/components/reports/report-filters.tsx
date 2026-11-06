@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Download, Filter } from 'lucide-react'
 
 interface ReportFiltersProps {
-  onExport?: (category?: string) => void
-  onExportPDF?: (category?: string) => void
+  onExport?: (category?: string, startDate?: string, endDate?: string) => void
+  onExportPDF?: (category?: string, startDate?: string, endDate?: string) => void
   onFilterChange?: (startDate: string, endDate: string) => void
   showCategoryFilter?: boolean
   initialStartDate?: string
@@ -104,7 +104,9 @@ export function ReportFilters({
             <div className="flex flex-wrap gap-2">
               {onExportPDF && (
                 <Button
-                  onClick={() => onExportPDF(showCategoryFilter ? category : undefined)}
+                  onClick={() =>
+                    onExportPDF(showCategoryFilter ? category : undefined, startDate, endDate)
+                  }
                   variant="destructive"
                   size="sm"
                 >
@@ -114,7 +116,9 @@ export function ReportFilters({
               )}
               {onExport && (
                 <Button
-                  onClick={() => onExport(showCategoryFilter ? category : undefined)}
+                  onClick={() =>
+                    onExport(showCategoryFilter ? category : undefined, startDate, endDate)
+                  }
                   variant="outline"
                   size="sm"
                 >

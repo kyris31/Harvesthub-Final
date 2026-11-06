@@ -34,7 +34,24 @@ interface InventoryReportProps {
 export default function InventoryReportClient({ initialData }: InventoryReportProps) {
   const [data] = useState(initialData)
 
-  const handleExportCSV = (category?: string) => {
+  // Seedlings are dated records (sowing / purchase date), so the report's date range
+  // applies to them. Dates are ISO yyyy-mm-dd, so string comparison is safe.
+  const seedlingsInRange = (startDate?: string, endDate?: string) =>
+    data.seedlings.items.filter((s: any) => {
+      const d = s.date ? String(s.date).slice(0, 10) : ''
+      if (!d) return false
+      if (startDate && d < startDate) return false
+      if (endDate && d > endDate) return false
+      return true
+    })
+
+  const fmtDate = (d: any) => {
+    const s = d ? String(d).slice(0, 10) : ''
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : ''
+  }
+
+  const handleExportCSV = (category?: string, startDate?: string, endDate?: string) => {
     const cat = category ?? 'all'
     const seedRows =
       cat === 'all' || cat === 'seeds'
@@ -51,25 +68,40 @@ export default function InventoryReportClient({ initialData }: InventoryReportPr
             category: 'Inputs',
             item: i.name,
             quantity: `${i.currentQuantity || 0} ${i.quantityUnit || ''}`,
-            value: `€${(Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)).toFixed(2)}`,
+            value: `€${Number(
+              i.value ?? Number(i.currentQuantity || 0) * Number(i.costPerUnit || 0)
+            ).toFixed(2)}`,
           }))
         : []
     const seedlingRows =
       cat === 'all' || cat === 'seedlings'
-        ? data.seedlings.items.map((s: any) => ({
-            category:
-              s.source === 'self_produced' ? 'Seedlings (Self-Produced)' : 'Seedlings (Purchased)',
-            item: s.crop?.name ?? s.name ?? 'Seedling',
-            quantity: `${s.currentQuantity || 0} seedlings`,
-            value: `€${(Number(s.currentQuantity || 0) * Number(s.costPerSeedling || 0)).toFixed(2)}`,
-          }))
+        ? [...seedlingsInRange(startDate, endDate)]
+            .sort(
+              (a: any, b: any) =>
+                (a.crop?.name ?? a.name ?? '').localeCompare(b.crop?.name ?? b.name ?? '', 'el') ||
+                (a.crop?.variety ?? '').localeCompare(b.crop?.variety ?? '', 'el') ||
+                String(a.date).localeCompare(String(b.date))
+            )
+            .map((s: any) => ({
+              category: 'Seedlings',
+              sowing_date: fmtDate(s.date),
+              crop: s.crop?.name ?? s.name ?? 'Seedling',
+              variety: s.crop?.variety ?? '',
+              seed_used: s.seedUsed != null ? `${s.seedUsed} ${s.seedUnit ?? ''}`.trim() : '',
+              plants_produced: Number(s.initialQuantity || 0),
+              transplant_date: fmtDate(s.transplantDate),
+              source: s.source === 'self_produced' ? 'Self-Produced' : 'Purchased',
+            }))
         : []
     exportToCSV([...seedRows, ...inputRows, ...seedlingRows], 'inventory-report')
   }
 
-  const handleExportPDF = async (category?: string) => {
+  const handleExportPDF = async (category?: string, startDate?: string, endDate?: string) => {
     try {
-      await exportInventoryReportPDF(data, category)
+      await exportInventoryReportPDF(
+        { ...data, seedlings: { ...data.seedlings, items: seedlingsInRange(startDate, endDate) } },
+        category
+      )
     } catch (err: any) {
       console.error('PDF export failed:', err)
       toast.error(err?.message ?? 'PDF export failed. Please try again.')
